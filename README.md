@@ -60,9 +60,6 @@ npm install
 # EMAIL_USER=your_email@gmail.com
 # EMAIL_PASS=your_app_password
 
-# Seed the database
-npm run seed
-
 # Start backend server
 npm run dev
 
@@ -73,14 +70,6 @@ npm install
 # Start frontend server
 npm start
 ```
-
-### Demo Credentials
-
-| Role  | Email | Password |
-|-------|-------|----------|
-| Admin | admin@evento.com | admin123 |
-| User  | john@example.com | user123 |
-| User  | jane@example.com | user123 |
 
 ## 📁 Project Structure
 
@@ -212,8 +201,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Evento Team**
-- GitHub: [@ShivaMani02](https://github.com/ShivaMani02)
-- Website: [theshivanshvasu.com](https://theshivanshvasu.com)
+- GitHub: [@https://github.com/mahendra0011)
 
 ## 🙏 Acknowledgments
 
