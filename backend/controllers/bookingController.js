@@ -57,7 +57,8 @@ exports.createBooking = async (req, res) => {
     res.status(201).json({
       message: 'Booking created. Please verify OTP sent to your email.',
       bookingId: booking._id,
-      totalPrice
+      totalPrice,
+      otp: otp // For testing - remove in production
     });
   } catch (error) {
     console.error('Create booking error:', error);
