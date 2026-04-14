@@ -49,13 +49,10 @@ exports.createBooking = async (req, res) => {
 
     await booking.save();
 
-    // Send OTP email
-    const emailSent = await sendOTPEmail(req.user.email, otp, req.user.name);
-
-    // Proceed even if email fails - user can verify with manually provided OTP
-    if (!emailSent) {
-      console.log('Email failed, booking still created with OTP:', otp);
-    }
+    // Send OTP email asynchronously (don't wait)
+    sendOTPEmail(req.user.email, otp, req.user.name).catch(err => 
+      console.log('Email error (non-blocking):', err.message)
+    );
 
     res.status(201).json({
       message: 'Booking created. Please verify OTP sent to your email.',
@@ -129,12 +126,10 @@ exports.resendOTP = async (req, res) => {
     booking.otpExpires = otpExpires;
     await booking.save();
 
-    // Send OTP email
-    const emailSent = await sendOTPEmail(req.user.email, otp, req.user.name);
-
-    if (!emailSent) {
-      return res.status(500).json({ message: 'Failed to send OTP email' });
-    }
+    // Send OTP email asynchronously
+    sendOTPEmail(req.user.email, otp, req.user.name).catch(err => 
+      console.log('Email error (non-blocking):', err.message)
+    );
 
     res.json({ message: 'OTP resent successfully' });
   } catch (error) {
