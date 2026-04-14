@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://evento-1xjw.onrender.com',
+  baseURL: process.env.REACT_APP_API_URL || 'https://evento-j034.onrender.com',
   headers: {
     'Content-Type': 'application/json'
   }
