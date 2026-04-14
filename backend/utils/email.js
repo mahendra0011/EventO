@@ -47,10 +47,11 @@ const sendOTPEmail = async (email, otp, name) => {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent:', info.messageId);
     return true;
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('Email error:', error.message);
     return false;
   }
 };
