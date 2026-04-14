@@ -52,10 +52,9 @@ exports.createBooking = async (req, res) => {
     // Send OTP email
     const emailSent = await sendOTPEmail(req.user.email, otp, req.user.name);
 
+    // Proceed even if email fails - user can verify with manually provided OTP
     if (!emailSent) {
-      // Delete booking if email fails
-      await Booking.findByIdAndDelete(booking._id);
-      return res.status(500).json({ message: 'Failed to send OTP email' });
+      console.log('Email failed, booking still created with OTP:', otp);
     }
 
     res.status(201).json({
