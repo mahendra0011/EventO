@@ -4,10 +4,8 @@ import api from '../utils/api';
 import toast from 'react-hot-toast';
 import {
   Calendar,
-  Users,
   Ticket,
   IndianRupee,
-  TrendingUp,
   Clock,
   CheckCircle,
   XCircle,

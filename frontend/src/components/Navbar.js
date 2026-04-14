@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { Menu, X, Calendar, User, LogOut, Settings, ChevronDown } from 'lucide-react';
+import { Menu, X, Calendar, User, LogOut, Settings } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -10,7 +10,6 @@ const Navbar = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null);
 
   useEffect(() => {
     const handleScroll = () => {

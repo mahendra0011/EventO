@@ -5,7 +5,7 @@ import EventCard from '../components/EventCard';
 import { Search, Filter, X } from 'lucide-react';
 
 const Events = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
@@ -17,6 +17,7 @@ const Events = () => {
 
   useEffect(() => {
     fetchEvents();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedCategory, currentPage]);
 
   const fetchEvents = async () => {

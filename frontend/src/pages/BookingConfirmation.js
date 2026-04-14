@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { CheckCircle, Calendar, Clock, MapPin, Ticket, DollarSign, ArrowLeft, Sparkles } from 'lucide-react';
+import { CheckCircle, Calendar, Clock, MapPin, Ticket, ArrowLeft, Sparkles } from 'lucide-react';
 import { QRCodeTicket, AnimatedButton, AnimatedContainer, GradientText } from '../components/animated';
 
 const BookingConfirmation = () => {
@@ -14,6 +14,7 @@ const BookingConfirmation = () => {
 
   useEffect(() => {
     fetchBooking();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchBooking = async () => {

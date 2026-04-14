@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, CheckCircle, XCircle, AlertCircle, Ticket, User, Calendar, MapPin } from 'lucide-react';
+import { Camera, CheckCircle, XCircle, Ticket, User, Calendar } from 'lucide-react';
 import AnimatedButton from './AnimatedButton';
 import AnimatedCard from './AnimatedCard';
 import GradientText from './GradientText';
@@ -12,7 +12,7 @@ const QRCodeScanner = ({
 }) => {
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
-  const [error, setError] = useState(null);
+  const [, setError] = useState(null);
 
   const handleScan = (detectedCodes) => {
     if (detectedCodes && detectedCodes.length > 0) {
@@ -41,8 +41,8 @@ const QRCodeScanner = ({
     }
   };
 
-  const handleError = (error) => {
-    console.error('QR Scanner Error:', error);
+  const handleCameraError = (err) => {
+    console.error('QR Scanner Error:', err);
     setError('Camera access denied or not available');
     setScanResult({
       success: false,
@@ -111,7 +111,7 @@ const QRCodeScanner = ({
               <div className="relative aspect-square max-w-md mx-auto overflow-hidden rounded-2xl border-4 border-primary-200 shadow-xl">
                 <Scanner
                   onScan={handleScan}
-                  onError={handleError}
+                  onError={handleCameraError}
                   styles={{
                     container: { width: '100%', height: '100%' },
                     video: { width: '100%', height: '100%', objectFit: 'cover' }

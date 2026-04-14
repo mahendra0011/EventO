@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Share2, Copy, Check, Ticket, Calendar, MapPin, Clock, User } from 'lucide-react';
+import { Download, Copy, Check, Ticket, Calendar, MapPin, Clock, User } from 'lucide-react';
 import AnimatedButton from './AnimatedButton';
 import AnimatedCard from './AnimatedCard';
-import GradientText from './GradientText';
 
 const QRCodeTicket = ({ 
   booking, 
