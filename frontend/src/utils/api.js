@@ -44,12 +44,6 @@ export const adminLogin = async (email, password, secretKeyword) => {
   return res.data;
 };
 
-// Admin Quick Login (keyword only)
-export const adminQuickLogin = async (secretKeyword) => {
-  const res = await api.post('/auth/admin-quick-login', { secretKeyword });
-  return res.data;
-};
-
 // Admin Register with secret keyword
 export const adminRegister = async (userData) => {
   const res = await api.post('/auth/admin-register', userData);

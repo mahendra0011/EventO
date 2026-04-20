@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { check } = require('express-validator');
-const { register, login, getMe, updateProfile, adminSecretLogin, adminRegister, adminQuickLogin } = require('../controllers/authController');
+const { register, login, getMe, updateProfile, adminSecretLogin, adminRegister } = require('../controllers/authController');
 const { auth } = require('../middleware/auth');
 
 // @route   POST /api/auth/register
@@ -39,13 +39,6 @@ router.post('/admin-login', [
   check('password', 'Password is required').exists(),
   check('secretKeyword', 'Secret keyword is required').not().isEmpty()
 ], adminSecretLogin);
-
-// @route   POST /api/auth/admin-quick-login
-// @desc    Admin quick login with only secret keyword
-// @access  Public
-router.post('/admin-quick-login', [
-  check('secretKeyword', 'Secret keyword is required').not().isEmpty()
-], adminQuickLogin);
 
 // @route   GET /api/auth/me
 // @desc    Get current user

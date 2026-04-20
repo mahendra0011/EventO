@@ -152,20 +152,25 @@ exports.getMe = async (req, res) => {
   }
 };
 
-// Admin Quick Login - Login using only secret keyword
-exports.adminQuickLogin = async (req, res) => {
+// Admin Login with email, password, and secret keyword
+exports.adminSecretLogin = async (req, res) => {
   try {
-    const { keyword } = req.body;
+    const { email, password, secretKeyword } = req.body;
 
     // Verify secret keyword
-    if (keyword !== process.env.ADMIN_SECRET_KEYWORD) {
+    if (secretKeyword !== process.env.ADMIN_SECRET_KEYWORD) {
       return res.status(400).json({ message: 'Invalid admin secret keyword' });
     }
 
-    // Find first admin user
-    const admin = await User.findOne({ role: 'admin' });
+    // Check if admin exists and password matches
+    const admin = await User.findOne({ email, role: 'admin' });
     if (!admin) {
-      return res.status(404).json({ message: 'No admin user found. Please create an admin first.' });
+      return res.status(400).json({ message: 'Admin not found' });
+    }
+
+    const isMatch = await admin.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Generate token for admin
@@ -181,41 +186,7 @@ exports.adminQuickLogin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin quick login error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// Admin Quick Login - Login using only secret keyword
-exports.adminQuickLogin = async (req, res) => {
-  try {
-    const { keyword } = req.body;
-
-    // Verify secret keyword
-    if (keyword !== process.env.ADMIN_SECRET_KEYWORD) {
-      return res.status(400).json({ message: 'Invalid admin secret keyword' });
-    }
-
-    // Find first admin user
-    const admin = await User.findOne({ role: 'admin' });
-    if (!admin) {
-      return res.status(404).json({ message: 'No admin user found. Please create an admin first.' });
-    }
-
-    // Generate token for admin
-    const token = generateToken(admin._id);
-
-    res.json({
-      token,
-      user: {
-        id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role
-      }
-    });
-  } catch (error) {
-    console.error('Admin quick login error:', error);
+    console.error('Admin secret login error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

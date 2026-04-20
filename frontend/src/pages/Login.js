@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { adminLogin, adminQuickLogin } from '../utils/api';
+import { adminLogin } from '../utils/api';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff, Calendar, Key, Shield } from 'lucide-react';
 
