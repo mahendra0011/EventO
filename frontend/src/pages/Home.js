@@ -91,7 +91,7 @@ const Home = () => {
             <motion.div variants={itemVariants} className="mb-6">
               <ShimmerEffect className="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium">
                 <Sparkles className="h-4 w-4 inline mr-2" />
-                Discover Amazing Events
+                Discover Amazing Events & Host Your Own
               </ShimmerEffect>
             </motion.div>
 
@@ -108,10 +108,19 @@ const Home = () => {
 
             <motion.p 
               variants={itemVariants}
-              className="text-xl md:text-2xl mb-8 text-primary-100 max-w-3xl mx-auto"
+              className="text-xl md:text-2xl mb-4 text-primary-100 max-w-3xl mx-auto"
             >
               Book tickets for concerts, conferences, sports, and more. 
-              Experience moments that matter with Evento.
+              Or host your own events and manage attendees with ease.
+            </motion.p>
+
+            <motion.p 
+              variants={itemVariants}
+              className="text-lg mb-8 text-primary-200 max-w-2xl mx-auto"
+            >
+              <span className="bg-white/20 px-3 py-1 rounded-full">✨ Create your event</span> <span className="mx-2">•</span> 
+              <span className="bg-white/20 px-3 py-1 rounded-full">🎫 Sell tickets</span> <span className="mx-2">•</span> 
+              <span className="bg-white/20 px-3 py-1 rounded-full">📊 Track analytics</span>
             </motion.p>
 
             <motion.div 
@@ -134,8 +143,19 @@ const Home = () => {
                 size="lg"
                 className="border-white text-white hover:bg-white hover:text-primary-600"
               >
-                <Link to="/register" className="flex items-center">
-                  Get Started
+                <Link to="/register?host=true" className="flex items-center">
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  Become a Host
+                </Link>
+              </AnimatedButton>
+
+              <AnimatedButton 
+                variant="ghost" 
+                size="lg"
+                className="border-white/50 text-white hover:bg-white/10"
+              >
+                <Link to="/login?host=true" className="flex items-center">
+                  Host Login
                   <ArrowRight className="h-5 w-5 ml-2" />
                 </Link>
               </AnimatedButton>
@@ -144,12 +164,13 @@ const Home = () => {
             {/* Stats */}
             <motion.div 
               variants={itemVariants}
-              className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto"
+              className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto"
             >
               {[
                 { number: '10K+', label: 'Events' },
                 { number: '500K+', label: 'Tickets Sold' },
                 { number: '50K+', label: 'Happy Users' },
+                { number: '1K+', label: 'Event Hosts' },
               ].map((stat, index) => (
                 <motion.div
                   key={index}
