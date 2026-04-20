@@ -222,6 +222,8 @@ exports.adminQuickLogin = async (req, res) => {
 
 // Update Profile
 exports.updateProfile = async (req, res) => {
+// Update Profile
+exports.updateProfile = async (req, res) => {
   try {
     const { name, phone } = req.body;
     const user = await User.findById(req.user.id);

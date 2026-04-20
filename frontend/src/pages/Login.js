@@ -5,7 +5,6 @@ import { adminLogin, adminQuickLogin } from '../utils/api';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff, Calendar, Key, Shield, User, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
   const [email, setEmail] = useState('');
