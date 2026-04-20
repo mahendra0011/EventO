@@ -7,7 +7,8 @@ import toast from 'react-hot-toast';
 import { 
   Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone, 
   Edit3, Save, X, QrCode, Heart, CreditCard, Star, Search, Bell, Trash2, 
-  Download, Eye, Filter, TrendingUp, MapPin, IndianRupee, History
+  Download, Eye, Filter, TrendingUp, MapPin, IndianRupee, History,
+  HelpCircle, MessageCircle, Calendar as CalendarIcon, StarHalf
 } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, AnimatedContainer, GradientText } from '../components/animated';
 
@@ -232,9 +233,12 @@ const Dashboard = () => {
             <nav className="flex -mb-px overflow-x-auto">
               {[
                 { id: 'bookings', icon: Ticket, label: 'My Bookings' },
-                { id: 'upcoming', icon: Calendar, label: 'Upcoming' },
+                { id: 'upcoming', icon: CalendarIcon, label: 'Upcoming' },
+                { id: 'calendar', icon: Calendar, label: 'Calendar' },
                 { id: 'wishlist', icon: Heart, label: 'Wishlist' },
                 { id: 'payments', icon: CreditCard, label: 'Payments' },
+                { id: 'reviews', icon: StarHalf, label: 'Reviews' },
+                { id: 'support', icon: HelpCircle, label: 'Support' },
                 { id: 'profile', icon: User, label: 'Profile' }
               ].map((tab) => (
                 <motion.button
@@ -450,6 +454,129 @@ const Dashboard = () => {
                       <p className="text-gray-600">Your payment history will appear here</p>
                     </div>
                   )}
+                </motion.div>
+              )}
+
+              {activeTab === 'calendar' && (
+                <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">My Calendar</h3>
+                  {bookings.filter(b => b.status === 'confirmed').length > 0 ? (
+                    <div className="space-y-3">
+                      {bookings.filter(b => b.status === 'confirmed').map((booking) => (
+                        <div key={booking._id} className="border border-gray-200 rounded-lg p-4 flex items-center bg-gradient-to-r from-primary-50 to-secondary-50">
+                          <div className="w-16 h-16 bg-primary-100 rounded-lg flex flex-col items-center justify-center">
+                            <span className="text-xs text-primary-600 uppercase">{new Date(booking.event?.date).toLocaleString('default', { month: 'short' })}</span>
+                            <span className="text-xl font-bold text-primary-600">{new Date(booking.event?.date).getDate()}</span>
+                          </div>
+                          <div className="ml-4 flex-1">
+                            <h4 className="font-semibold">{booking.event?.title}</h4>
+                            <p className="text-sm text-gray-500">{booking.event?.time} • {booking.numberOfTickets} tickets</p>
+                          </div>
+                          <Link to={`/booking/${booking._id}/confirmation`} className="btn-secondary text-sm">
+                            View Ticket
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No events scheduled</h3>
+                      <p className="text-gray-600 mb-4">Book events to see them in your calendar</p>
+                      <Link to="/events" className="btn-primary inline-flex">
+                        Browse Events
+                      </Link>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {activeTab === 'reviews' && (
+                <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Reviews & Feedback</h3>
+                  {bookings.filter(b => b.status === 'confirmed' && new Date(b.event?.date) < new Date()).length > 0 ? (
+                    <div className="space-y-4">
+                      {bookings.filter(b => b.status === 'confirmed' && new Date(b.event?.date) < new Date()).map((booking) => (
+                        <div key={booking._id} className="border border-gray-200 rounded-lg p-6">
+                          <div className="flex items-center mb-4">
+                            <img src={booking.event?.image} alt={booking.event?.title} className="w-16 h-16 rounded-lg object-cover" />
+                            <div className="ml-4 flex-1">
+                              <h4 className="font-semibold">{booking.event?.title}</h4>
+                              <p className="text-sm text-gray-500">{formatDate(booking.event?.date)}</p>
+                            </div>
+                          </div>
+                          <div className="mb-4">
+                            <p className="text-sm text-gray-600 mb-2">Rate this event:</p>
+                            <div className="flex gap-2">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button key={star} className="text-gray-300 hover:text-yellow-400 transition-colors">
+                                  <Star className="h-8 w-8 fill-current" />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <textarea
+                            placeholder="Share your experience..."
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                            rows={3}
+                          />
+                          <button className="btn-primary mt-3">
+                            <StarHalf className="h-4 w-4 inline mr-2" />
+                            Submit Review
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <StarHalf className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No events to review</h3>
+                      <p className="text-gray-600">Events you've attended will appear here for review</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {activeTab === 'support' && (
+                <motion.div key="support" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Help & Support</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 cursor-pointer hover:bg-primary-100 transition-colors">
+                      <HelpCircle className="h-8 w-8 text-primary-600 mb-3" />
+                      <h4 className="font-semibold text-primary-900">FAQs</h4>
+                      <p className="text-sm text-primary-700">Find answers to common questions</p>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 cursor-pointer hover:bg-blue-100 transition-colors">
+                      <MessageCircle className="h-8 w-8 text-blue-600 mb-3" />
+                      <h4 className="font-semibold text-blue-900">Contact Us</h4>
+                      <p className="text-sm text-blue-700">Chat with our support team</p>
+                    </div>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6 cursor-pointer hover:bg-green-100 transition-colors">
+                      <Mail className="h-8 w-8 text-green-600 mb-3" />
+                      <h4 className="font-semibold text-green-900">Email Support</h4>
+                      <p className="text-sm text-green-700">support@evento.com</p>
+                    </div>
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 cursor-pointer hover:bg-purple-100 transition-colors">
+                      <AlertCircle className="h-8 w-8 text-purple-600 mb-3" />
+                      <h4 className="font-semibold text-purple-900">Report Issue</h4>
+                      <p className="text-sm text-purple-700">Report a problem</p>
+                    </div>
+                  </div>
+                  <div className="border-t border-gray-200 pt-6">
+                    <h4 className="font-semibold text-gray-900 mb-3">Quick Help</h4>
+                    <details className="mb-3">
+                      <summary className="cursor-pointer font-medium text-gray-700">How do I get my tickets?</summary>
+                      <p className="text-sm text-gray-600 mt-2 ml-4">After booking, click "View Ticket" to see your QR code. You can also find them in My Bookings.</p>
+                    </details>
+                    <details className="mb-3">
+                      <summary className="cursor-pointer font-medium text-gray-700">Can I cancel my booking?</summary>
+                      <p className="text-sm text-gray-600 mt-2 ml-4">Yes, go to My Bookings and click Cancel on pending bookings.</p>
+                    </details>
+                    <details className="mb-3">
+                      <summary className="cursor-pointer font-medium text-gray-700">How do I become a host?</summary>
+                      <p className="text-sm text-gray-600 mt-2 ml-4">Register an account and check "Register as Host" to create events.</p>
+                    </details>
+                  </div>
                 </motion.div>
               )}
 
