@@ -185,6 +185,43 @@ exports.adminQuickLogin = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Admin Quick Login - Login using only secret keyword
+exports.adminQuickLogin = async (req, res) => {
+  try {
+    const { keyword } = req.body;
+
+    // Verify secret keyword
+    if (keyword !== process.env.ADMIN_SECRET_KEYWORD) {
+      return res.status(400).json({ message: 'Invalid admin secret keyword' });
+    }
+
+    // Find first admin user
+    const admin = await User.findOne({ role: 'admin' });
+    if (!admin) {
+      return res.status(404).json({ message: 'No admin user found. Please create an admin first.' });
+    }
+
+    // Generate token for admin
+    const token = generateToken(admin._id);
+
+    res.json({
+      token,
+      user: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+  } catch (error) {
+    console.error('Admin quick login error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Update Profile
+exports.updateProfile = async (req, res) => {
   try {
     const { name, phone } = req.body;
     const user = await User.findById(req.user.id);
