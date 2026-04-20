@@ -93,7 +93,7 @@ function AnimatedRoutes() {
             </PageTransition>
           } 
         />
-<Route
+        <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
