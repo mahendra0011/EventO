@@ -8,7 +8,7 @@ mongoose.set('bufferCommands', false);
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
 const bookingRoutes = require('./routes/bookings');
-const adminRoutes = require('./routes/admin');
+const hostRoutes = require('./routes/host');
 
 const app = express();
 
@@ -22,7 +22,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/bookings', bookingRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/host', hostRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Evento API is running' });

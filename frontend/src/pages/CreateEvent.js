@@ -24,9 +24,10 @@ const CreateEvent = () => {
   const categories = ['Music', 'Sports', 'Technology', 'Business', 'Art', 'Food', 'Other'];
 
   const handleChange = (e) => {
+    const { name, value, type } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
   };
 
@@ -36,16 +37,28 @@ const CreateEvent = () => {
 
     try {
       const eventData = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        date: formData.date,
+        time: formData.time,
+        venue: formData.venue,
+        location: formData.location,
+        category: formData.category,
         price: Number(formData.price),
         totalTickets: Number(formData.totalTickets),
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : []
       };
+
+      // Only add image if provided
+      if (formData.image && formData.image.trim()) {
+        eventData.image = formData.image.trim();
+      }
 
       await api.post('/events', eventData);
       toast.success('Event created successfully!');
       navigate('/admin');
     } catch (error) {
+      console.error('Create event error:', error);
       toast.error(error.response?.data?.message || 'Failed to create event');
     } finally {
       setLoading(false);

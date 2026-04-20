@@ -21,10 +21,14 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'host'],
     default: 'user'
   },
   phone: {
+    type: String,
+    trim: true
+  },
+  secretKeyword: {
     type: String,
     trim: true
   },

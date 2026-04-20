@@ -10,7 +10,7 @@ const {
   getOrganizerEvents,
   getFeaturedEvents
 } = require('../controllers/eventController');
-const { auth, adminAuth } = require('../middleware/auth');
+const { auth, hostAuth } = require('../middleware/auth');
 
 // @route   GET /api/events/featured
 // @desc    Get featured events
@@ -19,8 +19,8 @@ router.get('/featured', getFeaturedEvents);
 
 // @route   GET /api/events/organizer
 // @desc    Get events by organizer
-// @access  Private/Admin
-router.get('/organizer', adminAuth, getOrganizerEvents);
+// @access  Private/Host
+router.get('/organizer', hostAuth, getOrganizerEvents);
 
 // @route   GET /api/events
 // @desc    Get all events
@@ -34,8 +34,8 @@ router.get('/:id', getEvent);
 
 // @route   POST /api/events
 // @desc    Create event
-// @access  Private/Admin
-router.post('/', adminAuth, [
+// @access  Private/Host
+router.post('/', hostAuth, [
   check('title', 'Title is required').not().isEmpty(),
   check('description', 'Description is required').not().isEmpty(),
   check('date', 'Date is required').not().isEmpty(),
@@ -49,12 +49,12 @@ router.post('/', adminAuth, [
 
 // @route   PUT /api/events/:id
 // @desc    Update event
-// @access  Private/Admin
-router.put('/:id', adminAuth, updateEvent);
+// @access  Private/Host
+router.put('/:id', hostAuth, updateEvent);
 
 // @route   DELETE /api/events/:id
 // @desc    Delete event
-// @access  Private/Admin
-router.delete('/:id', adminAuth, deleteEvent);
+// @access  Private/Host
+router.delete('/:id', hostAuth, deleteEvent);
 
 module.exports = router;

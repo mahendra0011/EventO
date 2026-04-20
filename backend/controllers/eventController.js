@@ -79,19 +79,25 @@ exports.createEvent = async (req, res) => {
       tags
     } = req.body;
 
+    // Convert date string to Date object
+    const eventDate = new Date(date);
+    if (isNaN(eventDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
+
     const event = new Event({
       title,
       description,
-      date,
+      date: eventDate,
       time,
       venue,
       location,
       category,
-      image,
+      image: image || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
       price,
       totalTickets,
       organizer: req.user.id,
-      tags
+      tags: tags || []
     });
 
     await event.save();
@@ -99,7 +105,7 @@ exports.createEvent = async (req, res) => {
     res.status(201).json(event);
   } catch (error) {
     console.error('Create event error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 

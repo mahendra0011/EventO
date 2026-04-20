@@ -7,8 +7,8 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
-// Admin Registration with Secret Keyword
-exports.adminRegister = async (req, res) => {
+// Host Registration with Custom Secret Keyword
+exports.hostRegister = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -17,24 +17,20 @@ exports.adminRegister = async (req, res) => {
   try {
     const { name, email, password, phone, secretKeyword } = req.body;
 
-    // Verify secret keyword
-    if (secretKeyword !== process.env.ADMIN_SECRET_KEYWORD) {
-      return res.status(400).json({ message: 'Invalid admin secret keyword' });
-    }
-
     // Check if user exists
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create admin user
+    // Create host user
     user = new User({
       name,
       email,
       password,
       phone,
-      role: 'admin'
+      role: 'host',
+      secretKeyword
     });
 
     await user.save();
@@ -52,7 +48,7 @@ exports.adminRegister = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin register error:', error);
+    console.error('Host register error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -152,41 +148,42 @@ exports.getMe = async (req, res) => {
   }
 };
 
-// Admin Login with email, password, and secret keyword
-exports.adminSecretLogin = async (req, res) => {
+// Host Login - Login using email, password, and custom secret keyword
+exports.hostLogin = async (req, res) => {
   try {
     const { email, password, secretKeyword } = req.body;
 
-    // Verify secret keyword
-    if (secretKeyword !== process.env.ADMIN_SECRET_KEYWORD) {
-      return res.status(400).json({ message: 'Invalid admin secret keyword' });
+    // Find host user by email
+    const user = await User.findOne({ email, role: 'host' });
+    if (!user) {
+      return res.status(400).json({ message: 'Host not found' });
     }
 
-    // Check if admin exists and password matches
-    const admin = await User.findOne({ email, role: 'admin' });
-    if (!admin) {
-      return res.status(400).json({ message: 'Admin not found' });
+    // Check if provided secret keyword matches user's stored keyword
+    if (user.secretKeyword !== secretKeyword) {
+      return res.status(400).json({ message: 'Invalid secret keyword' });
     }
 
-    const isMatch = await admin.comparePassword(password);
+    // Verify password
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Generate token for admin
-    const token = generateToken(admin._id);
+    // Generate token
+    const token = generateToken(user._id);
 
     res.json({
       token,
       user: {
-        id: admin._id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
       }
     });
   } catch (error) {
-    console.error('Admin secret login error:', error);
+    console.error('Host login error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

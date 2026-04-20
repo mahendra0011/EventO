@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { check } = require('express-validator');
-const { register, login, getMe, updateProfile, adminSecretLogin, adminRegister } = require('../controllers/authController');
+const { register, login, getMe, updateProfile, hostRegister, hostLogin } = require('../controllers/authController');
 const { auth } = require('../middleware/auth');
 
 // @route   POST /api/auth/register
@@ -13,15 +13,15 @@ router.post('/register', [
   check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 })
 ], register);
 
-// @route   POST /api/auth/admin-register
-// @desc    Register admin with secret keyword
+// @route   POST /api/auth/host-register
+// @desc    Register host with custom secret keyword
 // @access  Public
-router.post('/admin-register', [
+router.post('/host-register', [
   check('name', 'Name is required').not().isEmpty(),
   check('email', 'Please include a valid email').isEmail(),
   check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 }),
   check('secretKeyword', 'Secret keyword is required').not().isEmpty()
-], adminRegister);
+], hostRegister);
 
 // @route   POST /api/auth/login
 // @desc    Login user
@@ -31,14 +31,14 @@ router.post('/login', [
   check('password', 'Password is required').exists()
 ], login);
 
-// @route   POST /api/auth/admin-login
-// @desc    Admin login with email, password, and secret keyword
+// @route   POST /api/auth/host-login
+// @desc    Host login with email, password, and custom secret keyword
 // @access  Public
-router.post('/admin-login', [
+router.post('/host-login', [
   check('email', 'Email is required').isEmail(),
   check('password', 'Password is required').exists(),
   check('secretKeyword', 'Secret keyword is required').not().isEmpty()
-], adminSecretLogin);
+], hostLogin);
 
 // @route   GET /api/auth/me
 // @desc    Get current user
