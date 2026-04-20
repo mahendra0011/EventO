@@ -4,15 +4,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone, Edit3, Save, X } from 'lucide-react';
+import { 
+  Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone, 
+  Edit3, Save, X, QrCode, Heart, CreditCard, Star, Search, Bell, Trash2, 
+  Download, Eye, Filter, TrendingUp, MapPin, IndianRupee, History
+} from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, AnimatedContainer, GradientText } from '../components/animated';
 
 const Dashboard = () => {
   const { user, updateProfile } = useAuth();
   const [bookings, setBookings] = useState([]);
+  const [savedEvents, setSavedEvents] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('bookings');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [editMode, setEditMode] = useState(false);
+  const [notification, setNotification] = useState(true);
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     phone: user?.phone || ''
@@ -20,6 +28,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchBookings();
+    fetchSavedEvents();
+    fetchPayments();
   }, []);
 
   const fetchBookings = async () => {
@@ -30,6 +40,39 @@ const Dashboard = () => {
       console.error('Error fetching bookings:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSavedEvents = async () => {
+    try {
+      setSavedEvents([]);
+    } catch (error) {
+      console.error('Error fetching saved events:', error);
+    }
+  };
+
+  const fetchPayments = async () => {
+    try {
+      const paidBookings = bookings.filter(b => b.status === 'confirmed');
+      setPayments(paidBookings.map(b => ({
+        _id: b._id,
+        event: b.event,
+        amount: b.totalPrice,
+        date: b.createdAt,
+        status: 'Paid'
+      })));
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    }
+  };
+
+  const handleToggleSaveEvent = (event) => {
+    if (savedEvents.find(e => e._id === event._id)) {
+      setSavedEvents(savedEvents.filter(e => e._id !== event._id));
+      toast.success('Event removed from wishlist');
+    } else {
+      setSavedEvents([...savedEvents, event]);
+      toast.success('Event added to wishlist');
     }
   };
 
@@ -186,20 +229,27 @@ const Dashboard = () => {
         {/* Tabs */}
         <AnimatedCard className="overflow-hidden" delay={0.4}>
           <div className="border-b border-gray-200">
-            <nav className="flex -mb-px">
-              {['bookings', 'profile'].map((tab) => (
+            <nav className="flex -mb-px overflow-x-auto">
+              {[
+                { id: 'bookings', icon: Ticket, label: 'My Bookings' },
+                { id: 'upcoming', icon: Calendar, label: 'Upcoming' },
+                { id: 'wishlist', icon: Heart, label: 'Wishlist' },
+                { id: 'payments', icon: CreditCard, label: 'Payments' },
+                { id: 'profile', icon: User, label: 'Profile' }
+              ].map((tab) => (
                 <motion.button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`py-4 px-6 text-sm font-medium border-b-2 transition-all duration-300 ${
-                    activeTab === tab
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`py-4 px-4 text-sm font-medium border-b-2 transition-all duration-300 whitespace-nowrap ${
+                    activeTab === tab.id
                       ? 'border-primary-500 text-primary-600 bg-primary-50'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  {tab === 'bookings' ? 'My Bookings' : 'Profile Settings'}
+                  <tab.icon className="h-4 w-4 inline mr-2" />
+                  {tab.label}
                 </motion.button>
               ))}
             </nav>
@@ -207,7 +257,7 @@ const Dashboard = () => {
 
           <div className="p-6">
             <AnimatePresence mode="wait">
-              {activeTab === 'bookings' ? (
+              {activeTab === 'bookings' && (
                 <motion.div
                   key="bookings"
                   initial={{ opacity: 0, x: -20 }}
@@ -215,6 +265,23 @@ const Dashboard = () => {
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
                 >
+                  {/* Filter */}
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {['all', 'pending', 'confirmed', 'cancelled'].map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => setFilterStatus(status)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium capitalize ${
+                          filterStatus === status
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+
                   {loading ? (
                     <div className="flex justify-center items-center py-12">
                       <motion.div
@@ -223,80 +290,170 @@ const Dashboard = () => {
                         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                       />
                     </div>
-                  ) : bookings.length > 0 ? (
-                    <motion.div 
-                      className="space-y-4"
-                      variants={containerVariants}
-                      initial="hidden"
-                      animate="visible"
-                    >
-                      {bookings.map((booking, index) => (
-                        <motion.div
-                          key={booking._id}
-                          variants={itemVariants}
-                          className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-300 bg-white"
-                          whileHover={{ 
-                            scale: 1.02,
-                            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                            <div className="flex items-start space-x-4">
-                              <motion.img
-                                src={booking.event?.image}
-                                alt={booking.event?.title}
-                                className="w-24 h-24 object-cover rounded-lg"
-                                whileHover={{ scale: 1.1 }}
-                              />
-                              <div>
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                  {booking.event?.title}
-                                </h3>
-                                <div className="flex items-center text-gray-500 text-sm mt-1">
-                                  <Calendar className="h-4 w-4 mr-1" />
-                                  {formatDate(booking.event?.date)} at {booking.event?.time}
+                  ) : (
+                    (filterStatus === 'all' ? bookings : bookings.filter(b => b.status === filterStatus)).length > 0 ? (
+                      <motion.div 
+                        className="space-y-4"
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                      >
+                        {(filterStatus === 'all' ? bookings : bookings.filter(b => b.status === filterStatus)).map((booking, index) => (
+                          <motion.div
+                            key={booking._id}
+                            variants={itemVariants}
+                            className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-300 bg-white"
+                            whileHover={{ scale: 1.01 }}
+                          >
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                              <div className="flex items-start space-x-4">
+                                <img
+                                  src={booking.event?.image || 'https://images.unsplash.com/photo-1540575467083-2bdc3c5f8ebe?w=200'}
+                                  alt={booking.event?.title}
+                                  className="w-24 h-24 object-cover rounded-lg"
+                                />
+                                <div>
+                                  <h3 className="text-lg font-semibold text-gray-900">{booking.event?.title}</h3>
+                                  <div className="flex items-center text-gray-500 text-sm mt-1">
+                                    <Calendar className="h-4 w-4 mr-1" />
+                                    {formatDate(booking.event?.date)} at {booking.event?.time}
+                                  </div>
+                                  <div className="flex items-center text-gray-500 text-sm mt-1">
+                                    <MapPin className="h-4 w-4 mr-1" />
+                                    {booking.event?.venue}
+                                  </div>
+                                  <div className="flex items-center text-gray-500 text-sm mt-1">
+                                    <Ticket className="h-4 w-4 mr-1" />
+                                    {booking.numberOfTickets} ticket(s) - ₹{booking.totalPrice?.toLocaleString('en-IN')}
+                                  </div>
                                 </div>
-                                <div className="flex items-center text-gray-500 text-sm mt-1">
-                                  <Ticket className="h-4 w-4 mr-1" />
-                                  {booking.numberOfTickets} ticket(s) - ₹{booking.totalPrice.toLocaleString('en-IN')}
+                              </div>
+                              <div className="mt-4 md:mt-0 flex flex-col items-end space-y-2">
+                                {getStatusBadge(booking.status)}
+                                <div className="flex space-x-2">
+                                  <Link to={`/booking/${booking._id}/confirmation`} className="btn-outline text-sm">
+                                    <Eye className="h-4 w-4 inline mr-1" />View Ticket
+                                  </Link>
+                                  {booking.status === 'pending' && (
+                                    <button onClick={() => handleCancelBooking(booking._id)} className="btn-danger text-sm">
+                                      Cancel
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>
-
-                            <div className="mt-4 md:mt-0 flex flex-col items-end space-y-2">
-                              {getStatusBadge(booking.status)}
-                              {booking.status === 'pending' && (
-                                <AnimatedButton
-                                  variant="danger"
-                                  size="sm"
-                                  onClick={() => handleCancelBooking(booking._id)}
-                                >
-                                  Cancel Booking
-                                </AnimatedButton>
-                              )}
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-                  ) : (
-                    <motion.div 
-                      className="text-center py-12"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                    >
-                      <AnimatedIcon variant="float" className="mb-4">
-                        <Ticket className="h-16 w-16 text-gray-300" />
-                      </AnimatedIcon>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No bookings yet</h3>
-                      <p className="text-gray-600 mb-4">Start exploring events and book your first ticket!</p>
-                      <AnimatedButton variant="primary">
-                        <Link to="/events">Browse Events</Link>
-                      </AnimatedButton>
-                    </motion.div>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <motion.div className="text-center py-12">
+                        <Ticket className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No {filterStatus} bookings</h3>
+                        <Link to="/events" className="btn-primary inline-flex">
+                          <Search className="h-4 w-4 mr-2" />Browse Events
+                        </Link>
+                      </motion.div>
+                    )
                   )}
                 </motion.div>
-              ) : (
+              )}
+
+              {activeTab === 'upcoming' && (
+                <motion.div
+                  key="upcoming"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-4"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Events</h3>
+                  {bookings.filter(b => b.status === 'confirmed' && new Date(b.event?.date) > new Date()).length > 0 ? (
+                    bookings.filter(b => b.status === 'confirmed' && new Date(b.event?.date) > new Date()).map((booking) => (
+                      <div key={booking._id} className="border border-gray-200 rounded-lg p-4 flex items-center bg-green-50">
+                        <img src={booking.event?.image || 'https://images.unsplash.com/photo-1540575467083-2bdc3c5f8ebe?w=100'} alt={booking.event?.title} className="w-16 h-16 rounded-lg object-cover" />
+                        <div className="ml-4 flex-1">
+                          <h4 className="font-semibold">{booking.event?.title}</h4>
+                          <p className="text-sm text-gray-500">{formatDate(booking.event?.date)} • {booking.numberOfTickets} tickets</p>
+                        </div>
+                        <Link to={`/events/${booking.event?._id}`} className="btn-secondary text-sm">
+                          View Details
+                        </Link>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No upcoming events</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {activeTab === 'wishlist' && (
+                <motion.div key="wishlist" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Saved Events</h3>
+                  {savedEvents.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {savedEvents.map((event) => (
+                        <div key={event._id} className="border border-gray-200 rounded-lg overflow-hidden">
+                          <img src={event.image} alt={event.title} className="w-full h-32 object-cover" />
+                          <div className="p-4">
+                            <h4 className="font-semibold">{event.title}</h4>
+                            <p className="text-sm text-gray-500">{formatDate(event.date)}</p>
+                            <div className="flex justify-between mt-2">
+                              <Link to={`/events/${event._id}`} className="btn-primary text-sm">Book Now</Link>
+                              <button onClick={() => handleToggleSaveEvent(event)} className="text-red-500"><Heart className="h-5 w-5 fill-current" /></button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No saved events</h3>
+                      <p className="text-gray-600 mb-4">Save events to your wishlist</p>
+                      <Link to="/events" className="btn-primary inline-flex">
+                        <Search className="h-4 w-4 mr-2" />Browse Events
+                      </Link>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {activeTab === 'payments' && (
+                <motion.div key="payments" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment History</h3>
+                  {payments.length > 0 ? (
+                    <div className="space-y-3">
+                      {payments.map((payment) => (
+                        <div key={payment._id} className="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                              <IndianRupee className="h-6 w-6 text-green-600" />
+                            </div>
+                            <div className="ml-4">
+                              <h4 className="font-semibold">{payment.event?.title}</h4>
+                              <p className="text-sm text-gray-500">{formatDate(payment.date)}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-green-600">₹{payment.amount?.toLocaleString('en-IN')}</p>
+                            <p className="text-sm text-green-500">Paid</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <CreditCard className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No payment history</h3>
+                      <p className="text-gray-600">Your payment history will appear here</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {activeTab === 'profile' && (
                 <motion.div
                   key="profile"
                   initial={{ opacity: 0, x: 20 }}
@@ -397,15 +554,46 @@ const Dashboard = () => {
                         </motion.div>
                       ))}
 
-                      <AnimatedButton
-                        variant="primary"
-                        onClick={() => setEditMode(true)}
-                      >
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        Edit Profile
-                      </AnimatedButton>
-                    </motion.div>
-                  )}
+                      <div className="pt-6 mt-6 border-t border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <Bell className="h-5 w-5 mr-2" />Notification Settings
+                    </h3>
+                    <div className="space-y-3">
+                      <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer">
+                        <div className="flex items-center">
+                          <Mail className="h-5 w-5 text-gray-400 mr-3" />
+                          <div>
+                            <p className="font-medium">Email Notifications</p>
+                            <p className="text-sm text-gray-500">Receive booking confirmations and updates</p>
+                          </div>
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={notification}
+                          onChange={() => setNotification(!notification)}
+                          className="h-5 w-5 text-primary-600 rounded" 
+                        />
+                      </label>
+                      <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer">
+                        <div className="flex items-center">
+                          <Bell className="h-5 w-5 text-gray-400 mr-3" />
+                          <div>
+                            <p className="font-medium">Push Notifications</p>
+                            <p className="text-sm text-gray-500">Get reminders about upcoming events</p>
+                          </div>
+                        </div>
+                        <input type="checkbox" defaultChecked className="h-5 w-5 text-primary-600 rounded" />
+                      </label>
+                    </div>
+                  </div>
+
+                  <AnimatedButton
+                    variant="primary"
+                    onClick={() => setEditMode(true)}
+                  >
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </AnimatedButton>
                 </motion.div>
               )}
             </AnimatePresence>
