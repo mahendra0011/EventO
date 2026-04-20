@@ -57,7 +57,7 @@ const Register = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         toast.success('Host account created!');
-        window.location.href = '/admin';
+        window.location.href = '/host';
       } else {
         // Regular user registration
         await register(formData.name, formData.email, formData.password, formData.phone);

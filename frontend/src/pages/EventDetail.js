@@ -74,7 +74,7 @@ const EventDetail = () => {
         otp
       });
 
-      toast.success('Booking verified! Pending admin approval.');
+      toast.success('Booking verified! Pending host approval.');
       setShowOtpModal(false);
       navigate(`/booking/${bookingId}/confirmation`);
     } catch (error) {

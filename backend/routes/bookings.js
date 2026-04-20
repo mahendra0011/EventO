@@ -12,7 +12,7 @@ const {
   confirmBooking,
   rejectBooking
 } = require('../controllers/bookingController');
-const { auth, adminAuth } = require('../middleware/auth');
+const { auth, hostAuth } = require('../middleware/auth');
 
 // @route   POST /api/bookings
 // @desc    Create booking request
@@ -45,7 +45,7 @@ router.get('/user', auth, getUserBookings);
 // @route   GET /api/bookings/all
 // @desc    Get all bookings (Admin)
 // @access  Private/Admin
-router.get('/all', adminAuth, getAllBookings);
+router.get('/all', hostAuth, getAllBookings);
 
 // @route   GET /api/bookings/:id
 // @desc    Get single booking
@@ -60,11 +60,11 @@ router.put('/:id/cancel', auth, cancelBooking);
 // @route   PUT /api/bookings/:id/confirm
 // @desc    Confirm booking (Admin)
 // @access  Private/Admin
-router.put('/:id/confirm', adminAuth, confirmBooking);
+router.put('/:id/confirm', hostAuth, confirmBooking);
 
 // @route   PUT /api/bookings/:id/reject
 // @desc    Reject booking (Admin)
 // @access  Private/Admin
-router.put('/:id/reject', adminAuth, rejectBooking);
+router.put('/:id/reject', hostAuth, rejectBooking);
 
 module.exports = router;

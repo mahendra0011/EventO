@@ -97,7 +97,7 @@ exports.verifyOTP = async (req, res) => {
     booking.otpExpires = undefined;
     await booking.save();
 
-    res.json({ message: 'OTP verified successfully. Your booking is pending admin approval.' });
+    res.json({ message: 'OTP verified successfully. Your booking is pending host approval.' });
   } catch (error) {
     console.error('Verify OTP error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -165,7 +165,7 @@ exports.getBooking = async (req, res) => {
     }
 
     // Check if user is authorized
-    if (booking.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (booking.user._id.toString() !== req.user.id && req.user.role !== 'host') {
       return res.status(403).json({ message: 'Not authorized' });
     }
 

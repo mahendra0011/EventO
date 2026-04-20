@@ -113,18 +113,18 @@ const Navbar = () => {
                   </Link>
                 </motion.div>
                 
-                {user.role === 'admin' && (
+                {user.role === 'host' && (
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Link
-                      to="/admin"
+                      to="/host"
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                        isActive('/admin')
+                        isActive('/host')
                           ? 'bg-primary-50 text-primary-600'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
                       <Settings className="h-4 w-4" />
-                      <span>Admin</span>
+                      <span>Host Panel</span>
                     </Link>
                   </motion.div>
                 )}
@@ -232,23 +232,23 @@ const Navbar = () => {
                       </Link>
                     </motion.div>
                     
-                    {user.role === 'admin' && (
+                    {user.role === 'host' && (
                       <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.3 }}
                       >
                         <Link
-                          to="/admin"
+                          to="/host"
                           className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
-                            isActive('/admin')
+                            isActive('/host')
                               ? 'bg-primary-50 text-primary-600'
                               : 'text-gray-700 hover:bg-gray-100'
                           }`}
                           onClick={() => setIsMenuOpen(false)}
                         >
                           <Settings className="h-4 w-4" />
-                          <span>Admin Panel</span>
+                          <span>Host Panel</span>
                         </Link>
                       </motion.div>
                     )}

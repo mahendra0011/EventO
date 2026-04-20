@@ -39,7 +39,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     return <Navigate to="/login" />;
   }
 
-  if (adminOnly && user.role !== 'admin') {
+  if (adminOnly && user.role !== 'host') {
     return <Navigate to="/dashboard" />;
   }
 
@@ -103,27 +103,17 @@ function AnimatedRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/admin"
-          element={
+<Route
+          path="/host"
+          element={{
             <ProtectedRoute adminOnly>
               <PageTransition>
                 <AdminDashboard />
               </PageTransition>
             </ProtectedRoute>
-          }
+          }}
         />
-        <Route
-          path="/admin/create-event"
-          element={
-            <ProtectedRoute adminOnly>
-              <PageTransition>
-                <CreateEvent />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
-        <Route
+<Route
           path="/booking/:id/confirmation"
           element={
             <ProtectedRoute>

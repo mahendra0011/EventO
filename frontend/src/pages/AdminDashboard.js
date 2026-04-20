@@ -30,7 +30,7 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const [statsRes, bookingsRes, eventsRes] = await Promise.all([
-        api.get('/admin/dashboard'),
+        api.get('/host/dashboard'),
         api.get('/bookings/all'),
         api.get('/events/organizer')
       ]);
@@ -116,10 +116,10 @@ const AdminDashboard = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Host Dashboard</h1>
             <p className="text-gray-600">Manage events, bookings, and analytics</p>
           </div>
-          <Link to="/admin/create-event" className="mt-4 md:mt-0 btn-primary inline-flex items-center">
+          <Link to="/host/create-event" className="mt-4 md:mt-0 btn-primary inline-flex items-center">
             <Plus className="h-5 w-5 mr-2" />
             Create Event
           </Link>

@@ -33,7 +33,7 @@ const Login = () => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         toast.success('Host login successful!');
-        window.location.href = '/admin';
+        window.location.href = '/host';
       } else {
         // Regular user login
         await login(email, password);

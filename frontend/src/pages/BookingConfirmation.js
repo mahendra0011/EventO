@@ -100,7 +100,7 @@ const BookingConfirmation = () => {
                 <GradientText gradient="from-white to-green-100">Booking Confirmed!</GradientText>
               </h1>
               <p className="text-green-100 text-lg">
-                Your booking has been verified and is pending admin approval.
+                Your booking has been verified and is pending host approval.
               </p>
               
               <motion.div
@@ -250,7 +250,7 @@ const BookingConfirmation = () => {
           <ul className="text-blue-800 space-y-2">
             <li className="flex items-start">
               <span className="mr-2 font-bold">1.</span>
-              <span>Your booking is pending admin approval</span>
+              <span>Your booking is pending host approval</span>
             </li>
             <li className="flex items-start">
               <span className="mr-2 font-bold">2.</span>

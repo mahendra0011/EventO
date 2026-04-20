@@ -56,7 +56,7 @@ const CreateEvent = () => {
 
       await api.post('/events', eventData);
       toast.success('Event created successfully!');
-      navigate('/admin');
+      navigate('/host');
     } catch (error) {
       console.error('Create event error:', error);
       toast.error(error.response?.data?.message || 'Failed to create event');

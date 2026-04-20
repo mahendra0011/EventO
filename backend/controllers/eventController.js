@@ -118,8 +118,8 @@ exports.updateEvent = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    // Check if user is organizer or admin
-    if (event.organizer.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Check if user is organizer or host
+    if (event.organizer.toString() !== req.user.id && req.user.role !== 'host') {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
@@ -145,8 +145,8 @@ exports.deleteEvent = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    // Check if user is organizer or admin
-    if (event.organizer.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Check if user is organizer or host
+    if (event.organizer.toString() !== req.user.id && req.user.role !== 'host') {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
