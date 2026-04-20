@@ -56,56 +56,62 @@ const Home = () => {
     <div className="overflow-hidden">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-600 via-primary-700 to-secondary-600 text-white overflow-hidden">
+        {/* Gradient Orbs Background */}
         <div className="absolute inset-0 overflow-hidden">
-          <FloatingElement className="absolute top-20 left-10 opacity-20" duration={4}>
-            <Calendar className="h-32 w-32" />
-          </FloatingElement>
-          <FloatingElement className="absolute top-40 right-20 opacity-20" duration={5} delay={1}>
-            <Star className="h-24 w-24" />
-          </FloatingElement>
-          <FloatingElement className="absolute bottom-20 left-1/4 opacity-20" duration={6} delay={2}>
-            <Sparkles className="h-28 w-28" />
-          </FloatingElement>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 right-1/2 w-64 h-64 bg-primary-400/10 rounded-full blur-2xl"></div>
         </div>
 
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/40"></div>
+        {/* Grid Pattern Overlay */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtNi42MjggMC0xMiA1LjM3Mi0xMiAxMnM1LjM3MiAxMiAxMiAxMiA1LjM3Mi0xMiAxMi0xMnptMC0zNmMtNi42MjggMC0xMiA1LjM3Mi0xMiAxMnM1LjM3MiAxMiAxMiAxMiA1LjM3Mi0xMiAxMi0xMnptMzYtMzZjLTYuNjI4IDAtMTIgNS4zNzItMTIgMTJzNS4zNzIgMTIgMTIgMTIgNS4zNzItMTIgMTItMTJ6bTAgMzZjLTYuNjI4IDAtMTIgNS4zNzItMTIgMTJzNS4zNzIgMTIgMTIgMTIgNS4zNzItMTIgMTItMTJ6IiBmaWxsPSJ3aGl0ZSIvPjwvZz48L3N2Zz4=')] opacity-20"></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 z-10">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10">
           <motion.div className="text-center" variants={containerVariants} initial="hidden" animate="visible">
-            <motion.div variants={itemVariants} className="mb-6">
-              <ShimmerEffect className="inline-block px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium">
-                <Sparkles className="h-4 w-4 inline mr-2" />
+            {/* Badge */}
+            <motion.div variants={itemVariants} className="mb-8">
+              <span className="inline-flex items-center px-5 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-sm font-medium">
+                <Sparkles className="h-4 w-4 text-yellow-300 mr-2" />
                 Discover Amazing Events & Host Your Own
-              </ShimmerEffect>
+              </span>
             </motion.div>
 
-            <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-              <GradientText gradient="from-white via-primary-200 to-white">
-                Unforgettable
-              </GradientText>
+            {/* Main Heading */}
+            <motion.h1 variants={itemVariants} className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+              <span className="text-white">Unforgettable</span>
               <br />
-              <span className="text-white">Events Await</span>
+              <span className="bg-gradient-to-r from-white via-primary-200 to-white bg-clip-text text-transparent">
+                Events Await
+              </span>
             </motion.h1>
 
-            <motion.p variants={itemVariants} className="text-xl md:text-2xl mb-4 text-primary-100 max-w-3xl mx-auto">
+            {/* Subtitle */}
+            <motion.p variants={itemVariants} className="text-lg md:text-xl text-primary-100 mb-6 max-w-2xl mx-auto leading-relaxed">
               Book tickets for concerts, conferences, sports, and more. 
               Or host your own events and manage attendees with ease.
             </motion.p>
 
-            <motion.p variants={itemVariants} className="text-lg mb-8 text-primary-200 max-w-2xl mx-auto">
-              <span className="bg-white/20 px-3 py-1 rounded-full">✨ Create your event</span> <span className="mx-2">•</span> 
-              <span className="bg-white/20 px-3 py-1 rounded-full">🎫 Sell tickets</span> <span className="mx-2">•</span> 
-              <span className="bg-white/20 px-3 py-1 rounded-full">📊 Track analytics</span>
-            </motion.p>
+            {/* Features Pills */}
+            <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-3 mb-10">
+              <span className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm border border-white/10">✨ Create your event</span>
+              <span className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm border border-white/10">🎫 Sell tickets</span>
+              <span className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm border border-white/10">📊 Track analytics</span>
+              <span className="px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm border border-white/10">🔒 Secure payments</span>
+            </motion.div>
 
-            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center">
-              <AnimatedButton variant="secondary" size="lg" className="shadow-2xl">
+            {/* CTA Buttons */}
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+              <AnimatedButton variant="secondary" size="lg" className="shadow-2xl shadow-secondary-500/25">
                 <Link to="/events" className="flex items-center">
                   <Search className="h-5 w-5 mr-2" />
                   Browse Events
                 </Link>
               </AnimatedButton>
-              <AnimatedButton variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-primary-600">
+              <AnimatedButton 
+                variant="outline" 
+                size="lg" 
+                className="border-white text-white hover:bg-white hover:text-primary-600 bg-white/5 backdrop-blur-sm"
+              >
                 <Link to="/register?host=true" className="flex items-center">
                   <Sparkles className="h-5 w-5 mr-2" />
                   Become a Host
@@ -113,25 +119,39 @@ const Home = () => {
               </AnimatedButton>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto">
+            {/* Stats Banner */}
+            <motion.div variants={itemVariants} className="inline-flex flex-wrap justify-center gap-8 md:gap-12 px-8 py-6 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10">
               {[
-                { number: '10K+', label: 'Events' },
-                { number: '500K+', label: 'Tickets Sold' },
-                { number: '50K+', label: 'Happy Users' },
-                { number: '1K+', label: 'Event Hosts' },
+                { number: '10K+', label: 'Events', icon: Calendar },
+                { number: '500K+', label: 'Tickets Sold', icon: Ticket },
+                { number: '50K+', label: 'Happy Users', icon: Users },
+                { number: '1K+', label: 'Event Hosts', icon: Award },
               ].map((stat, index) => (
-                <motion.div key={index} className="text-center" whileHover={{ scale: 1.1 }}>
-                  <div className="text-3xl md:text-4xl font-bold text-white mb-2">{stat.number}</div>
-                  <div className="text-primary-200 text-sm">{stat.label}</div>
+                <motion.div 
+                  key={index} 
+                  className="text-center"
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <div className="text-2xl md:text-3xl font-bold text-white">{stat.number}</div>
+                  <div className="text-primary-200 text-xs md:text-sm">{stat.label}</div>
                 </motion.div>
               ))}
             </motion.div>
           </motion.div>
         </div>
 
-        <motion.div className="absolute bottom-8 left-1/2 transform -translate-x-1/2" animate={{ y: [0, 10, 0] }} transition={{ duration: 2, repeat: Infinity }}>
-          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
-            <motion.div className="w-1.5 h-3 bg-white rounded-full mt-2" animate={{ opacity: [1, 0] }} transition={{ duration: 1.5, repeat: Infinity }} />
+        {/* Scroll Indicator */}
+        <motion.div 
+          className="absolute bottom-6 left-1/2 transform -translate-x-1/2" 
+          animate={{ y: [0, 8, 0] }} 
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <div className="w-8 h-14 border-2 border-white/30 rounded-full flex justify-center p-1">
+            <motion.div 
+              className="w-1.5 h-3 bg-white rounded-full" 
+              animate={{ y: [0, 4, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
           </div>
         </motion.div>
       </section>
