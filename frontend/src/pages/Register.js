@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { adminRegister } from '../utils/api';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff, User, Phone, Calendar, Shield, Key } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Register = () => {
   const [formData, setFormData] = useState({
