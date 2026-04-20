@@ -133,26 +133,6 @@ function AnimatedRoutes() {
             </ProtectedRoute>
           }
         />
-<Route
-          path="/host"
-          element={{
-            <ProtectedRoute adminOnly>
-              <PageTransition>
-                <AdminDashboard />
-              </PageTransition>
-            </ProtectedRoute>
-          }}
-        />
-<Route
-          path="/booking/:id/confirmation"
-          element={
-            <ProtectedRoute>
-              <PageTransition>
-                <BookingConfirmation />
-              </PageTransition>
-            </ProtectedRoute>
-          }
-        />
       </Routes>
     </AnimatePresence>
   );
