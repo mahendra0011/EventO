@@ -28,17 +28,18 @@ const Login = () => {
 
     try {
       if (isAdmin) {
-        // Admin login with keyword
-        const data = await adminQuickLogin(adminKeyword);
+        // Admin login with email + password + keyword
+        const data = await adminLogin(email, password, adminKeyword);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        toast.success('Admin access granted!');
+        toast.success('Admin login successful!');
+        window.location.href = '/admin';
       } else {
         // Regular user login
         await login(email, password);
         toast.success('Login successful!');
+        navigate('/dashboard');
       }
-      navigate('/dashboard');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
     } finally {
@@ -82,78 +83,75 @@ const Login = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {isAdmin ? (
-              <>
-                {/* Admin Keyword Only */}
-                <div>
-                  <label htmlFor="adminKeyword" className="label">
-                    <span className="flex items-center text-secondary-700">
-                      <Key className="h-4 w-4 mr-2" />
-                      Admin Secret Keyword
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      id="adminKeyword"
-                      type="password"
-                      value={adminKeyword}
-                      onChange={(e) => setAdminKeyword(e.target.value)}
-                      required={isAdmin}
-                      className="input-field pl-10 border-2 border-secondary-300 focus:border-secondary-500"
-                      placeholder="Enter admin keyword"
-                    />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Regular User Login */}
-                <div>
-                  <label htmlFor="email" className="label">Email Address</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required={!isAdmin}
-                      className="input-field pl-10"
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                </div>
+            {/* Email (always required) */}
+            <div>
+              <label htmlFor="email" className="label">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="input-field pl-10"
+                  placeholder="you@example.com"
+                />
+              </div>
+            </div>
 
-                <div>
-                  <label htmlFor="password" className="label">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required={!isAdmin}
-                      className="input-field pl-10 pr-10"
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
+            {/* Password (always required) */}
+            <div>
+              <label htmlFor="password" className="label">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="input-field pl-10 pr-10"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Admin Keyword (only for admin login) */}
+            {isAdmin && (
+              <div>
+                <label htmlFor="adminKeyword" className="label">
+                  <span className="flex items-center text-secondary-700">
+                    <Key className="h-4 w-4 mr-2" />
+                    Admin Secret Keyword *
+                  </span>
+                </label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    id="adminKeyword"
+                    type="password"
+                    value={adminKeyword}
+                    onChange={(e) => setAdminKeyword(e.target.value)}
+                    required={isAdmin}
+                    className="input-field pl-10 border-2 border-secondary-300 focus:border-secondary-500"
+                    placeholder="Enter admin keyword"
+                  />
                 </div>
-              </>
+              </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className={`w-full ${isAdmin ? 'bg-gradient-to-r from-secondary-600 to-secondary-700 hover:from-secondary-700 hover:to-secondary-800' : 'btn-primary'} text-white py-3 px-4 rounded-lg font-semibold shadow-lg transition-all`}
+              className="w-full btn-primary"
             >
               {loading ? 'Signing in...' : (isAdmin ? 'Access Admin Panel' : 'Sign In')}
             </button>

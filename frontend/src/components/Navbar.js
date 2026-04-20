@@ -139,39 +139,31 @@ const Navbar = () => {
                   <span>Logout</span>
                 </motion.button>
                </motion.div>
-             ) : (
-               <motion.div
-                 className="flex items-center space-x-3 ml-4"
-                 initial={{ opacity: 0, x: 20 }}
-                 animate={{ opacity: 1, x: 0 }}
-                 transition={{ delay: 0.3 }}
-               >
-                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                   <Link
-                     to="/login?admin=true"
-                     className="px-4 py-2 rounded-lg font-medium text-secondary-700 hover:text-secondary-800 hover:bg-secondary-50 transition-all duration-300 border border-secondary-200"
-                   >
-                     Admin
-                   </Link>
-                 </motion.div>
-                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                   <Link
-                     to="/login"
-                     className="px-4 py-2 rounded-lg font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-300"
-                   >
-                     Login
-                   </Link>
-                 </motion.div>
-                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                   <Link
-                     to="/register"
-                     className="px-6 py-2 rounded-lg font-semibold bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 shadow-lg hover:shadow-xl transition-all duration-300"
-                   >
-                     Sign Up
-                   </Link>
-                 </motion.div>
-               </motion.div>
-             )}
+              ) : (
+                <motion.div
+                  className="flex items-center space-x-3 ml-4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Link
+                      to="/login"
+                      className="px-4 py-2 rounded-lg font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-300"
+                    >
+                      Login
+                    </Link>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Link
+                      to="/register"
+                      className="px-6 py-2 rounded-lg font-semibold bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      Sign Up
+                    </Link>
+                  </motion.div>
+                </motion.div>
+              )}
           </div>
 
           {/* Mobile menu button */}
@@ -275,49 +267,36 @@ const Navbar = () => {
                       <span>Logout</span>
                     </motion.button>
                    </>
-                 ) : (
-                   <>
-                     <motion.div
-                       initial={{ opacity: 0, x: -20 }}
-                       animate={{ opacity: 1, x: 0 }}
-                       transition={{ delay: 0.2 }}
-                     >
-                       <Link
-                         to="/login?admin=true"
-                         className="px-4 py-3 rounded-lg font-medium text-secondary-700 hover:bg-secondary-50 border border-secondary-200 transition-all duration-300"
-                         onClick={() => setIsMenuOpen(false)}
-                       >
-                         Admin
-                       </Link>
-                     </motion.div>
-                     <motion.div
-                       initial={{ opacity: 0, x: -20 }}
-                       animate={{ opacity: 1, x: 0 }}
-                       transition={{ delay: 0.3 }}
-                     >
-                       <Link
-                         to="/login"
-                         className="px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-all duration-300"
-                         onClick={() => setIsMenuOpen(false)}
-                       >
-                         Login
-                       </Link>
-                     </motion.div>
-                     <motion.div
-                       initial={{ opacity: 0, x: -20 }}
-                       animate={{ opacity: 1, x: 0 }}
-                       transition={{ delay: 0.4 }}
-                     >
-                       <Link
-                         to="/register"
-                         className="px-4 py-3 rounded-lg font-semibold bg-gradient-to-r from-primary-600 to-primary-700 text-white text-center hover:from-primary-700 hover:to-primary-800 transition-all duration-300"
-                         onClick={() => setIsMenuOpen(false)}
-                       >
-                         Sign Up
-                       </Link>
-                     </motion.div>
-                   </>
-                 )}
+                  ) : (
+                    <>
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <Link
+                          to="/login"
+                          className="px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-all duration-300"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Login
+                        </Link>
+                      </motion.div>
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <Link
+                          to="/register"
+                          className="px-4 py-3 rounded-lg font-semibold bg-gradient-to-r from-primary-600 to-primary-700 text-white text-center hover:from-primary-700 hover:to-primary-800 transition-all duration-300"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Sign Up
+                        </Link>
+                      </motion.div>
+                    </>
+                  )}
               </div>
             </motion.div>
           )}

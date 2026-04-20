@@ -114,39 +114,28 @@ const Home = () => {
               Experience moments that matter with Evento.
             </motion.p>
 
-            <motion.div
+            <motion.div 
               variants={itemVariants}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <AnimatedButton
-                variant="admin"
-                size="lg"
-                className="shadow-2xl border-2 border-secondary-500 bg-gradient-to-r from-secondary-600 to-secondary-700"
-              >
-                <Link to="/login?admin=true" className="flex items-center">
-                  <Shield className="h-5 w-5 mr-2" />
-                  Admin Login
-                </Link>
-              </AnimatedButton>
-
-              <AnimatedButton
-                variant="secondary"
+              <AnimatedButton 
+                variant="secondary" 
                 size="lg"
                 className="shadow-2xl"
               >
-                <Link to="/login" className="flex items-center">
-                  <Calendar className="h-5 w-5 mr-2" />
-                  User Login
+                <Link to="/events" className="flex items-center">
+                  <Search className="h-5 w-5 mr-2" />
+                  Browse Events
                 </Link>
               </AnimatedButton>
-
-              <AnimatedButton
-                variant="outline"
+              
+              <AnimatedButton 
+                variant="outline" 
                 size="lg"
                 className="border-white text-white hover:bg-white hover:text-primary-600"
               >
                 <Link to="/register" className="flex items-center">
-                  Sign Up
+                  Get Started
                   <ArrowRight className="h-5 w-5 ml-2" />
                 </Link>
               </AnimatedButton>

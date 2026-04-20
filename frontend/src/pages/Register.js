@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { adminRegister } from '../utils/api';
 import toast from 'react-hot-toast';
-import { Mail, Lock, Eye, EyeOff, User, Phone, Calendar } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, Phone, Calendar, Key, Shield } from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -10,7 +11,9 @@ const Register = () => {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    secretKeyword: '',
+    isAdmin: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,9 +21,10 @@ const Register = () => {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: type === 'checkbox' ? checked : value
     });
   };
 
@@ -40,9 +44,26 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register(formData.name, formData.email, formData.password, formData.phone);
-      toast.success('Registration successful!');
-      navigate('/dashboard');
+      if (formData.isAdmin) {
+        // Admin registration
+        const data = await adminRegister({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          secretKeyword: formData.secretKeyword
+        });
+
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        toast.success('Admin account created!');
+        window.location.href = '/admin';
+      } else {
+        // Regular user registration
+        await register(formData.name, formData.email, formData.password, formData.phone);
+        toast.success('Registration successful!');
+        navigate('/dashboard');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
     } finally {
@@ -66,12 +87,26 @@ const Register = () => {
             <p className="mt-2 text-gray-600">Join us to discover amazing events</p>
           </div>
 
+          {/* Admin Checkbox */}
+          <div className="mb-6">
+            <label className="flex items-center justify-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                name="isAdmin"
+                checked={formData.isAdmin}
+                onChange={handleChange}
+                className="w-4 h-4 text-secondary-600 rounded focus:ring-secondary-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Register as Administrator</span>
+              <Shield className="h-4 w-4 text-secondary-600" />
+            </label>
+          </div>
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Full Name */}
             <div>
-              <label htmlFor="name" className="label">
-                Full Name
-              </label>
+              <label htmlFor="name" className="label">Full Name</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -87,10 +122,9 @@ const Register = () => {
               </div>
             </div>
 
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="label">
-                Email Address
-              </label>
+              <label htmlFor="email" className="label">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -106,10 +140,9 @@ const Register = () => {
               </div>
             </div>
 
+            {/* Phone */}
             <div>
-              <label htmlFor="phone" className="label">
-                Phone Number (Optional)
-              </label>
+              <label htmlFor="phone" className="label">Phone Number (Optional)</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -124,10 +157,9 @@ const Register = () => {
               </div>
             </div>
 
+            {/* Password */}
             <div>
-              <label htmlFor="password" className="label">
-                Password
-              </label>
+              <label htmlFor="password" className="label">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -151,10 +183,9 @@ const Register = () => {
               </div>
             </div>
 
+            {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="label">
-                Confirm Password
-              </label>
+              <label htmlFor="confirmPassword" className="label">Confirm Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -170,6 +201,31 @@ const Register = () => {
                 />
               </div>
             </div>
+
+            {/* Admin Secret Keyword (only if admin checkbox checked) */}
+            {formData.isAdmin && (
+              <div>
+                <label htmlFor="secretKeyword" className="label">
+                  <span className="flex items-center text-secondary-700">
+                    <Key className="h-4 w-4 mr-2" />
+                    Admin Secret Keyword *
+                  </span>
+                </label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    id="secretKeyword"
+                    name="secretKeyword"
+                    type="password"
+                    value={formData.secretKeyword}
+                    onChange={handleChange}
+                    required={formData.isAdmin}
+                    className="input-field pl-10 border-2 border-secondary-300 focus:border-secondary-500"
+                    placeholder="Enter admin keyword"
+                  />
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"
@@ -192,23 +248,22 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Admin Registration Link */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Want to register as an Admin?{' '}
-              <Link to="/login?admin=true" className="text-secondary-600 hover:text-secondary-700 font-semibold">
-                Admin Access
-              </Link>
-            </p>
-          </div>
-
           {/* Login Link */}
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center">
             <p className="text-gray-600">
               Already have an account?{' '}
               <Link to="/login" className="text-primary-600 hover:text-primary-700 font-semibold">
                 Sign in
               </Link>
+            </p>
+          </div>
+
+          {/* Info */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-xs text-gray-600">
+              <strong className="text-primary-700">Users:</strong> Register with name, email, phone, and password.
+              <br />
+              <strong className="text-secondary-700">Admins:</strong> Check "Register as Administrator" above and enter the secret keyword.
             </p>
           </div>
         </div>
