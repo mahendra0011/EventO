@@ -82,3 +82,34 @@ export const getUserReviews = async () => {
   const res = await api.get('/reviews/user');
   return res.data;
 };
+
+// Wishlist / Saved Events (localStorage based - shown in UI only)
+export const getSavedEvents = () => {
+  const saved = localStorage.getItem('wishlist');
+  return saved ? JSON.parse(saved) : [];
+};
+
+export const saveEventToWishlist = (event) => {
+  const saved = getSavedEvents();
+  if (!saved.find(e => e._id === event._id)) {
+    saved.push(event);
+    localStorage.setItem('wishlist', JSON.stringify(saved));
+  }
+};
+
+export const removeEventFromWishlist = (eventId) => {
+  const saved = getSavedEvents().filter(e => e._id !== eventId);
+  localStorage.setItem('wishlist', JSON.stringify(saved));
+};
+
+// Event Categories
+export const getCategories = async () => {
+  const res = await api.get('/events/categories');
+  return res.data;
+};
+
+// Host Dashboard Stats
+export const getHostDashboardStats = async () => {
+  const res = await api.get('/host/dashboard');
+  return res.data;
+};
