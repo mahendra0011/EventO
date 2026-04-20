@@ -5,75 +5,59 @@ const User = require('../models/User');
 // Get dashboard statistics
 exports.getDashboardStats = async (req, res) => {
   try {
-    // Get total events
-    const totalEvents = await Event.countDocuments({ isActive: true });
+    const hostId = req.user.id;
+
+    // Get host's events only
+    const hostEvents = await Event.find({ organizer: hostId });
+    const hostEventIds = hostEvents.map(e => e._id);
+
+    // Get total events for this host
+    const totalEvents = hostEvents.length;
+
+    // Get bookings for host's events only
+    const hostBookings = await Booking.find({ event: { $in: hostEventIds } });
 
     // Get total bookings
-    const totalBookings = await Booking.countDocuments();
+    const totalBookings = hostBookings.length;
 
     // Get confirmed bookings
-    const confirmedBookings = await Booking.countDocuments({ status: 'confirmed' });
+    const confirmedBookings = hostBookings.filter(b => b.status === 'confirmed').length;
 
-    // Get pending bookings
-    const pendingBookings = await Booking.countDocuments({ status: 'pending', isOtpVerified: true });
-
-    // Get total users
-    const totalUsers = await User.countDocuments({ role: 'user' });
+    // Get pending bookings (OTP verified but not confirmed)
+    const pendingBookings = hostBookings.filter(b => b.status === 'pending' && b.isOtpVerified).length;
 
     // Calculate total revenue
-    const revenueResult = await Booking.aggregate([
-      { $match: { status: 'confirmed', paymentStatus: 'completed' } },
-      { $group: { _id: null, total: { $sum: '$totalPrice' } } }
-    ]);
-    const totalRevenue = revenueResult.length > 0 ? revenueResult[0].total : 0;
+    const totalRevenue = hostBookings
+      .filter(b => b.status === 'confirmed' && b.paymentStatus === 'completed')
+      .reduce((sum, b) => sum + b.totalPrice, 0);
 
-    // Get recent bookings
-    const recentBookings = await Booking.find()
-      .populate('event', 'title')
+    // Get recent bookings for host's events
+    const recentBookings = await Booking.find({ event: { $in: hostEventIds } })
+      .populate('event', 'title date')
       .populate('user', 'name email')
-      .sort({ bookingDate: -1 })
+      .sort({ createdAt: -1 })
       .limit(5);
 
     // Get bookings by status
-    const bookingsByStatus = await Booking.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
+    const bookingsByStatus = [
+      { _id: 'confirmed', count: confirmedBookings },
+      { _id: 'pending', count: pendingBookings },
+      { _id: 'cancelled', count: hostBookings.filter(b => b.status === 'cancelled').length }
+    ];
 
-    // Get revenue by month (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-    const revenueByMonth = await Booking.aggregate([
-      {
-        $match: {
-          status: 'confirmed',
-          paymentStatus: 'completed',
-          confirmedAt: { $gte: sixMonthsAgo }
-        }
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$confirmedAt' },
-            month: { $month: '$confirmedAt' }
-          },
-          revenue: { $sum: '$totalPrice' },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { '_id.year': 1, '_id.month': 1 } }
-    ]);
-
-    // Get top events by bookings
-    const topEvents = await Booking.aggregate([
-      { $match: { status: 'confirmed' } },
-      { $group: { _id: '$event', bookings: { $sum: 1 }, revenue: { $sum: '$totalPrice' } } },
-      { $sort: { bookings: -1 } },
-      { $limit: 5 }
-    ]);
-
-    // Populate event details for top events
-    const topEventsWithDetails = await Event.populate(topEvents, { path: '_id', select: 'title date venue' });
+    // Get top events by bookings for this host
+    const topEvents = hostEvents
+      .map(event => {
+        const eventBookings = hostBookings.filter(b => b.event.toString() === event._id.toString());
+        return {
+          _id: event._id,
+          title: event.title,
+          bookings: eventBookings.length,
+          revenue: eventBookings.filter(b => b.status === 'confirmed').reduce((sum, b) => sum + b.totalPrice, 0)
+        };
+      })
+      .sort((a, b) => b.bookings - a.bookings)
+      .slice(0, 5);
 
     res.json({
       stats: {
@@ -81,13 +65,11 @@ exports.getDashboardStats = async (req, res) => {
         totalBookings,
         confirmedBookings,
         pendingBookings,
-        totalUsers,
         totalRevenue
       },
       recentBookings,
       bookingsByStatus,
-      revenueByMonth,
-      topEvents: topEventsWithDetails
+      topEvents
     });
   } catch (error) {
     console.error('Get dashboard stats error:', error);

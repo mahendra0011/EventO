@@ -211,12 +211,17 @@ exports.cancelBooking = async (req, res) => {
   }
 };
 
-// Admin: Get all bookings
+// Host: Get all bookings for host's events only
 exports.getAllBookings = async (req, res) => {
   try {
+    const hostId = req.user.id;
     const { status, page = 1, limit = 10 } = req.query;
 
-    let query = {};
+    // Get host's events
+    const hostEvents = await Event.find({ organizer: hostId });
+    const hostEventIds = hostEvents.map(e => e._id);
+
+    let query = { event: { $in: hostEventIds } };
     if (status) {
       query.status = status;
     }
@@ -224,7 +229,7 @@ exports.getAllBookings = async (req, res) => {
     const bookings = await Booking.find(query)
       .populate('event', 'title date time venue image price')
       .populate('user', 'name email')
-      .sort({ bookingDate: -1 })
+      .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
