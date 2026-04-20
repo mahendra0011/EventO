@@ -49,3 +49,9 @@ export const hostRegister = async (userData) => {
   const res = await api.post('/auth/host-register', userData);
   return res.data;
 };
+
+// Admin Login with keyword
+export const adminLogin = async (email, password, adminKeyword) => {
+  const res = await api.post('/auth/admin-login', { email, password, adminKeyword });
+  return res.data;
+};

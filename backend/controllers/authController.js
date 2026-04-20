@@ -213,3 +213,43 @@ exports.updateProfile = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Admin Login - Login using email, password, and admin keyword
+exports.adminLogin = async (req, res) => {
+  try {
+    const { email, password, adminKeyword } = req.body;
+
+    // Find admin user by email
+    const user = await User.findOne({ email, role: 'admin' });
+    if (!user) {
+      return res.status(400).json({ message: 'Admin not found' });
+    }
+
+    // Check if provided admin keyword matches user's stored keyword
+    if (user.secretKeyword !== adminKeyword) {
+      return res.status(400).json({ message: 'Invalid admin keyword' });
+    }
+
+    // Verify password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
