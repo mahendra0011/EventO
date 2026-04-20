@@ -17,6 +17,14 @@ const users = [
     isVerified: true
   },
   {
+    name: 'Mahendra Admin',
+    email: 'mahendrapra0077@gmail.com',
+    password: 'admin@123',
+    role: 'admin',
+    phone: '+1234567899',
+    isVerified: true
+  },
+  {
     name: 'John Doe',
     email: 'john@example.com',
     password: 'user123',

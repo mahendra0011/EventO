@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { check } = require('express-validator');
-const { register, login, getMe, updateProfile } = require('../controllers/authController');
+const { register, login, getMe, updateProfile, adminSecretLogin } = require('../controllers/authController');
 const { auth } = require('../middleware/auth');
 
 // @route   POST /api/auth/register
@@ -20,6 +20,13 @@ router.post('/login', [
   check('email', 'Please include a valid email').isEmail(),
   check('password', 'Password is required').exists()
 ], login);
+
+// @route   POST /api/auth/admin-login
+// @desc    Admin secret keyword login
+// @access  Public
+router.post('/admin-login', [
+  check('keyword', 'Admin keyword is required').not().isEmpty()
+], adminSecretLogin);
 
 // @route   GET /api/auth/me
 // @desc    Get current user
