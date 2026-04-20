@@ -44,6 +44,31 @@ const AdminDashboard = () => {
     phone: user?.phone || ''
   });
   const [updatingProfile, setUpdatingProfile] = useState(false);
+  const [sendingNotification, setSendingNotification] = useState(false);
+
+  const handleDeleteEvent = async (eventId) => {
+    if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      return;
+    }
+    try {
+      await api.delete(`/events/${eventId}`);
+      toast.success('Event deleted successfully');
+      fetchDashboardData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete event');
+    }
+  };
+
+  const handleSendNotification = async () => {
+    setSendingNotification(true);
+    try {
+      toast.success('Notification feature coming soon!');
+    } catch (error) {
+      toast.error('Failed to send notification');
+    } finally {
+      setSendingNotification(false);
+    }
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -245,6 +270,17 @@ const AdminDashboard = () => {
                 >
                   <Calendar className="h-4 w-4 inline mr-2" />
                   Events
+                </button>
+                <button
+                  onClick={() => setActiveTab('communications')}
+                  className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
+                    activeTab === 'communications'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Mail className="h-4 w-4 inline mr-2" />
+                  Messages
                 </button>
                 <button
                   onClick={() => setActiveTab('settings')}
@@ -460,10 +496,110 @@ const AdminDashboard = () => {
                             <Edit className="h-4 w-4 inline mr-1" />
                             Edit
                           </Link>
+                          <button
+                            onClick={() => handleDeleteEvent(event._id)}
+                            className="px-3 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 text-sm"
+                            title="Delete Event"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'communications' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Send Announcement</h3>
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Select Event</label>
+                        <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                          <option value="">All Events</option>
+                          {events.map((event) => (
+                            <option key={event._id} value={event._id}>{event.title}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Message Title</label>
+                        <input
+                          type="text"
+                          placeholder="Important update about your event..."
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                        <textarea
+                          rows={4}
+                          placeholder="Write your message to attendees..."
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                        />
+                      </div>
+                      <button
+                        onClick={handleSendNotification}
+                        disabled={sendingNotification}
+                        className="btn-primary"
+                      >
+                        <Mail className="h-4 w-4 inline mr-2" />
+                        {sendingNotification ? 'Sending...' : 'Send to All Attendees'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Broadcast</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 cursor-pointer hover:bg-primary-100 transition-colors">
+                      <div className="flex items-center">
+                        <Bell className="h-8 w-8 text-primary-600 mr-3" />
+                        <div>
+                          <h4 className="font-semibold text-primary-900">Event Reminder</h4>
+                          <p className="text-sm text-primary-700">Send reminder to upcoming event attendees</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6 cursor-pointer hover:bg-green-100 transition-colors">
+                      <div className="flex items-center">
+                        <CheckCircle className="h-8 w-8 text-green-600 mr-3" />
+                        <div>
+                          <h4 className="font-semibold text-green-900">Booking Confirmed</h4>
+                          <p className="text-sm text-green-700">Notify confirmed booking attendees</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 cursor-pointer hover:bg-blue-100 transition-colors">
+                      <div className="flex items-center">
+                        <Calendar className="h-8 w-8 text-blue-600 mr-3" />
+                        <div>
+                          <h4 className="font-semibold text-blue-900">Event Update</h4>
+                          <p className="text-sm text-blue-700">Notify about event changes</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 cursor-pointer hover:bg-amber-100 transition-colors">
+                      <div className="flex items-center">
+                        <QrCode className="h-8 w-8 text-amber-600 mr-3" />
+                        <div>
+                          <h4 className="font-semibold text-amber-900">QR Code Ready</h4>
+                          <p className="text-sm text-amber-700">Tell attendees to get their tickets</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-600">
+                    <strong>Note:</strong> Email notifications will be sent to all registered attendees for the selected event.
+                  </p>
                 </div>
               </div>
             )}
