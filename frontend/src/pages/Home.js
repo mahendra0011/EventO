@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import EventCard from '../components/EventCard';
-import { Search, Calendar, Users, Shield, ArrowRight, Sparkles, Star, Zap } from 'lucide-react';
+import { Search, Calendar, Users, Shield, ArrowRight, Sparkles, Star, Zap, Ticket, CheckCircle, Clock, MapPin, Music, Gamepad2, Briefcase, Heart, Coffee } from 'lucide-react';
 import { 
   AnimatedButton, 
   AnimatedCard, 
@@ -241,6 +241,173 @@ const Home = () => {
               </motion.div>
             ))}
           </motion.div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedContainer className="text-center mb-16">
+            <AnimatedHeading level={2} className="text-4xl font-bold text-gray-900 mb-4">
+              How It <GradientText>Works</GradientText>?
+            </AnimatedHeading>
+            <AnimatedParagraph className="text-gray-600 max-w-2xl mx-auto text-lg">
+              Booking your dream event is just three simple steps away
+            </AnimatedParagraph>
+          </AnimatedContainer>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                step: '01',
+                icon: Search,
+                title: 'Browse Events',
+                description: 'Explore thousands of events across concerts, sports, conferences and more',
+                color: 'primary',
+              },
+              {
+                step: '02',
+                icon: Ticket,
+                title: 'Book Tickets',
+                description: 'Select your preferred date and seats, then book instantly with secure payment',
+                color: 'secondary',
+              },
+              {
+                step: '03',
+                icon: CheckCircle,
+                title: 'Enjoy Event',
+                description: 'Receive your digital ticket via email and enjoy unforgettable moments',
+                color: 'primary',
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.2, duration: 0.5 }}
+              >
+                <AnimatedCard className="p-8 text-center h-full relative overflow-hidden">
+                  <div className="absolute -top-4 -right-4 text-8xl font-bold text-gray-100 opacity-50">
+                    {item.step}
+                  </div>
+                  <div className={`w-20 h-20 bg-${item.color}-100 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10`}>
+                    <item.icon className={`h-10 w-10 text-${item.color}-600`} />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3 text-gray-900 relative z-10">{item.title}</h3>
+                  <p className="text-gray-600 relative z-10">{item.description}</p>
+                </AnimatedCard>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Event Categories Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedContainer className="text-center mb-16">
+            <AnimatedHeading level={2} className="text-4xl font-bold text-gray-900 mb-4">
+              Browse by <GradientText>Category</GradientText>
+            </AnimatedHeading>
+            <AnimatedParagraph className="text-gray-600 max-w-2xl mx-auto text-lg">
+              Find exactly what you're looking for across diverse event categories
+            </AnimatedParagraph>
+          </AnimatedContainer>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {[
+              { icon: Music, label: 'Music', color: 'rose' },
+              { icon: Gamepad2, label: 'Gaming', color: 'purple' },
+              { icon: Briefcase, label: 'Business', color: 'blue' },
+              { icon: Heart, label: 'Wellness', color: 'pink' },
+              { icon: Coffee, label: 'Food', color: 'amber' },
+              { icon: Calendar, label: 'Sports', color: 'green' },
+            ].map((category, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
+              >
+                <Link to={`/events?category=${category.label.toLowerCase()}`}>
+                  <AnimatedCard className="p-6 text-center hover:shadow-xl transition-shadow cursor-pointer">
+                    <div className={`w-14 h-14 bg-${category.color}-100 rounded-full flex items-center justify-center mx-auto mb-3`}>
+                      <category.icon className={`h-7 w-7 text-${category.color}-600`} />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">{category.label}</span>
+                  </AnimatedCard>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedContainer className="text-center mb-16">
+            <AnimatedHeading level={2} className="text-4xl font-bold mb-4">
+              What Our <GradientText gradient="from-primary-400 to-secondary-400">Users Say</GradientText>
+            </AnimatedHeading>
+            <AnimatedParagraph className="text-gray-400 max-w-2xl mx-auto text-lg">
+              Join thousands of satisfied event goers who trust Evento
+            </AnimatedParagraph>
+          </AnimatedContainer>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                name: 'Sarah Johnson',
+                role: 'Music Lover',
+                image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop',
+                quote: 'Booked tickets for my favorite band in seconds! The OTP verification gave me complete peace of mind.',
+              },
+              {
+                name: 'Michael Chen',
+                role: 'Event Organizer',
+                image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop',
+                quote: 'Hosting my conference through Evento was seamless. The dashboard makes managing attendees so easy!',
+              },
+              {
+                name: 'Emily Davis',
+                role: 'Sports Fan',
+                image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d40?w=150&h=150&fit=crop',
+                quote: 'Never missed a game since using Evento. Instant tickets and great customer support!',
+              },
+            ].map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.2 }}
+              >
+                <AnimatedCard className="p-8 bg-white/5 backdrop-blur-sm border border-white/10 h-full">
+                  <div className="flex items-center mb-4">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star key={star} className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                    ))}
+                  </div>
+                  <p className="text-gray-300 mb-6 italic">"{testimonial.quote}"</p>
+                  <div className="flex items-center">
+                    <img
+                      src={testimonial.image}
+                      alt={testimonial.name}
+                      className="w-12 h-12 rounded-full object-cover mr-4"
+                    />
+                    <div>
+                      <p className="font-semibold text-white">{testimonial.name}</p>
+                      <p className="text-gray-400 text-sm">{testimonial.role}</p>
+                    </div>
+                  </div>
+                </AnimatedCard>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -50,14 +50,14 @@ export const hostRegister = async (userData) => {
   return res.data;
 };
 
-// Admin Login with keyword
-export const adminLogin = async (email, password, adminKeyword) => {
-  const res = await api.post('/auth/admin-login', { email, password, adminKeyword });
+// Host Keyword Login
+export const hostKeywordLogin = async (email, password, hostKeyword) => {
+  const res = await api.post('/auth/host-keyword-login', { email, password, hostKeyword });
   return res.data;
 };
 
-// Admin Register with keyword
-export const adminRegister = async (userData) => {
-  const res = await api.post('/auth/admin-register', userData);
+// Host Keyword Register
+export const hostKeywordRegister = async (userData) => {
+  const res = await api.post('/auth/host-keyword-register', userData);
   return res.data;
 };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { adminRegister } from '../utils/api';
+import { hostKeywordRegister } from '../utils/api';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff, User, Phone, Calendar, Key, Shield } from 'lucide-react';
 
@@ -13,7 +13,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     secretKeyword: '',
-    isAdmin: false
+    isHost: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -44,9 +44,9 @@ const Register = () => {
     setLoading(true);
 
     try {
-      if (formData.isAdmin) {
-        // Admin registration
-        const data = await adminRegister({
+      if (formData.isHost) {
+        // Host registration
+        const data = await hostKeywordRegister({
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
@@ -56,7 +56,7 @@ const Register = () => {
 
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        toast.success('Admin account created!');
+        toast.success('Host account created!');
         window.location.href = '/admin';
       } else {
         // Regular user registration
@@ -87,17 +87,17 @@ const Register = () => {
             <p className="mt-2 text-gray-600">Join us to discover amazing events</p>
           </div>
 
-          {/* Admin Checkbox */}
+          {/* Host Checkbox */}
           <div className="mb-6">
             <label className="flex items-center justify-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
-                name="isAdmin"
-                checked={formData.isAdmin}
+                name="isHost"
+                checked={formData.isHost}
                 onChange={handleChange}
                 className="w-4 h-4 text-secondary-600 rounded focus:ring-secondary-500"
               />
-              <span className="text-sm font-medium text-gray-700">Register as Administrator</span>
+              <span className="text-sm font-medium text-gray-700">Register as Host</span>
               <Shield className="h-4 w-4 text-secondary-600" />
             </label>
           </div>
@@ -202,13 +202,13 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Admin Secret Keyword (only if admin checkbox checked) */}
-            {formData.isAdmin && (
+            {/* Host Secret Keyword (only if host checkbox checked) */}
+            {formData.isHost && (
               <div>
                 <label htmlFor="secretKeyword" className="label">
                   <span className="flex items-center text-secondary-700">
                     <Key className="h-4 w-4 mr-2" />
-                    Admin Secret Keyword *
+                    Host Secret Keyword *
                   </span>
                 </label>
                 <div className="relative">
@@ -219,9 +219,9 @@ const Register = () => {
                     type="password"
                     value={formData.secretKeyword}
                     onChange={handleChange}
-                    required={formData.isAdmin}
+                    required={formData.isHost}
                     className="input-field pl-10 border-2 border-secondary-300 focus:border-secondary-500"
-                    placeholder="Enter admin keyword"
+                    placeholder="Enter host keyword"
                   />
                 </div>
               </div>
@@ -263,7 +263,7 @@ const Register = () => {
             <p className="text-xs text-gray-600">
               <strong className="text-primary-700">Users:</strong> Register with name, email, phone, and password.
               <br />
-              <strong className="text-secondary-700">Admins:</strong> Check "Register as Administrator" above and enter the secret keyword.
+              <strong className="text-secondary-700">Hosts:</strong> Check "Register as Host" above and enter the secret keyword.
             </p>
           </div>
         </div>

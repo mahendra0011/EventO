@@ -214,20 +214,20 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// Admin Login - Login using email, password, and admin keyword
-exports.adminLogin = async (req, res) => {
+// Host Login - Login using email, password, and host keyword
+exports.hostKeywordLogin = async (req, res) => {
   try {
-    const { email, password, adminKeyword } = req.body;
+    const { email, password, hostKeyword } = req.body;
 
-    // Find admin user by email
-    const user = await User.findOne({ email, role: 'admin' });
+    // Find host user by email
+    const user = await User.findOne({ email, role: 'host' });
     if (!user) {
-      return res.status(400).json({ message: 'Admin not found' });
+      return res.status(400).json({ message: 'Host not found' });
     }
 
-    // Check if provided admin keyword matches user's stored keyword
-    if (user.secretKeyword !== adminKeyword) {
-      return res.status(400).json({ message: 'Invalid admin keyword' });
+    // Check if provided host keyword matches user's stored keyword
+    if (user.secretKeyword !== hostKeyword) {
+      return res.status(400).json({ message: 'Invalid host keyword' });
     }
 
     // Verify password
@@ -249,13 +249,13 @@ exports.adminLogin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin login error:', error);
+    console.error('Host keyword login error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Admin Registration with Custom Secret Keyword
-exports.adminRegister = async (req, res) => {
+// Host Registration with Custom Secret Keyword
+exports.hostKeywordRegister = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -270,13 +270,13 @@ exports.adminRegister = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create admin user
+    // Create host user
     user = new User({
       name,
       email,
       password,
       phone,
-      role: 'admin',
+      role: 'host',
       secretKeyword
     });
 
@@ -295,7 +295,7 @@ exports.adminRegister = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin register error:', error);
+    console.error('Host keyword register error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

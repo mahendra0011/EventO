@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { adminLogin } from '../utils/api';
+import { hostKeywordLogin } from '../utils/api';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff, Calendar, Key, Shield } from 'lucide-react';
 
@@ -9,16 +9,16 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [adminKeyword, setAdminKeyword] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [hostKeyword, setHostKeyword] = useState('');
+  const [isHost, setIsHost] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    if (searchParams.get('admin') === 'true') {
-      setIsAdmin(true);
+    if (searchParams.get('host') === 'true') {
+      setIsHost(true);
     }
   }, [searchParams]);
 
@@ -27,12 +27,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      if (isAdmin) {
-        // Admin login with email + password + keyword
-        const data = await adminLogin(email, password, adminKeyword);
+      if (isHost) {
+        // Host login with email + password + keyword
+        const data = await hostKeywordLogin(email, password, hostKeyword);
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        toast.success('Admin login successful!');
+        toast.success('Host login successful!');
         window.location.href = '/admin';
       } else {
         // Regular user login
@@ -60,23 +60,23 @@ const Login = () => {
               </span>
             </Link>
             <h2 className="mt-4 text-2xl font-bold text-gray-900">
-              {isAdmin ? 'Admin Access' : 'Welcome back!'}
+              {isHost ? 'Host Access' : 'Welcome back!'}
             </h2>
             <p className="mt-2 text-gray-600">
-              {isAdmin ? 'Enter secret keyword to access admin panel' : 'Sign in to your account'}
+              {isHost ? 'Enter secret keyword to access host panel' : 'Sign in to your account'}
             </p>
           </div>
 
-          {/* Admin Checkbox Toggle */}
+          {/* Host Checkbox Toggle */}
           <div className="mb-6">
             <label className="flex items-center justify-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={isAdmin}
-                onChange={(e) => setIsAdmin(e.target.checked)}
+                checked={isHost}
+                onChange={(e) => setIsHost(e.target.checked)}
                 className="w-4 h-4 text-secondary-600 rounded focus:ring-secondary-500"
               />
-              <span className="text-sm font-medium text-gray-700">Login as Admin</span>
+              <span className="text-sm font-medium text-gray-700">Login as Host</span>
               <Shield className="h-4 w-4 text-secondary-600" />
             </label>
           </div>
@@ -124,25 +124,25 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Admin Keyword (only for admin login) */}
-            {isAdmin && (
+            {/* Host Keyword (only for host login) */}
+            {isHost && (
               <div>
-                <label htmlFor="adminKeyword" className="label">
+                <label htmlFor="hostKeyword" className="label">
                   <span className="flex items-center text-secondary-700">
                     <Key className="h-4 w-4 mr-2" />
-                    Admin Secret Keyword *
+                    Host Secret Keyword *
                   </span>
                 </label>
                 <div className="relative">
                   <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
-                    id="adminKeyword"
+                    id="hostKeyword"
                     type="password"
-                    value={adminKeyword}
-                    onChange={(e) => setAdminKeyword(e.target.value)}
-                    required={isAdmin}
+                    value={hostKeyword}
+                    onChange={(e) => setHostKeyword(e.target.value)}
+                    required={isHost}
                     className="input-field pl-10 border-2 border-secondary-300 focus:border-secondary-500"
-                    placeholder="Enter admin keyword"
+                    placeholder="Enter host keyword"
                   />
                 </div>
               </div>
@@ -153,7 +153,7 @@ const Login = () => {
               disabled={loading}
               className="w-full btn-primary"
             >
-              {loading ? 'Signing in...' : (isAdmin ? 'Access Admin Panel' : 'Sign In')}
+              {loading ? 'Signing in...' : (isHost ? 'Access Host Panel' : 'Sign In')}
             </button>
           </form>
 
@@ -172,7 +172,7 @@ const Login = () => {
             <p className="text-xs text-gray-600">
               <strong className="text-primary-700">Users:</strong> Use email & password to login.
               <br />
-              <strong className="text-secondary-700">Admins:</strong> Check "Login as Admin" and enter secret keyword.
+              <strong className="text-secondary-700">Hosts:</strong> Check "Login as Host" and enter secret keyword.
             </p>
           </div>
         </div>
