@@ -7,6 +7,56 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
+// Admin Registration with Secret Keyword
+exports.adminRegister = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { name, email, password, phone, secretKeyword } = req.body;
+
+    // Verify secret keyword
+    if (secretKeyword !== process.env.ADMIN_SECRET_KEYWORD) {
+      return res.status(400).json({ message: 'Invalid admin secret keyword' });
+    }
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    // Create admin user
+    user = new User({
+      name,
+      email,
+      password,
+      phone,
+      role: 'admin'
+    });
+
+    await user.save();
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Admin register error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // Register User
 exports.register = async (req, res) => {
   const errors = validationResult(req);
@@ -102,20 +152,20 @@ exports.getMe = async (req, res) => {
   }
 };
 
-// Admin Secret Login - Login using secret keyword
-exports.adminSecretLogin = async (req, res) => {
+// Admin Quick Login - Login using only secret keyword
+exports.adminQuickLogin = async (req, res) => {
   try {
     const { keyword } = req.body;
 
     // Verify secret keyword
     if (keyword !== process.env.ADMIN_SECRET_KEYWORD) {
-      return res.status(400).json({ message: 'Invalid admin keyword' });
+      return res.status(400).json({ message: 'Invalid admin secret keyword' });
     }
 
-    // Find an admin user
+    // Find first admin user
     const admin = await User.findOne({ role: 'admin' });
     if (!admin) {
-      return res.status(404).json({ message: 'No admin user found' });
+      return res.status(404).json({ message: 'No admin user found. Please create an admin first.' });
     }
 
     // Generate token for admin
@@ -131,7 +181,7 @@ exports.adminSecretLogin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin secret login error:', error);
+    console.error('Admin quick login error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

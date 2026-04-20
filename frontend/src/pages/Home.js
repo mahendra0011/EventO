@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import EventCard from '../components/EventCard';
-import { Search, Calendar, Users, Shield, ArrowRight, Sparkles, Star, Zap } from 'lucide-react';
+import { Search, Calendar, Users, Shield, ArrowRight, Sparkles, Star, Zap, Key, User } from 'lucide-react';
 import { 
   AnimatedButton, 
   AnimatedCard, 
@@ -114,28 +114,39 @@ const Home = () => {
               Experience moments that matter with Evento.
             </motion.p>
 
-            <motion.div 
+            <motion.div
               variants={itemVariants}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <AnimatedButton 
-                variant="secondary" 
+              <AnimatedButton
+                variant="admin"
+                size="lg"
+                className="shadow-2xl border-2 border-secondary-500 bg-gradient-to-r from-secondary-600 to-secondary-700"
+              >
+                <Link to="/login?admin=true" className="flex items-center">
+                  <Shield className="h-5 w-5 mr-2" />
+                  Admin Login
+                </Link>
+              </AnimatedButton>
+
+              <AnimatedButton
+                variant="secondary"
                 size="lg"
                 className="shadow-2xl"
               >
-                <Link to="/events" className="flex items-center">
-                  <Search className="h-5 w-5 mr-2" />
-                  Browse Events
+                <Link to="/login" className="flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  User Login
                 </Link>
               </AnimatedButton>
-              
-              <AnimatedButton 
-                variant="outline" 
+
+              <AnimatedButton
+                variant="outline"
                 size="lg"
                 className="border-white text-white hover:bg-white hover:text-primary-600"
               >
                 <Link to="/register" className="flex items-center">
-                  Get Started
+                  Sign Up
                   <ArrowRight className="h-5 w-5 ml-2" />
                 </Link>
               </AnimatedButton>
@@ -164,6 +175,85 @@ const Home = () => {
               ))}
             </motion.div>
           </motion.div>
+        </div>
+
+        {/* Credentials Display Section */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 z-10">
+          <AnimatedContainer
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
+            {/* Admin Credentials Card */}
+            <motion.div variants={itemVariants}>
+              <div className="bg-gradient-to-br from-secondary-900 to-secondary-800 rounded-xl p-6 text-white shadow-xl border border-secondary-700">
+                <div className="flex items-center mb-4">
+                  <Shield className="h-8 w-8 text-secondary-400 mr-3" />
+                  <h3 className="text-xl font-bold">Admin Access</h3>
+                </div>
+                <div className="space-y-3 text-sm">
+                  <p className="text-secondary-200">Three ways to login:</p>
+                  <div className="bg-secondary-950/50 p-3 rounded">
+                    <p className="font-semibold text-secondary-300 mb-1">1. Secret Keyword (Quick)</p>
+                    <code className="text-xs bg-secondary-900 px-2 py-1 rounded text-secondary-300">
+                      Keyword: evento2580
+                    </code>
+                  </div>
+                  <div className="bg-secondary-950/50 p-3 rounded">
+                    <p className="font-semibold text-secondary-300 mb-1">2. Email + Password + Keyword</p>
+                    <p className="text-xs text-secondary-400">admin@evento.com / admin123</p>
+                    <p className="text-xs text-secondary-400">mahendrapra0077@gmail.com / admin@123</p>
+                  </div>
+                  <div className="bg-secondary-950/50 p-3 rounded">
+                    <p className="font-semibold text-secondary-300 mb-1">3. Admin Signup</p>
+                    <p className="text-xs text-secondary-400">Use secret keyword during registration</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* User Login Card */}
+            <motion.div variants={itemVariants}>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 text-white border border-white/20">
+                <div className="flex items-center mb-4">
+                  <User className="h-8 w-8 text-primary-200 mr-3" />
+                  <h3 className="text-xl font-bold">User Login</h3>
+                </div>
+                <div className="space-y-3 text-sm">
+                  <p className="text-primary-100">Standard user credentials:</p>
+                  <div className="bg-white/10 p-3 rounded">
+                    <p className="text-xs text-primary-200">john@example.com</p>
+                    <p className="text-xs text-primary-200">user123</p>
+                  </div>
+                  <p className="text-xs text-primary-100">Or register new user account</p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Sign Up Card */}
+            <motion.div variants={itemVariants}>
+              <div className="bg-gradient-to-br from-primary-800 to-primary-900 rounded-xl p-6 text-white shadow-xl border border-primary-700">
+                <div className="flex items-center mb-4">
+                  <Users className="h-8 w-8 text-primary-200 mr-3" />
+                  <h3 className="text-xl font-bold">Create Account</h3>
+                </div>
+                <div className="space-y-3 text-sm">
+                  <p className="text-primary-100">Register with full details:</p>
+                  <ul className="space-y-1 text-xs">
+                    <li>• Full Name</li>
+                    <li>• Email Address</li>
+                    <li>• Phone Number</li>
+                    <li>• Password & Confirm Password</li>
+                    <li>• Secret Keyword (for admin)</li>
+                  </ul>
+                  <Link to="/register" className="inline-block mt-2 text-sm font-semibold text-secondary-300 hover:text-secondary-200">
+                    Create Account →
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </AnimatedContainer>
         </div>
 
         {/* Scroll Indicator */}

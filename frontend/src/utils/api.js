@@ -37,3 +37,21 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+// Admin Login with credentials (email + password + secret keyword)
+export const adminLogin = async (email, password, secretKeyword) => {
+  const res = await api.post('/auth/admin-login', { email, password, secretKeyword });
+  return res.data;
+};
+
+// Admin Quick Login (keyword only)
+export const adminQuickLogin = async (secretKeyword) => {
+  const res = await api.post('/auth/admin-quick-login', { secretKeyword });
+  return res.data;
+};
+
+// Admin Register with secret keyword
+export const adminRegister = async (userData) => {
+  const res = await api.post('/auth/admin-register', userData);
+  return res.data;
+};
