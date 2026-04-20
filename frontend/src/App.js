@@ -93,12 +93,42 @@ function AnimatedRoutes() {
             </PageTransition>
           } 
         />
-        <Route
+<Route
           path="/dashboard"
           element={
             <ProtectedRoute>
               <PageTransition>
                 <Dashboard />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/host"
+          element={
+            <ProtectedRoute adminOnly>
+              <PageTransition>
+                <AdminDashboard />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/host/create-event"
+          element={
+            <ProtectedRoute adminOnly>
+              <PageTransition>
+                <CreateEvent />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/booking/:id/confirmation"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <BookingConfirmation />
               </PageTransition>
             </ProtectedRoute>
           }
