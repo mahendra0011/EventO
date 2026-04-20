@@ -61,3 +61,24 @@ export const hostKeywordRegister = async (userData) => {
   const res = await api.post('/auth/host-keyword-register', userData);
   return res.data;
 };
+
+// Reviews
+export const createReview = async (eventId, rating, comment) => {
+  const res = await api.post('/reviews', { eventId, rating, comment });
+  return res.data;
+};
+
+export const getEventReviews = async (eventId) => {
+  const res = await api.get(`/reviews/event/${eventId}`);
+  return res.data;
+};
+
+export const getEventRating = async (eventId) => {
+  const res = await api.get(`/reviews/event/${eventId}/rating`);
+  return res.data;
+};
+
+export const getUserReviews = async () => {
+  const res = await api.get('/reviews/user');
+  return res.data;
+};
