@@ -682,45 +682,45 @@ const Dashboard = () => {
                       ))}
 
                       <div className="pt-6 mt-6 border-t border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                      <Bell className="h-5 w-5 mr-2" />Notification Settings
-                    </h3>
-                    <div className="space-y-3">
-                      <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer">
-                        <div className="flex items-center">
-                          <Mail className="h-5 w-5 text-gray-400 mr-3" />
-                          <div>
-                            <p className="font-medium">Email Notifications</p>
-                            <p className="text-sm text-gray-500">Receive booking confirmations and updates</p>
-                          </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                          <Bell className="h-5 w-5 mr-2" />Notification Settings
+                        </h3>
+                        <div className="space-y-3">
+                          <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer">
+                            <div className="flex items-center">
+                              <Mail className="h-5 w-5 text-gray-400 mr-3" />
+                              <div>
+                                <p className="font-medium">Email Notifications</p>
+                                <p className="text-sm text-gray-500">Receive booking confirmations and updates</p>
+                              </div>
+                            </div>
+                            <input 
+                              type="checkbox" 
+                              checked={notification}
+                              onChange={() => setNotification(!notification)}
+                              className="h-5 w-5 text-primary-600 rounded" 
+                            />
+                          </label>
+                          <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer">
+                            <div className="flex items-center">
+                              <Bell className="h-5 w-5 text-gray-400 mr-3" />
+                              <div>
+                                <p className="font-medium">Push Notifications</p>
+                                <p className="text-sm text-gray-500">Get reminders about upcoming events</p>
+                              </div>
+                            </div>
+                            <input type="checkbox" defaultChecked className="h-5 w-5 text-primary-600 rounded" />
+                          </label>
                         </div>
-                        <input 
-                          type="checkbox" 
-                          checked={notification}
-                          onChange={() => setNotification(!notification)}
-                          className="h-5 w-5 text-primary-600 rounded" 
-                        />
-                      </label>
-                      <label className="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer">
-                        <div className="flex items-center">
-                          <Bell className="h-5 w-5 text-gray-400 mr-3" />
-                          <div>
-                            <p className="font-medium">Push Notifications</p>
-                            <p className="text-sm text-gray-500">Get reminders about upcoming events</p>
-                          </div>
-                        </div>
-                        <input type="checkbox" defaultChecked className="h-5 w-5 text-primary-600 rounded" />
-                      </label>
-                    </div>
-                  </div>
+                      </div>
 
-                  <AnimatedButton
-                    variant="primary"
-                    onClick={() => setEditMode(true)}
-                  >
-                    <Edit3 className="h-4 w-4 mr-2" />
-                    Edit Profile
-                  </AnimatedButton>
+                      <AnimatedButton
+                        variant="primary"
+                        onClick={() => setEditMode(true)}
+                      >
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        Edit Profile
+                      </AnimatedButton>
                 </motion.div>
               )}
             </AnimatePresence>
