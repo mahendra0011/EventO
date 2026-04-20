@@ -253,3 +253,49 @@ exports.adminLogin = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Admin Registration with Custom Secret Keyword
+exports.adminRegister = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { name, email, password, phone, secretKeyword } = req.body;
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    // Create admin user
+    user = new User({
+      name,
+      email,
+      password,
+      phone,
+      role: 'admin',
+      secretKeyword
+    });
+
+    await user.save();
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Admin register error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

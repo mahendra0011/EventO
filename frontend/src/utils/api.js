@@ -55,3 +55,9 @@ export const adminLogin = async (email, password, adminKeyword) => {
   const res = await api.post('/auth/admin-login', { email, password, adminKeyword });
   return res.data;
 };
+
+// Admin Register with keyword
+export const adminRegister = async (userData) => {
+  const res = await api.post('/auth/admin-register', userData);
+  return res.data;
+};
