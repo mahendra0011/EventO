@@ -198,7 +198,9 @@ const Dashboard = () => {
                             <div className="mt-4 md:mt-0 flex flex-col items-end space-y-2">
                               {getStatusBadge(booking.status)}
                               <div className="flex space-x-2">
-                                <Link to={`/booking/${booking._id}/confirmation`} className="btn-outline text-sm">View Ticket</Link>
+                                <Link to={`/booking/${booking._id}/confirmation`} className="btn-outline text-sm">
+                                  <Eye className="h-4 w-4 inline mr-1" />View Ticket
+                                </Link>
                                 {booking.status === 'pending' && (
                                   <button onClick={() => handleCancelBooking(booking._id)} className="btn-danger text-sm">Cancel</button>
                                 )}
