@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import EventCard from '../components/EventCard';
-import { Search, Calendar, Users, Shield, ArrowRight, Sparkles, Star, Zap, Ticket, CheckCircle, Clock, MapPin, Music, Gamepad2, Briefcase, Heart, Coffee } from 'lucide-react';
+import { Search, Calendar, Users, Shield, ArrowRight, Sparkles, Star, Zap, Ticket, CheckCircle, Clock, MapPin, Music, Gamepad2, Briefcase, Heart, Coffee, CreditCard, Mail, Award, TrendingUp } from 'lucide-react';
 import { 
   AnimatedButton, 
   AnimatedCard, 
@@ -195,7 +195,7 @@ const Home = () => {
           </AnimatedContainer>
 
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -212,35 +212,98 @@ const Home = () => {
               {
                 icon: Shield,
                 title: 'Secure Booking',
-                description: 'OTP verification ensures your bookings are safe and secure',
+                description: 'OTP verification ensures your bookings are safe',
                 color: 'secondary',
+                delay: 0.1,
+              },
+              {
+                icon: CreditCard,
+                title: 'Secure Payments',
+                description: 'Multiple payment options with secure transactions',
+                color: 'blue',
                 delay: 0.2,
+              },
+              {
+                icon: Mail,
+                title: 'Instant Tickets',
+                description: 'Get your e-tickets delivered via email',
+                color: 'green',
+                delay: 0.3,
               },
               {
                 icon: Users,
                 title: 'Easy Management',
-                description: 'Track your bookings and manage tickets from your dashboard',
-                color: 'primary',
+                description: 'Track bookings from your dashboard',
+                color: 'purple',
                 delay: 0.4,
+              },
+              {
+                icon: Award,
+                title: 'Verified Hosts',
+                description: 'All hosts are verified for your safety',
+                color: 'amber',
+                delay: 0.5,
+              },
+              {
+                icon: TrendingUp,
+                title: 'Best Prices',
+                description: 'Competitive pricing on all events',
+                color: 'rose',
+                delay: 0.6,
+              },
+              {
+                icon: Sparkles,
+                title: '24/7 Support',
+                description: 'Round-the-clock customer support',
+                color: 'cyan',
+                delay: 0.7,
               },
             ].map((feature, index) => (
               <motion.div
                 key={index}
                 variants={itemVariants}
               >
-                <AnimatedCard className="p-8 text-center h-full" delay={feature.delay}>
+                <AnimatedCard className="p-6 text-center h-full hover:shadow-xl transition-shadow" delay={feature.delay}>
                   <AnimatedIcon 
                     variant="bounce" 
-                    className={`w-16 h-16 bg-${feature.color}-100 rounded-full flex items-center justify-center mx-auto mb-6`}
+                    className={`w-14 h-14 bg-${feature.color}-100 rounded-full flex items-center justify-center mx-auto mb-4`}
                   >
-                    <feature.icon className={`h-8 w-8 text-${feature.color}-600`} />
+                    <feature.icon className={`h-7 w-7 text-${feature.color}-600`} />
                   </AnimatedIcon>
-                  <h3 className="text-xl font-semibold mb-3 text-gray-900">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <h3 className="text-lg font-semibold mb-2 text-gray-900">{feature.title}</h3>
+                  <p className="text-gray-600 text-sm">{feature.description}</p>
                 </AnimatedCard>
               </motion.div>
             ))}
           </motion.div>
+        </div>
+      </section>
+
+      {/* Animated Stats Section */}
+      <section className="py-16 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { number: '10K+', label: 'Events', suffix: '' },
+              { number: '500K+', label: 'Tickets Sold', suffix: '' },
+              { number: '50K+', label: 'Happy Users', suffix: '' },
+              { number: '1000+', label: 'Verified Hosts', suffix: '' },
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.5 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                className="text-center"
+              >
+                <div className="text-4xl md:text-5xl font-bold text-white mb-2">
+                  {stat.number}
+                </div>
+                <div className="text-primary-200">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -438,6 +501,18 @@ const Home = () => {
                 animate={{ rotate: 360 }}
                 transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
               />
+            </div>
+          ) : featuredEvents.length === 0 ? (
+            <div className="text-center py-16 bg-gray-50 rounded-xl">
+              <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Featured Events Yet</h3>
+              <p className="text-gray-600 mb-6">Check back soon for amazing events!</p>
+              <AnimatedButton variant="primary">
+                <Link to="/events" className="flex items-center">
+                  Browse All Events
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                </Link>
+              </AnimatedButton>
             </div>
           ) : (
             <motion.div 
