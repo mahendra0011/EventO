@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { hostKeywordRegister } from '../utils/api';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff, User, Phone, Calendar, Key, Shield } from 'lucide-react';
 
@@ -17,7 +16,7 @@ const Register = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, hostRegister } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -45,19 +44,10 @@ const Register = () => {
 
     try {
       if (formData.isHost) {
-        // Host registration
-        const data = await hostKeywordRegister({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password,
-          secretKeyword: formData.secretKeyword
-        });
-
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Host registration via context
+        await hostRegister(formData.name, formData.email, formData.password, formData.phone, formData.secretKeyword);
         toast.success('Host account created!');
-        window.location.href = '/host';
+        navigate('/host');
       } else {
         // Regular user registration
         await register(formData.name, formData.email, formData.password, formData.phone);
