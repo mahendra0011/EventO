@@ -48,9 +48,12 @@ const Dashboard = () => {
   const fetchWishlist = async () => {
     try {
       const res = await getWishlist();
-      setSavedEvents(res.data);
+      // Ensure we always have an array
+      const data = Array.isArray(res.data) ? res.data : [];
+      setSavedEvents(data);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
+      setSavedEvents([]);
     }
   };
 
@@ -263,22 +266,25 @@ const Dashboard = () => {
               )}
 
               {/* Wishlist Tab */}
-              {/* Wishlist Tab */}
               {activeTab === 'wishlist' && (
                 <motion.div key="wishlist" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <h3 className="text-lg font-semibold mb-4">Saved Events</h3>
-                  {savedEvents.length > 0 ? (
+                  {savedEvents && savedEvents.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {savedEvents.map((item) => (
-                        <div key={item._id} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-                          <img src={item.event.image} alt={item.event.title} className="w-full h-40 object-cover" />
-                          <div className="p-4">
-                            <h4 className="font-semibold">{item.event.title}</h4>
-                            <p className="text-sm text-gray-500">{formatDate(item.event.date)}</p>
-                            <p className="text-primary-600 font-bold">₹{item.event.price.toLocaleString('en-IN')}</p>
+                      {savedEvents.map((item) => {
+                        // Defensive: ensure item and event exist
+                        if (!item || !item.event) return null;
+                        return (
+                          <div key={item._id} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                            <img src={item.event.image || 'https://via.placeholder.com/400x200?text=No+Image'} alt={item.event.title} className="w-full h-40 object-cover" />
+                            <div className="p-4">
+                              <h4 className="font-semibold">{item.event.title || 'Untitled Event'}</h4>
+                              <p className="text-sm text-gray-500">{item.event.date ? formatDate(item.event.date) : 'TBD'}</p>
+                              <p className="text-primary-600 font-bold">₹{(item.event.price || 0).toLocaleString('en-IN')}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-12">
