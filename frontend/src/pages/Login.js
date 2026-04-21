@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { hostKeywordLogin } from '../utils/api';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff, Calendar, Key, Shield } from 'lucide-react';
 
@@ -12,7 +11,7 @@ const Login = () => {
   const [hostKeyword, setHostKeyword] = useState('');
   const [isHost, setIsHost] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, hostLogin } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -28,14 +27,10 @@ const Login = () => {
 
     try {
       if (isHost) {
-        // Host login with email + password + keyword
-        const data = await hostKeywordLogin(email, password, hostKeyword);
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        await hostLogin(email, password, hostKeyword);
         toast.success('Host login successful!');
-        window.location.href = '/host';
+        navigate('/host');
       } else {
-        // Regular user login
         await login(email, password);
         toast.success('Login successful!');
         navigate('/dashboard');
