@@ -72,11 +72,16 @@ const eventSchema = new mongoose.Schema({
   }
 });
 
-// Update availableTickets before saving
-eventSchema.pre('save', function(next) {
+// Set availableTickets before validation for new events
+eventSchema.pre('validate', function(next) {
   if (this.isNew) {
     this.availableTickets = this.totalTickets;
   }
+  next();
+});
+
+// Update updatedAt before saving
+eventSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
