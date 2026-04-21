@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, Clock, IndianRupee, Ticket, Sparkles, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 import { addToWishlist, removeFromWishlist, checkWishlist } from '../utils/api';
 
 const EventCard = ({ event, index = 0 }) => {
@@ -10,7 +11,7 @@ const EventCard = ({ event, index = 0 }) => {
   const [inWishlist, setInWishlist] = useState(false);
 
   // Check wishlist status on mount
-  React.useEffect(() => {
+  useEffect(() => {
     if (user) {
       checkWishlist(event._id).then(res => setInWishlist(res.inWishlist)).catch(() => {});
     }
@@ -27,14 +28,18 @@ const EventCard = ({ event, index = 0 }) => {
       if (inWishlist) {
         await removeFromWishlist(event._id);
         setInWishlist(false);
+        toast.success('Removed from wishlist');
       } else {
         await addToWishlist(event._id);
         setInWishlist(true);
+        toast.success('Added to wishlist');
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed');
     }
   };
+
+  const formatDate = (dateString) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {

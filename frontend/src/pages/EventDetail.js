@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 import { Calendar, Clock, MapPin, IndianRupee, Users, Ticket, ArrowLeft, Heart, Phone, Mail, User, Star } from 'lucide-react';
+import { addToWishlist, removeFromWishlist, checkWishlist } from '../utils/api';
 
 const EventDetail = () => {
   const { id } = useParams();
