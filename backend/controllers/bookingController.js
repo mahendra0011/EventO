@@ -1,7 +1,6 @@
 const Booking = require('../models/Booking');
 const Event = require('../models/Event');
 const { sendOTPEmail, sendBookingConfirmationEmail } = require('../utils/email');
-const { validationResult } = require('express-validator');
 
 // Generate OTP
 const generateOTP = () => {
@@ -10,13 +9,13 @@ const generateOTP = () => {
 
 // Create booking request
 exports.createBooking = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
   try {
     const { eventId, numberOfTickets, attendeeDetails } = req.body;
+
+    // Validation
+    if (!eventId || !numberOfTickets) {
+      return res.status(400).json({ message: 'Event ID and number of tickets are required' });
+    }
 
     // Check if event exists
     const event = await Event.findById(eventId);

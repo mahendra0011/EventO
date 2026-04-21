@@ -1,5 +1,4 @@
 const Event = require('../models/Event');
-const { validationResult } = require('express-validator');
 
 // Get all events
 exports.getEvents = async (req, res) => {
@@ -57,13 +56,8 @@ exports.getEvent = async (req, res) => {
   }
 };
 
-// Create event (Admin only)
+// Create event (Host only)
 exports.createEvent = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
   try {
     const {
       title,
@@ -78,6 +72,11 @@ exports.createEvent = async (req, res) => {
       totalTickets,
       tags
     } = req.body;
+
+    // Validation
+    if (!title || !description || !date || !time || !venue || !location || !category) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
 
     // Convert date string to Date object
     const eventDate = new Date(date);
@@ -94,8 +93,8 @@ exports.createEvent = async (req, res) => {
       location,
       category,
       image: image || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
-      price,
-      totalTickets,
+      price: price || 0,
+      totalTickets: totalTickets || 100,
       organizer: req.user.id,
       tags: tags || []
     });

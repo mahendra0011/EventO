@@ -1,6 +1,5 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const { validationResult } = require('express-validator');
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -9,13 +8,13 @@ const generateToken = (userId) => {
 
 // Host Registration with Custom Secret Keyword
 exports.hostRegister = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
   try {
     const { name, email, password, phone, secretKeyword } = req.body;
+
+    // Validation
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email and password are required' });
+    }
 
     // Check if user exists
     let user = await User.findOne({ email });
@@ -55,13 +54,13 @@ exports.hostRegister = async (req, res) => {
 
 // Register User
 exports.register = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
   try {
     const { name, email, password, phone } = req.body;
+
+    // Validation
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email and password are required' });
+    }
 
     // Check if user exists
     let user = await User.findOne({ email });
@@ -99,13 +98,13 @@ exports.register = async (req, res) => {
 
 // Login User
 exports.login = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
   try {
     const { email, password } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
 
     // Check if user exists
     const user = await User.findOne({ email });
@@ -256,13 +255,13 @@ exports.hostKeywordLogin = async (req, res) => {
 
 // Host Registration with Custom Secret Keyword
 exports.hostKeywordRegister = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
   try {
     const { name, email, password, phone, secretKeyword } = req.body;
+
+    // Validation
+    if (!name || !email || !password || !secretKeyword) {
+      return res.status(400).json({ message: 'Name, email, password and secretKeyword are required' });
+    }
 
     // Check if user exists
     let user = await User.findOne({ email });
