@@ -1,5 +1,6 @@
 const Booking = require('../models/Booking');
 const Event = require('../models/Event');
+const Notification = require('../models/Notification');
 const { sendOTPEmail, sendBookingConfirmationEmail } = require('../utils/email');
 
 // Generate OTP
@@ -53,6 +54,18 @@ exports.createBooking = async (req, res) => {
       console.log('Email error (non-blocking):', err.message)
     );
 
+    // Create notification for host
+    const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
+    if (eventWithOrganizer && eventWithOrganizer.organizer) {
+      await Notification.create({
+        user: eventWithOrganizer.organizer._id,
+        title: 'New Booking Received',
+        message: `${req.user.name} booked ${numberOfTickets} ticket(s) for "${event.title}"`,
+        type: 'booking',
+        link: `/host/bookings`
+      });
+    }
+
     res.status(201).json({
       message: 'Booking created. Please verify OTP sent to your email.',
       bookingId: booking._id,
@@ -103,6 +116,15 @@ exports.verifyOTP = async (req, res) => {
     const event = await Event.findById(booking.event);
     event.availableTickets -= booking.numberOfTickets;
     await event.save();
+
+    // Create notification for user
+    await Notification.create({
+      user: booking.user,
+      title: 'Booking Confirmed!',
+      message: `Your booking for "${event.title}" is confirmed.`,
+      type: 'booking',
+      link: `/booking/${booking._id}/confirmation`
+    });
 
     res.json({ 
       message: 'Booking confirmed successfully.', 
@@ -189,7 +211,7 @@ exports.getBooking = async (req, res) => {
 // Cancel booking
 exports.cancelBooking = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findById(req.params.id).populate('event');
 
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
@@ -200,9 +222,9 @@ exports.cancelBooking = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    // Check if booking can be cancelled
+    // Only pending bookings can be cancelled by user
     if (booking.status === 'confirmed') {
-      return res.status(400).json({ message: 'Cannot cancel confirmed booking' });
+      return res.status(400).json({ message: 'Cannot cancel confirmed booking. Contact support.' });
     }
 
     booking.status = 'cancelled';
@@ -210,9 +232,29 @@ exports.cancelBooking = async (req, res) => {
     await booking.save();
 
     // Return tickets to event
-    const event = await Event.findById(booking.event);
+    const event = await Event.findById(booking.event._id);
     event.availableTickets += booking.numberOfTickets;
     await event.save();
+
+    // Notify user
+    await Notification.create({
+      user: booking.user,
+      title: 'Booking Cancelled',
+      message: `Your booking for "${event.title}" has been cancelled.`,
+      type: 'booking',
+      link: '/dashboard'
+    });
+
+    // Notify host
+    if (event.organizer) {
+      await Notification.create({
+        user: event.organizer._id,
+        title: 'Booking Cancelled',
+        message: `${req.user.name || 'A user'} cancelled booking for "${event.title}"`,
+        type: 'booking',
+        link: '/host/bookings'
+      });
+    }
 
     res.json({ message: 'Booking cancelled successfully' });
   } catch (error) {

@@ -89,6 +89,20 @@ export const getCategories = async () => {
   return res.data;
 };
 
+// Notifications
+export const getNotifications = async () => {
+  const res = await api.get('/notifications');
+  return res.data;
+};
+
+export const markNotificationAsRead = (notificationId) => {
+  return api.put(`/notifications/${notificationId}/read`);
+};
+
+export const markAllNotificationsAsRead = () => {
+  return api.put('/notifications/read-all');
+};
+
 // Host Dashboard Stats
 export const getHostDashboardStats = async () => {
   const res = await api.get('/host/dashboard');

@@ -270,13 +270,47 @@ const Dashboard = () => {
                 </motion.div>
               )}
 
-              {/* Calendar Tab */}
-              {activeTab === 'calendar' && (
-                <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <h3 className="text-lg font-semibold mb-4">My Calendar</h3>
-                  <div className="text-center py-8 text-gray-500">Calendar view coming soon</div>
-                </motion.div>
-              )}
+               {/* Calendar Tab */}
+               {activeTab === 'calendar' && (
+                 <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                   <h3 className="text-lg font-semibold mb-4">My Event Calendar</h3>
+                   {bookings.filter(b => b.status === 'confirmed').length > 0 ? (
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                       {bookings
+                         .filter(b => b.status === 'confirmed')
+                         .sort((a, b) => new Date(a.event.date) - new Date(b.event.date))
+                         .map((booking) => (
+                           <div key={booking._id} className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+                             <div className="flex items-center gap-3 mb-2">
+                               <div className="bg-primary-100 p-2 rounded-lg">
+                                 <Calendar className="h-5 w-5 text-primary-600" />
+                               </div>
+                               <div>
+                                 <h4 className="font-semibold text-sm line-clamp-1">{booking.event?.title}</h4>
+                                 <p className="text-xs text-gray-500">{formatDate(booking.event?.date)}</p>
+                               </div>
+                             </div>
+                             <div className="flex items-center text-sm text-gray-600">
+                               <Clock className="h-4 w-4 mr-1" />
+                               {booking.event?.time}
+                             </div>
+                             <div className="flex items-center text-sm text-gray-600 mt-1">
+                               <MapPin className="h-4 w-4 mr-1" />
+                               {booking.event?.venue}, {booking.event?.location}
+                             </div>
+                           </div>
+                         ))}
+                     </div>
+                   ) : (
+                     <div className="text-center py-12">
+                       <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                       <h3 className="text-lg font-semibold">No upcoming events</h3>
+                       <p className="text-gray-600 mb-4">Bookings you confirm will appear here</p>
+                       <Link to="/events" className="btn-primary">Browse Events</Link>
+                     </div>
+                   )}
+                 </motion.div>
+               )}
 
               {/* Wishlist Tab */}
               {activeTab === 'wishlist' && (
