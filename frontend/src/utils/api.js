@@ -62,27 +62,6 @@ export const hostKeywordRegister = async (userData) => {
   return res.data;
 };
 
-// Reviews
-export const createReview = async (eventId, rating, comment) => {
-  const res = await api.post('/reviews', { eventId, rating, comment });
-  return res.data;
-};
-
-export const getEventReviews = async (eventId) => {
-  const res = await api.get(`/reviews/event/${eventId}`);
-  return res.data;
-};
-
-export const getEventRating = async (eventId) => {
-  const res = await api.get(`/reviews/event/${eventId}/rating`);
-  return res.data;
-};
-
-export const getUserReviews = async () => {
-  const res = await api.get('/reviews/user');
-  return res.data;
-};
-
 // Wishlist / Saved Events (localStorage based - shown in UI only)
 export const getSavedEvents = () => {
   const saved = localStorage.getItem('wishlist');

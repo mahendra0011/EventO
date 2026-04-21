@@ -23,7 +23,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/host', hostRoutes);
-app.use('/api/reviews', require('./routes/reviews'));
+// app.use('/api/reviews', require('./routes/reviews'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Evento API is running' });
