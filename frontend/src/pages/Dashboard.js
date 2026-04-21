@@ -41,6 +41,13 @@ const Dashboard = () => {
     }
   }, [user]);
 
+  // Refresh wishlist when switching to wishlist tab
+  useEffect(() => {
+    if (activeTab === 'wishlist' && user) {
+      fetchWishlist();
+    }
+  }, [activeTab, user]);
+
   const fetchBookings = async () => {
     try {
       const res = await api.get('/bookings/user');
