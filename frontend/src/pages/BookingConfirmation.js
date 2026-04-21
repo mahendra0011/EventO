@@ -96,12 +96,12 @@ const BookingConfirmation = () => {
               <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-full mb-4 backdrop-blur-sm">
                 <CheckCircle className="h-12 w-12" />
               </div>
-              <h1 className="text-4xl font-bold mb-2">
-                <GradientText gradient="from-white to-green-100">Booking Confirmed!</GradientText>
-              </h1>
-              <p className="text-green-100 text-lg">
-                Your booking has been verified and is pending host approval.
-              </p>
+               <h1 className="text-4xl font-bold mb-2">
+                 <GradientText gradient="from-white to-green-100">Booking Confirmed!</GradientText>
+               </h1>
+               <p className="text-green-100 text-lg">
+                 Your booking is confirmed. A confirmation has been sent to your email.
+               </p>
               
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -250,11 +250,11 @@ const BookingConfirmation = () => {
           <ul className="text-blue-800 space-y-2">
             <li className="flex items-start">
               <span className="mr-2 font-bold">1.</span>
-              <span>Your booking is pending host approval</span>
+              <span>Your booking is confirmed!</span>
             </li>
             <li className="flex items-start">
               <span className="mr-2 font-bold">2.</span>
-              <span>You'll receive an email confirmation once approved</span>
+              <span>A confirmation has been sent to your email</span>
             </li>
             <li className="flex items-start">
               <span className="mr-2 font-bold">3.</span>
@@ -262,7 +262,7 @@ const BookingConfirmation = () => {
             </li>
             <li className="flex items-start">
               <span className="mr-2 font-bold">4.</span>
-              <span>Check your dashboard for booking status updates</span>
+              <span>Check your dashboard for booking details</span>
             </li>
           </ul>
         </motion.div>

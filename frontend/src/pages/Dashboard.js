@@ -81,8 +81,6 @@ const Dashboard = () => {
     e.preventDefault();
     try {
       await updateProfile(profileData);
-      // Refresh user context
-      const userRes = await api.get('/auth/me');
       toast.success('Profile updated successfully');
       setEditMode(false);
     } catch (error) {
@@ -377,38 +375,83 @@ const Dashboard = () => {
                 </motion.div>
               )}
 
-              {/* Profile Tab */}
-              {activeTab === 'profile' && (
-                <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                      <User className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">Full Name</p>
-                        <p className="font-medium">{user?.name}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">Email</p>
-                        <p className="font-medium">{user?.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                      <Phone className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-500">Phone</p>
-                        <p className="font-medium">{user?.phone || 'Not provided'}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <AnimatedButton variant="primary" className="mt-6" onClick={() => setEditMode(true)}>
-                    <Edit3 className="h-4 w-4 mr-2" />Edit Profile
-                  </AnimatedButton>
-                </motion.div>
-              )}
+               {/* Profile Tab */}
+               {activeTab === 'profile' && (
+                 <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                   <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
+                   
+                   {editMode ? (
+                     <form onSubmit={handleUpdateProfile} className="bg-white border border-gray-200 rounded-lg p-6 max-w-xl">
+                       <div className="space-y-4">
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                           <input
+                             type="text"
+                             value={profileData.name}
+                             onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                             required
+                           />
+                         </div>
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                           <input
+                             type="tel"
+                             value={profileData.phone}
+                             onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                             placeholder="+91 9876543210"
+                           />
+                         </div>
+                         <div>
+                           <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                           <input
+                             type="email"
+                             value={user?.email || ''}
+                             disabled
+                             className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
+                           />
+                         </div>
+                         <div className="flex gap-2">
+                           <button type="submit" className="btn-primary">
+                             Save Changes
+                           </button>
+                           <button type="button" onClick={() => setEditMode(false)} className="btn-secondary">
+                             Cancel
+                           </button>
+                         </div>
+                       </div>
+                     </form>
+                   ) : (
+                     <div className="space-y-4">
+                       <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                         <User className="h-5 w-5 text-gray-400" />
+                         <div>
+                           <p className="text-sm text-gray-500">Full Name</p>
+                           <p className="font-medium">{user?.name}</p>
+                         </div>
+                       </div>
+                       <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                         <Mail className="h-5 w-5 text-gray-400" />
+                         <div>
+                           <p className="text-sm text-gray-500">Email</p>
+                           <p className="font-medium">{user?.email}</p>
+                         </div>
+                       </div>
+                       <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                         <Phone className="h-5 w-5 text-gray-400" />
+                         <div>
+                           <p className="text-sm text-gray-500">Phone</p>
+                           <p className="font-medium">{user?.phone || 'Not provided'}</p>
+                         </div>
+                       </div>
+                       <AnimatedButton variant="primary" className="mt-6" onClick={() => setEditMode(true)}>
+                         <Edit3 className="h-4 w-4 mr-2" />Edit Profile
+                       </AnimatedButton>
+                     </div>
+                   )}
+                 </motion.div>
+               )}
             </AnimatePresence>
           </div>
         </AnimatedCard>

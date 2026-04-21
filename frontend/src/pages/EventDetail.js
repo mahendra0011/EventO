@@ -99,7 +99,7 @@ const EventDetail = () => {
         otp
       });
 
-      toast.success('Booking verified! Pending host approval.');
+      toast.success('Booking confirmed successfully!');
       setShowOtpModal(false);
       navigate(`/booking/${bookingId}/confirmation`);
     } catch (error) {
