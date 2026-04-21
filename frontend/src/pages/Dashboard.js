@@ -269,7 +269,7 @@ const Dashboard = () => {
               {activeTab === 'wishlist' && (
                 <motion.div key="wishlist" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <h3 className="text-lg font-semibold mb-4">Saved Events</h3>
-                  {savedEvents && savedEvents.length > 0 ? (
+                  {savedEvents?.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {savedEvents.map((item) => {
                         // Defensive: ensure item and event exist
