@@ -62,23 +62,25 @@ export const hostKeywordRegister = async (userData) => {
   return res.data;
 };
 
-// Wishlist / Saved Events (localStorage based - shown in UI only)
-export const getSavedEvents = () => {
-  const saved = localStorage.getItem('wishlist');
-  return saved ? JSON.parse(saved) : [];
+// Wishlist / Saved Events - Now backed by server
+export const getWishlist = async () => {
+  const res = await api.get('/wishlist');
+  return res.data;
 };
 
-export const saveEventToWishlist = (event) => {
-  const saved = getSavedEvents();
-  if (!saved.find(e => e._id === event._id)) {
-    saved.push(event);
-    localStorage.setItem('wishlist', JSON.stringify(saved));
-  }
+export const addToWishlist = async (eventId) => {
+  const res = await api.post('/wishlist', { eventId });
+  return res.data;
 };
 
-export const removeEventFromWishlist = (eventId) => {
-  const saved = getSavedEvents().filter(e => e._id !== eventId);
-  localStorage.setItem('wishlist', JSON.stringify(saved));
+export const removeFromWishlist = async (eventId) => {
+  const res = await api.delete(`/wishlist/${eventId}`);
+  return res.data;
+};
+
+export const checkWishlist = async (eventId) => {
+  const res = await api.get(`/wishlist/check/${eventId}`);
+  return res.data;
 };
 
 // Event Categories

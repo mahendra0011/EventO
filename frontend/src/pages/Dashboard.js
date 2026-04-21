@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import api from '../utils/api';
+import api, { getWishlist } from '../utils/api';
 import toast from 'react-hot-toast';
 import { 
   Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone, 
   Edit3, Save, X, QrCode, Heart, CreditCard, Star, Search, Bell, Trash2, 
   Download, Eye, Filter, TrendingUp, MapPin, IndianRupee, History,
-  HelpCircle, MessageCircle, Calendar as CalendarIcon, StarHalf
+  HelpCircle, MessageCircle, Calendar as CalendarIcon
 } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, AnimatedContainer, GradientText } from '../components/animated';
 
@@ -29,7 +29,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+    if (user) {
+      fetchWishlist();
+    }
+  }, [user]);
 
   const fetchBookings = async () => {
     try {
@@ -39,6 +42,15 @@ const Dashboard = () => {
       console.error('Error fetching bookings:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWishlist = async () => {
+    try {
+      const res = await getWishlist();
+      setSavedEvents(res.data);
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
     }
   };
 
@@ -134,16 +146,16 @@ const Dashboard = () => {
         <AnimatedCard className="overflow-hidden">
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px overflow-x-auto">
-              {[
-                { id: 'bookings', icon: Ticket, label: 'My Bookings' },
-                { id: 'upcoming', icon: CalendarIcon, label: 'Upcoming' },
-                { id: 'calendar', icon: Calendar, label: 'Calendar' },
-                { id: 'wishlist', icon: Heart, label: 'Wishlist' },
-                { id: 'payments', icon: CreditCard, label: 'Payments' },
-                { id: 'reviews', icon: StarHalf, label: 'Reviews' },
-                { id: 'support', icon: HelpCircle, label: 'Support' },
-                { id: 'profile', icon: User, label: 'Profile' }
-              ].map((tab) => (
+               {[
+                 { id: 'bookings', icon: Ticket, label: 'My Bookings' },
+                 { id: 'upcoming', icon: CalendarIcon, label: 'Upcoming' },
+                 { id: 'calendar', icon: Calendar, label: 'Calendar' },
+                 { id: 'wishlist', icon: Heart, label: 'Wishlist' },
+                 { id: 'payments', icon: CreditCard, label: 'Payment History' },
+                 { id: 'reviews', icon: Star, label: 'Reviews' },
+                 { id: 'support', icon: HelpCircle, label: 'Support' },
+                 { id: 'profile', icon: User, label: 'Profile' }
+               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
@@ -251,10 +263,79 @@ const Dashboard = () => {
               )}
 
               {/* Wishlist Tab */}
+              {/* Wishlist Tab */}
               {activeTab === 'wishlist' && (
                 <motion.div key="wishlist" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <h3 className="text-lg font-semibold mb-4">Saved Events</h3>
-                  <div className="text-center py-8 text-gray-500">No saved events</div>
+                  {savedEvents.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {savedEvents.map((item) => (
+                        <div key={item._id} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                          <img src={item.event.image} alt={item.event.title} className="w-full h-40 object-cover" />
+                          <div className="p-4">
+                            <h4 className="font-semibold">{item.event.title}</h4>
+                            <p className="text-sm text-gray-500">{formatDate(item.event.date)}</p>
+                            <p className="text-primary-600 font-bold">₹{item.event.price.toLocaleString('en-IN')}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold">No saved events</h3>
+                      <p className="text-gray-600 mb-4">Events you save will appear here</p>
+                      <Link to="/events" className="btn-primary">Browse Events</Link>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Payments Tab */}
+              {activeTab === 'payments' && (
+                <motion.div key="payments" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold mb-4">Payment History</h3>
+                  {bookings.filter(b => b.paymentStatus === 'completed').length > 0 ? (
+                    <div className="space-y-4">
+                      {bookings
+                        .filter(b => b.paymentStatus === 'completed')
+                        .map((booking) => (
+                          <div key={booking._id} className="border border-gray-200 rounded-lg p-4 flex items-center bg-white">
+                            <img src={booking.event?.image} alt={booking.event?.title} className="w-16 h-16 rounded-lg object-cover" />
+                            <div className="ml-4 flex-1">
+                              <h4 className="font-semibold">{booking.event?.title}</h4>
+                              <p className="text-sm text-gray-500">{formatDate(booking.event?.date)}</p>
+                              <p className="text-sm text-gray-500">{booking.numberOfTickets} ticket(s)</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xl font-bold text-green-600">₹{booking.totalPrice?.toLocaleString('en-IN')}</p>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Paid
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <CreditCard className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold">No payments yet</h3>
+                      <p className="text-gray-600">Your payment history will appear here</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Reviews Tab - Coming Soon */}
+              {activeTab === 'reviews' && (
+                <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold mb-4">Reviews & Feedback</h3>
+                  <div className="text-center py-12">
+                    <Star className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold">Reviews Coming Soon</h3>
+                    <p className="text-gray-600">Share your event experiences here</p>
+                  </div>
                 </motion.div>
               )}
 

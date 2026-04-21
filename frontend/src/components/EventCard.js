@@ -1,9 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, IndianRupee, Ticket, Sparkles } from 'lucide-react';
+import { Calendar, MapPin, Clock, IndianRupee, Ticket, Sparkles, Heart } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { addToWishlist, removeFromWishlist, checkWishlist } from '../utils/api';
 
 const EventCard = ({ event, index = 0 }) => {
+  const { user } = useAuth();
+  const [inWishlist, setInWishlist] = useState(false);
+
+  // Check wishlist status on mount
+  React.useEffect(() => {
+    if (user) {
+      checkWishlist(event._id).then(res => setInWishlist(res.inWishlist)).catch(() => {});
+    }
+  }, [user, event._id]);
+
+  const handleWishlist = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) {
+      toast.error('Please login to add to wishlist');
+      return;
+    }
+    try {
+      if (inWishlist) {
+        await removeFromWishlist(event._id);
+        setInWishlist(false);
+      } else {
+        await addToWishlist(event._id);
+        setInWishlist(true);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed');
+    }
+  };
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -45,12 +76,26 @@ const EventCard = ({ event, index = 0 }) => {
               transition={{ duration: 0.5 }}
             />
             
-            {/* Category Badge */}
+            {/* Category Badge & Wishlist */}
             <motion.div 
-              className="absolute top-4 right-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg"
+              className="absolute top-4 right-4 flex items-center gap-2"
               whileHover={{ scale: 1.1 }}
             >
-              {event.category}
+              <span className="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+                {event.category}
+              </span>
+              <motion.button
+                onClick={handleWishlist}
+                className={`p-2 rounded-full shadow-lg ${
+                  inWishlist 
+                    ? 'bg-red-500 text-white' 
+                    : 'bg-white text-gray-600 hover:text-red-500'
+                }`}
+                whileTap={{ scale: 0.9 }}
+                title={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+              >
+                <Heart className="h-4 w-4" fill={inWishlist ? 'currentColor' : 'none'} />
+              </motion.button>
             </motion.div>
 
             {/* Sold Out Overlay */}

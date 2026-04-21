@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { Calendar, Clock, MapPin, IndianRupee, Users, Ticket, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, MapPin, IndianRupee, Users, Ticket, ArrowLeft, Heart, Phone, Mail, User, Star } from 'lucide-react';
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -17,6 +17,13 @@ const EventDetail = () => {
   const [otp, setOtp] = useState('');
   const [bookingId, setBookingId] = useState(null);
   const [showOtpModal, setShowOtpModal] = useState(false);
+  const [inWishlist, setInWishlist] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [avgRating, setAvgRating] = useState(0);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [userReview, setUserReview] = useState(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
 
   useEffect(() => {
     fetchEvent();
@@ -27,6 +34,21 @@ const EventDetail = () => {
     try {
       const res = await api.get(`/events/${id}`);
       setEvent(res.data);
+      // Check if in wishlist
+      if (user) {
+        const wishlistRes = await checkWishlist(id);
+        setInWishlist(wishlistRes.inWishlist);
+      }
+      // Fetch reviews
+      const reviewsRes = await api.get(`/reviews/event/${id}`);
+      setReviews(reviewsRes.data.reviews);
+      setAvgRating(reviewsRes.data.averageRating);
+      // Check if user has already reviewed
+      if (user) {
+        const myReviewsRes = await api.get('/reviews/my');
+        const myReview = myReviewsRes.data.find(r => r.event._id === id);
+        setUserReview(myReview);
+      }
     } catch (error) {
       console.error('Error fetching event:', error);
       toast.error('Event not found');
@@ -93,6 +115,52 @@ const EventDetail = () => {
     }
   };
 
+  const handleWishlist = async () => {
+    if (!user) {
+      toast.error('Please login to add to wishlist');
+      navigate('/login');
+      return;
+    }
+    try {
+      if (inWishlist) {
+        await removeFromWishlist(event._id);
+        setInWishlist(false);
+        toast.success('Removed from wishlist');
+      } else {
+        await addToWishlist(event._id);
+        setInWishlist(true);
+        toast.success('Added to wishlist');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed');
+    }
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/reviews', {
+        eventId: event._id,
+        rating,
+        comment
+      });
+      toast.success('Review submitted!');
+      setShowReviewForm(false);
+      setRating(5);
+      setComment('');
+      // Refresh reviews
+      const reviewsRes = await api.get(`/reviews/event/${id}`);
+      setReviews(reviewsRes.data.reviews);
+      setAvgRating(reviewsRes.data.averageRating);
+      // Update user review flag
+      const myReviewsRes = await api.get('/reviews/my');
+      const myReview = myReviewsRes.data.find(r => r.event._id === id);
+      setUserReview(myReview);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to submit review');
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -146,6 +214,19 @@ const EventDetail = () => {
                       Sold Out
                     </span>
                   )}
+                  <motion.button
+                    onClick={handleWishlist}
+                    className={`p-2 rounded-full ${
+                      inWishlist 
+                        ? 'bg-red-500 text-white' 
+                        : 'bg-gray-100 text-gray-600 hover:text-red-500 hover:bg-red-50'
+                    }`}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    title={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                  >
+                    <Heart className="h-5 w-5" fill={inWishlist ? 'currentColor' : 'none'} />
+                  </motion.button>
                 </div>
 
                 <h1 className="text-3xl font-bold text-gray-900 mb-4">{event.title}</h1>
@@ -166,8 +247,139 @@ const EventDetail = () => {
                   <div className="flex items-center text-gray-600">
                     <Users className="h-5 w-5 mr-3 text-primary-600" />
                     <span>{event.location}</span>
-                  </div>
-                </div>
+                 </div>
+
+                 {/* Host Contact Info */}
+                 {event.organizer && (
+                   <div className="border-t border-gray-200 pt-6">
+                     <h2 className="text-xl font-semibold mb-4 flex items-center">
+                       Contact Host
+                     </h2>
+                     <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                       <div className="flex items-center text-gray-600">
+                         <User className="h-5 w-5 mr-3 text-primary-600" />
+                         <span className="font-medium">{event.organizer.name}</span>
+                       </div>
+                       {event.organizer.email && (
+                         <div className="flex items-center text-gray-600">
+                           <Mail className="h-5 w-5 mr-3 text-primary-600" />
+                           <a href={`mailto:${event.organizer.email}`} className="text-primary-600 hover:underline">
+                             {event.organizer.email}
+                           </a>
+                         </div>
+                       )}
+                       {event.organizer.phone && (
+                         <div className="flex items-center text-gray-600">
+                           <Phone className="h-5 w-5 mr-3 text-primary-600" />
+                           <a href={`tel:${event.organizer.phone}`} className="text-primary-600 hover:underline">
+                             {event.organizer.phone}
+                           </a>
+                         </div>
+                       )}
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Reviews Section */}
+                 <div className="border-t border-gray-200 pt-6">
+                   <div className="flex items-center justify-between mb-4">
+                     <h2 className="text-xl font-semibold flex items-center">
+                       Reviews & Ratings
+                     </h2>
+                     {user && !userReview && (
+                       <button onClick={() => setShowReviewForm(!showReviewForm)} className="btn-primary">
+                         Write a Review
+                       </button>
+                     )}
+                   </div>
+
+                   {avgRating > 0 && (
+                     <div className="flex items-center gap-2 mb-4">
+                       <div className="flex items-center">
+                         {[1,2,3,4,5].map((star) => (
+                           <Star
+                             key={star}
+                             className={`h-5 w-5 ${star <= Math.round(avgRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                           />
+                         ))}
+                       </div>
+                       <span className="text-lg font-semibold">{avgRating}</span>
+                       <span className="text-gray-500">({reviews.length} reviews)</span>
+                     </div>
+                   )}
+
+                   {/* Review Form */}
+                   {showReviewForm && user && !userReview && (
+                     <form onSubmit={handleSubmitReview} className="bg-gray-50 p-4 rounded-lg mb-6">
+                       <div className="mb-4">
+                         <label className="label">Rating</label>
+                         <div className="flex items-center gap-2">
+                           {[1,2,3,4,5].map((star) => (
+                             <button
+                               key={star}
+                               type="button"
+                               onClick={() => setRating(star)}
+                               className="focus:outline-none"
+                             >
+                               <Star
+                                 className={`h-6 w-6 ${star <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                               />
+                             </button>
+                           ))}
+                         </div>
+                       </div>
+                       <div className="mb-4">
+                         <label className="label">Comment (optional)</label>
+                         <textarea
+                           value={comment}
+                           onChange={(e) => setComment(e.target.value)}
+                           className="input-field"
+                           rows="3"
+                           placeholder="Share your experience..."
+                         />
+                       </div>
+                       <div className="flex gap-2">
+                         <button type="submit" className="btn-primary">
+                           Submit Review
+                         </button>
+                         <button type="button" onClick={() => setShowReviewForm(false)} className="btn-secondary">
+                           Cancel
+                         </button>
+                       </div>
+                     </form>
+                   )}
+
+                   {/* Reviews List */}
+                   {reviews.length > 0 ? (
+                     <div className="space-y-4">
+                       {reviews.map((review) => (
+                         <div key={review._id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                           <div className="flex items-center justify-between mb-2">
+                             <span className="font-semibold">{review.user?.name}</span>
+                             <span className="text-sm text-gray-500">
+                               {new Date(review.createdAt).toLocaleDateString()}
+                             </span>
+                           </div>
+                           <div className="flex items-center gap-1 mb-2">
+                             {[1,2,3,4,5].map((star) => (
+                               <Star
+                                 key={star}
+                                 className={`h-4 w-4 ${star <= review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                               />
+                             ))}
+                           </div>
+                           {review.comment && <p className="text-gray-600">{review.comment}</p>}
+                         </div>
+                       ))}
+                     </div>
+                   ) : (
+                     <div className="text-center py-8 bg-gray-50 rounded-lg">
+                       <Star className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                       <p className="text-gray-600">No reviews yet. Be the first to review!</p>
+                     </div>
+                   )}
+                 </div>
+               </div>
 
                 <div className="border-t border-gray-200 pt-6">
                   <h2 className="text-xl font-semibold mb-4">About This Event</h2>

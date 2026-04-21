@@ -20,7 +20,7 @@ exports.getEvents = async (req, res) => {
     }
 
     const events = await Event.find(query)
-      .populate('organizer', 'name email')
+      .populate('organizer', 'name email phone')
       .sort({ date: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -43,7 +43,7 @@ exports.getEvents = async (req, res) => {
 exports.getEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .populate('organizer', 'name email');
+      .populate('organizer', 'name email phone');
 
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });

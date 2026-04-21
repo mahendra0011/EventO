@@ -36,15 +36,36 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [bookingFilter, setBookingFilter] = useState('all');
-  const { user, logout } = useAuth();
+  const { user, logout, updateProfile } = useAuth();
   const navigate = useNavigate();
-  
+   
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     phone: user?.phone || ''
   });
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [sendingNotification, setSendingNotification] = useState(false);
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    try {
+      await updateProfile(profileData);
+      toast.success('Profile updated successfully');
+      // updateProfile already updates the user in context
+    } catch (error) {
+      toast.error('Failed to update profile');
+    }
+  };
+
+  // Reset profileData when user changes (e.g., after update)
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: user.name,
+        phone: user.phone || ''
+      });
+    }
+  }, [user]);
 
   const handleDeleteEvent = async (eventId) => {
     if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
@@ -723,12 +744,13 @@ const AdminDashboard = () => {
                           className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
                         />
                       </div>
-                      <button
-                        className="btn-primary"
-                      >
-                        <Edit className="h-4 w-4 inline mr-2" />
-                        Update Profile
-                      </button>
+                       <button
+                         onClick={handleUpdateProfile}
+                         className="btn-primary"
+                       >
+                         <Edit className="h-4 w-4 inline mr-2" />
+                         Update Profile
+                       </button>
                     </div>
                   </div>
                 </div>
