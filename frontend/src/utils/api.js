@@ -103,6 +103,34 @@ export const markAllNotificationsAsRead = () => {
   return api.put('/notifications/read-all');
 };
 
+// Messaging
+export const sendMessage = (data) => {
+  return api.post('/messages', data);
+};
+
+export const getInbox = async (page = 1, limit = 20) => {
+  const res = await api.get(`/messages/inbox?page=${page}&limit=${limit}`);
+  return res.data;
+};
+
+export const getConversation = async (userId, page = 1, limit = 50) => {
+  const res = await api.get(`/messages/conversation/${userId}?page=${page}&limit=${limit}`);
+  return res.data;
+};
+
+export const getSentMessages = async (page = 1, limit = 20) => {
+  const res = await api.get(`/messages/sent?page=${page}&limit=${limit}`);
+  return res.data;
+};
+
+export const markConversationAsRead = (userId) => {
+  return api.put(`/messages/read/${userId}`);
+};
+
+export const deleteMessage = (messageId) => {
+  return api.delete(`/messages/${messageId}`);
+};
+
 // Host Dashboard Stats
 export const getHostDashboardStats = async () => {
   const res = await api.get('/host/dashboard');

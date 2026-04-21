@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
-import { Menu, X, Calendar, User, LogOut, Settings, Shield, Bell, Check, Trash2 } from 'lucide-react';
+import { Menu, X, Calendar, User, LogOut, Settings, Shield, Bell, Check, Trash2, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Navbar = () => {

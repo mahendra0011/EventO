@@ -8,7 +8,7 @@ import {
   Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone, 
   Edit3, Save, X, QrCode, Heart, CreditCard, Star, Search, Bell, Trash2, 
   Download, Eye, Filter, TrendingUp, MapPin, IndianRupee, History,
-  HelpCircle, MessageCircle, Calendar as CalendarIcon
+  HelpCircle, MessageCircle, Calendar as CalendarIcon, MessageSquare
 } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, AnimatedContainer, GradientText } from '../components/animated';
 
@@ -17,6 +17,11 @@ const Dashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [savedEvents, setSavedEvents] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [messageSubject, setMessageSubject] = useState('');
+  const [messageContent, setMessageContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('bookings');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -38,8 +43,16 @@ const Dashboard = () => {
     fetchBookings();
     if (user) {
       fetchWishlist();
+      fetchConversations();
     }
   }, [user]);
+
+  // Fetch messages when viewing a conversation
+  useEffect(() => {
+    if (selectedConversation) {
+      fetchMessages(selectedConversation.user._id);
+    }
+  }, [selectedConversation]);
 
   // Refresh wishlist when switching to wishlist tab
   useEffect(() => {
@@ -62,12 +75,52 @@ const Dashboard = () => {
   const fetchWishlist = async () => {
     try {
       const res = await getWishlist();
-      // Ensure we always have an array
       const data = Array.isArray(res.data) ? res.data : [];
       setSavedEvents(data);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
       setSavedEvents([]);
+    }
+  };
+
+  const fetchConversations = async () => {
+    try {
+      const res = await getInbox();
+      setConversations(res.data.conversations || []);
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    }
+  };
+
+  const fetchMessages = async (userId) => {
+    try {
+      const res = await getConversation(userId);
+      setMessages(res.data.messages || []);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      setMessages([]);
+    }
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!selectedConversation) return;
+
+    try {
+      await sendMessage({
+        receiverId: selectedConversation.user._id,
+        eventId: selectedConversation.lastMessage.event?._id || '',
+        subject: messageSubject,
+        content: messageContent,
+        bookingId: selectedConversation.lastMessage.booking?._id || null
+      });
+      toast.success('Message sent');
+      setMessageContent('');
+      setMessageSubject('');
+      fetchMessages(selectedConversation.user._id);
+      fetchConversations();
+    } catch (error) {
+      toast.error('Failed to send message');
     }
   };
 
@@ -165,12 +218,13 @@ const Dashboard = () => {
         <AnimatedCard className="overflow-hidden">
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px overflow-x-auto">
-               {["bookings", "upcoming", "calendar", "wishlist", "payments", "reviews", "support", "profile"].map((tabId) => {
+               {["bookings", "upcoming", "calendar", "wishlist", "messages", "payments", "reviews", "support", "profile"].map((tabId) => {
                  const tabDef = {
                    bookings: { icon: Ticket, label: 'My Bookings' },
                    upcoming: { icon: CalendarIcon, label: 'Upcoming' },
                    calendar: { icon: Calendar, label: 'Calendar' },
                    wishlist: { icon: Heart, label: 'Wishlist' },
+                   messages: { icon: MessageSquare, label: 'Messages' },
                    payments: { icon: CreditCard, label: 'Payment History' },
                    reviews: { icon: Star, label: 'Reviews' },
                    support: { icon: HelpCircle, label: 'Support' },
@@ -348,10 +402,149 @@ const Dashboard = () => {
                       <Link to="/events" className="btn-primary">Browse Events</Link>
                     </div>
                   )}
-                </motion.div>
-              )}
+                 </motion.div>
+               )}
 
-               {/* Payments Tab */}
+               {/* Messages Tab */}
+               {activeTab === 'messages' && (
+                 <motion.div key="messages" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                   <h3 className="text-lg font-semibold mb-4">Messages</h3>
+                   {conversations.length > 0 ? (
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                       {/* Conversation List */}
+                       <div className="md:col-span-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                         <div className="p-4 border-b border-gray-200 bg-gray-50">
+                           <h4 className="font-semibold">Inbox</h4>
+                         </div>
+                         <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                           {conversations.map((conv) => (
+                             <div
+                               key={conv.user._id}
+                               onClick={() => {
+                                 setSelectedConversation(conv);
+                                 markConversationAsRead(conv.user._id);
+                               }}
+                               className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                                 selectedConversation?.user._id === conv.user._id ? 'bg-primary-50' : ''
+                               } ${!conv.lastMessage.isRead && conv.lastMessage.sender._id !== user?.id ? 'border-l-4 border-l-primary-500' : ''}`}
+                             >
+                               <div className="flex items-center gap-3">
+                                 <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                                   <User className="h-5 w-5 text-primary-600" />
+                                 </div>
+                                 <div className="flex-1 min-w-0">
+                                   <p className="font-medium truncate">{conv.user.name}</p>
+                                   <p className="text-xs text-gray-500 truncate">{conv.lastMessage.subject}</p>
+                                   <p className="text-xs text-gray-400">
+                                     {new Date(conv.lastMessage.createdAt).toLocaleDateString()}
+                                   </p>
+                                 </div>
+                                 {conv.unreadCount > 0 && (
+                                   <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                                     {conv.unreadCount}
+                                   </span>
+                                 )}
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+
+                       {/* Message Thread */}
+                       <div className="md:col-span-2 border border-gray-200 rounded-lg overflow-hidden bg-white flex flex-col h-[500px]">
+                         {selectedConversation ? (
+                           <>
+                             {/* Header */}
+                             <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                               <div className="flex items-center gap-3">
+                                 <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                                   <User className="h-4 w-4 text-primary-600" />
+                                 </div>
+                                 <div>
+                                   <p className="font-medium">{selectedConversation.user.name}</p>
+                                   <p className="text-xs text-gray-500">{selectedConversation.user.email}</p>
+                                 </div>
+                               </div>
+                               <button
+                                 onClick={() => setSelectedConversation(null)}
+                                 className="text-gray-400 hover:text-gray-600"
+                               >
+                                 <X className="h-5 w-5" />
+                               </button>
+                             </div>
+
+                             {/* Messages */}
+                             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                               {messages.map((msg) => (
+                                 <div
+                                   key={msg._id}
+                                   className={`flex ${msg.sender._id === user?.id ? 'justify-end' : 'justify-start'}`}
+                                 >
+                                   <div
+                                     className={`max-w-xs md:max-w-md p-3 rounded-lg ${
+                                       msg.sender._id === user?.id
+                                         ? 'bg-primary-600 text-white'
+                                         : 'bg-gray-100 text-gray-800'
+                                     }`}
+                                   >
+                                     {msg.sender._id !== user?.id && (
+                                       <p className="text-xs font-semibold mb-1 opacity-75">{msg.sender.name}</p>
+                                     )}
+                                     {msg.subject && (
+                                       <p className="text-sm font-semibold mb-1">{msg.subject}</p>
+                                     )}
+                                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                     <p className={`text-xs mt-1 ${msg.sender._id === user?.id ? 'text-primary-100' : 'text-gray-500'}`}>
+                                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                     </p>
+                                   </div>
+                                 </div>
+                               ))}
+                             </div>
+
+                             {/* Reply Form */}
+                             <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
+                               <div className="space-y-2">
+                                 <input
+                                   type="text"
+                                   value={messageSubject}
+                                   onChange={(e) => setMessageSubject(e.target.value)}
+                                   placeholder="Subject (optional)"
+                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                                 />
+                                 <textarea
+                                   value={messageContent}
+                                   onChange={(e) => setMessageContent(e.target.value)}
+                                   placeholder="Write your message..."
+                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                                   rows="2"
+                                   required
+                                 />
+                                 <button type="submit" className="btn-primary text-sm py-2">
+                                   Send
+                                 </button>
+                               </div>
+                             </form>
+                           </>
+                         ) : (
+                           <div className="flex-1 flex items-center justify-center text-gray-500">
+                             <div className="text-center">
+                               <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                               <p>Select a conversation to read messages</p>
+                             </div>
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   ) : (
+                     <div className="text-center py-12">
+                       <MessageSquare className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                       <h3 className="text-lg font-semibold">No messages yet</h3>
+                       <p className="text-gray-600">When hosts message you, they'll appear here</p>
+                     </div>
+                   )}
+                 </motion.div>
+               )}
                {activeTab === 'payments' && (
                  <motion.div key="payments" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                    <h3 className="text-lg font-semibold mb-4">Payment History</h3>

@@ -12,6 +12,7 @@ const hostRoutes = require('./routes/host');
 const wishlistRoutes = require('./routes/wishlist');
 const reviewRoutes = require('./routes/reviews');
 const notificationRoutes = require('./routes/notifications');
+const messageRoutes = require('./routes/messages');
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/api/host', hostRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/messages', messageRoutes);
 // app.use('/api/reviews', require('./routes/reviews'));
 
 app.get('/api/health', (req, res) => {

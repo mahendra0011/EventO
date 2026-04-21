@@ -26,13 +26,22 @@ import {
   Bell,
   LogOut,
   User,
-  Key
+  Key,
+  MessageSquare,
+  Search
 } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [events, setEvents] = useState([]);
+  const [attendees, setAttendees] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState('');
+  const [subject, setSubject] = useState('');
+  const [content, setContent] = useState('');
+  const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [bookingFilter, setBookingFilter] = useState('all');
@@ -93,26 +102,75 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    if (user && user.role === 'host') {
+      fetchAttendees();
+      fetchHostConversations();
+    }
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      const [statsRes, bookingsRes, eventsRes] = await Promise.all([
-        api.get('/host/dashboard'),
-        api.get('/bookings/all'),
-        api.get('/events/organizer')
-      ]);
+   const fetchDashboardData = async () => {
+     try {
+       const [statsRes, bookingsRes, eventsRes] = await Promise.all([
+         api.get('/host/dashboard'),
+         api.get('/bookings/all'),
+         api.get('/events/organizer')
+       ]);
 
-      setStats(statsRes.data);
-      setBookings(bookingsRes.data.bookings);
-      setEvents(eventsRes.data);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      toast.error('Failed to load dashboard data');
-    } finally {
-      setLoading(false);
-    }
-  };
+       setStats(statsRes.data);
+       setBookings(bookingsRes.data.bookings);
+       setEvents(eventsRes.data);
+     } catch (error) {
+       console.error('Error fetching dashboard data:', error);
+       toast.error('Failed to load dashboard data');
+     } finally {
+       setLoading(false);
+     }
+   };
+
+   const fetchAttendees = async () => {
+     try {
+       const res = await api.get('/messages/attendees');
+       setAttendees(res.data.users || []);
+     } catch (error) {
+       console.error('Error fetching attendees:', error);
+     }
+   };
+
+   const fetchHostConversations = async () => {
+     try {
+       const res = await api.get('/messages/conversations');
+       setConversations(res.data.conversations || []);
+     } catch (error) {
+       console.error('Error fetching conversations:', error);
+     }
+   };
+
+   const handleSendMessage = async (e) => {
+     e.preventDefault();
+     if (!selectedUser || !selectedEvent) {
+       toast.error('Please select a user and event');
+       return;
+     }
+     setSending(true);
+     try {
+       await api.post('/messages', {
+         receiverId: selectedUser._id,
+         eventId: selectedEvent,
+         subject,
+         content
+       });
+       toast.success('Message sent successfully');
+       setSubject('');
+       setContent('');
+       setSelectedUser(null);
+       setSelectedEvent('');
+       fetchHostConversations();
+     } catch (error) {
+       toast.error(error.response?.data?.message || 'Failed to send message');
+     } finally {
+       setSending(false);
+     }
+   };
 
   const handleConfirmBooking = async (bookingId) => {
     try {
@@ -517,93 +575,215 @@ const AdminDashboard = () => {
 
             {activeTab === 'communications' && (
               <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Send Announcement</h3>
-                  <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Conversations List */}
+                  <div className="md:col-span-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                    <div className="p-4 border-b border-gray-200 bg-gray-50">
+                      <h3 className="font-semibold">Conversations</h3>
+                    </div>
+                    <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                      {conversations.length > 0 ? (
+                        conversations.map((conv) => (
+                          <div
+                            key={conv.user._id}
+                            onClick={() => setSelectedUser(conv.user)}
+                            className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                              selectedUser?._id === conv.user._id ? 'bg-primary-50' : ''
+                            } ${!conv.lastMessage.isRead && conv.lastMessage.sender._id !== user?.id ? 'border-l-4 border-l-primary-500' : ''}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                                <User className="h-4 w-4 text-primary-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{conv.user.name}</p>
+                                <p className="text-xs text-gray-500 truncate">
+                                  {conv.lastMessage.subject || conv.lastMessage.content.substring(0, 20)}...
+                                </p>
+                              </div>
+                              {conv.unreadCount > 0 && (
+                                <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                                  {conv.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="p-4 text-center text-gray-500 text-sm">No conversations</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Message Area */}
+                  <div className="md:col-span-2 border border-gray-200 rounded-lg overflow-hidden bg-white flex flex-col h-[500px]">
+                    {selectedUser ? (
+                      <>
+                        {/* Header */}
+                        <div className="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                              <User className="h-4 w-4 text-primary-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{selectedUser.name}</p>
+                              <p className="text-xs text-gray-500">{selectedUser.email}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setSelectedUser(null)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+
+                        {/* Messages */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                          {messages.map((msg) => (
+                            <div
+                              key={msg._id}
+                              className={`flex ${msg.sender._id === user?.id ? 'justify-end' : 'justify-start'}`}
+                            >
+                              <div
+                                className={`max-w-xs md:max-w-sm p-3 rounded-lg ${
+                                  msg.sender._id === user?.id
+                                    ? 'bg-primary-600 text-white'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}
+                              >
+                                {msg.subject && (
+                                  <p className={`text-sm font-semibold mb-1 ${msg.sender._id === user?.id ? 'text-primary-100' : 'text-gray-600'}`}>
+                                    {msg.subject}
+                                  </p>
+                                )}
+                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                <p className={`text-xs mt-1 ${msg.sender._id === user?.id ? 'text-primary-100' : 'text-gray-500'}`}>
+                                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Reply */}
+                        <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-200">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={subject}
+                              onChange={(e) => setSubject(e.target.value)}
+                              placeholder="Subject (optional)"
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                            />
+                          </div>
+                          <div className="flex gap-2 mt-2">
+                            <textarea
+                              value={content}
+                              onChange={(e) => setContent(e.target.value)}
+                              placeholder="Your message..."
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                              rows="2"
+                              required
+                            />
+                            <button type="submit" disabled={sending} className="btn-primary px-4">
+                              {sending ? '...' : 'Send'}
+                            </button>
+                          </div>
+                        </form>
+                      </>
+                    ) : (
+                      <div className="flex-1 flex items-center justify-center text-gray-500">
+                        <div className="text-center">
+                          <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                          <p>Select a conversation to view messages</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+                      </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Select Event</label>
-                        <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
-                          <option value="">All Events</option>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Event</label>
+                        <select
+                          value={selectedEvent}
+                          onChange={(e) => setSelectedEvent(e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                          required
+                        >
+                          <option value="">Select event...</option>
                           {events.map((event) => (
-                            <option key={event._id} value={event._id}>{event.title}</option>
+                            <option key={event._id} value={event._id}>
+                              {event.title} - {formatDate(event.date)}
+                            </option>
                           ))}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Message Title</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
                         <input
                           type="text"
-                          placeholder="Important update about your event..."
+                          value={subject}
+                          onChange={(e) => setSubject(e.target.value)}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                          placeholder="Message subject"
+                          required
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
                         <textarea
-                          rows={4}
-                          placeholder="Write your message to attendees..."
+                          value={content}
+                          onChange={(e) => setContent(e.target.value)}
+                          rows="4"
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                          placeholder="Type your message..."
+                          required
                         />
                       </div>
-                      <button
-                        onClick={handleSendNotification}
-                        disabled={sendingNotification}
-                        className="btn-primary"
-                      >
-                        <Mail className="h-4 w-4 inline mr-2" />
-                        {sendingNotification ? 'Sending...' : 'Send to All Attendees'}
+                      <button type="submit" disabled={sending || !selectedUser || !selectedEvent} className="btn-primary w-full">
+                        {sending ? 'Sending...' : 'Send Message'}
                       </button>
-                    </div>
+                    </form>
                   </div>
-                </div>
 
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Broadcast</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 cursor-pointer hover:bg-primary-100 transition-colors">
-                      <div className="flex items-center">
-                        <Bell className="h-8 w-8 text-primary-600 mr-3" />
-                        <div>
-                          <h4 className="font-semibold text-primary-900">Event Reminder</h4>
-                          <p className="text-sm text-primary-700">Send reminder to upcoming event attendees</p>
-                        </div>
+                  {/* Recent Conversations */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Conversations</h3>
+                    {conversations.length > 0 ? (
+                      <div className="space-y-3 max-h-80 overflow-y-auto">
+                        {conversations.slice(0, 5).map((conv) => (
+                          <div
+                            key={conv.user._id}
+                            className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
+                            onClick={() => {
+                              setSelectedUser(conv.user);
+                              // Load conversation messages (for now just fetch)
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                                <User className="h-4 w-4 text-primary-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{conv.user.name}</p>
+                                <p className="text-xs text-gray-500 truncate">{conv.lastMessage.subject || conv.lastMessage.content.substring(0, 30)}</p>
+                              </div>
+                              {conv.unreadCount > 0 && (
+                                <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                                  {conv.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-6 cursor-pointer hover:bg-green-100 transition-colors">
-                      <div className="flex items-center">
-                        <CheckCircle className="h-8 w-8 text-green-600 mr-3" />
-                        <div>
-                          <h4 className="font-semibold text-green-900">Booking Confirmed</h4>
-                          <p className="text-sm text-green-700">Notify confirmed booking attendees</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 cursor-pointer hover:bg-blue-100 transition-colors">
-                      <div className="flex items-center">
-                        <Calendar className="h-8 w-8 text-blue-600 mr-3" />
-                        <div>
-                          <h4 className="font-semibold text-blue-900">Event Update</h4>
-                          <p className="text-sm text-blue-700">Notify about event changes</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 cursor-pointer hover:bg-amber-100 transition-colors">
-                      <div className="flex items-center">
-                        <QrCode className="h-8 w-8 text-amber-600 mr-3" />
-                        <div>
-                          <h4 className="font-semibold text-amber-900">QR Code Ready</h4>
-                          <p className="text-sm text-amber-700">Tell attendees to get their tickets</p>
-                        </div>
-                      </div>
-                    </div>
+                    ) : (
+                      <p className="text-center text-gray-500 py-8">No conversations yet</p>
+                    )}
                   </div>
-                </div>
-
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">
-                    <strong>Note:</strong> Email notifications will be sent to all registered attendees for the selected event.
-                  </p>
                 </div>
               </div>
             )}
