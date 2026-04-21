@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { Calendar, Clock, MapPin, IndianRupee, Users, Ticket, ArrowLeft, Heart, Phone, Mail, User, Star } from 'lucide-react';
+import { Calendar, Clock, MapPin, IndianRupee, Users, Ticket, ArrowLeft, Heart, Phone, Mail, User, Star, Share2, Copy, Check } from 'lucide-react';
 import { addToWishlist, removeFromWishlist, checkWishlist } from '../utils/api';
 
 const EventDetail = () => {
@@ -26,6 +26,7 @@ const EventDetail = () => {
   const [userReview, setUserReview] = useState(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchEvent();
@@ -114,6 +115,27 @@ const EventDetail = () => {
       toast.success('OTP resent to your email!');
     } catch (error) {
       toast.error('Failed to resend OTP');
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/events/${event._id}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast.success('Event link copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopied(true);
+      toast.success('Event link copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -461,22 +483,42 @@ const EventDetail = () => {
                 )}
               </div>
 
-              {event.availableTickets > 0 ? (
-                <button
-                  onClick={() => setShowBookingModal(true)}
-                  className="w-full btn-primary flex items-center justify-center"
-                >
-                  <Ticket className="h-5 w-5 mr-2" />
-                  Book Now
-                </button>
-              ) : (
-                <button
-                  disabled
-                  className="w-full bg-gray-300 text-gray-500 px-6 py-3 rounded-lg font-semibold cursor-not-allowed"
-                >
-                  Sold Out
-                </button>
-              )}
+               {event.availableTickets > 0 ? (
+                 <div className="flex gap-2">
+                   <button
+                     onClick={() => setShowBookingModal(true)}
+                     className="flex-1 btn-primary flex items-center justify-center"
+                   >
+                     <Ticket className="h-5 w-5 mr-2" />
+                     Book Now
+                   </button>
+                   <motion.button
+                     onClick={handleShare}
+                     className="flex-1 btn-secondary flex items-center justify-center"
+                     whileHover={{ scale: 1.02 }}
+                     whileTap={{ scale: 0.98 }}
+                   >
+                     {copied ? (
+                       <>
+                         <Check className="h-5 w-5 mr-2 text-green-600" />
+                         Copied!
+                       </>
+                     ) : (
+                       <>
+                         <Share2 className="h-5 w-5 mr-2" />
+                         Share Event
+                       </>
+                     )}
+                   </motion.button>
+                 </div>
+               ) : (
+                 <button
+                   disabled
+                   className="w-full bg-gray-300 text-gray-500 px-6 py-3 rounded-lg font-semibold cursor-not-allowed"
+                 >
+                   Sold Out
+                 </button>
+               )}
             </div>
           </div>
         </div>
