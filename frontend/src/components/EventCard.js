@@ -13,7 +13,11 @@ const EventCard = ({ event, index = 0 }) => {
   // Check wishlist status on mount
   useEffect(() => {
     if (user) {
-      checkWishlist(event._id).then(res => setInWishlist(res.inWishlist)).catch(() => {});
+      checkWishlist(event._id)
+        .then(res => setInWishlist(res.inWishlist))
+        .catch(err => {
+          console.error('Wishlist check failed:', err);
+        });
     }
   }, [user, event._id]);
 

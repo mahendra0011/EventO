@@ -156,7 +156,8 @@ const EventDetail = () => {
         toast.success('Added to wishlist');
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed');
+      console.error('Wishlist error:', error);
+      toast.error(error.response?.data?.message || 'Failed to update wishlist');
     }
   };
 
