@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const { check } = require('express-validator');
 const {
   createBooking,
   verifyOTP,
@@ -17,25 +16,17 @@ const { auth, hostAuth } = require('../middleware/auth');
 // @route   POST /api/bookings
 // @desc    Create booking request
 // @access  Private
-router.post('/', auth, [
-  check('eventId', 'Event ID is required').not().isEmpty(),
-  check('numberOfTickets', 'Number of tickets is required').isNumeric()
-], createBooking);
+router.post('/', auth, createBooking);
 
 // @route   POST /api/bookings/verify-otp
 // @desc    Verify OTP
 // @access  Private
-router.post('/verify-otp', auth, [
-  check('bookingId', 'Booking ID is required').not().isEmpty(),
-  check('otp', 'OTP is required').not().isEmpty()
-], verifyOTP);
+router.post('/verify-otp', auth, verifyOTP);
 
 // @route   POST /api/bookings/resend-otp
 // @desc    Resend OTP
 // @access  Private
-router.post('/resend-otp', auth, [
-  check('bookingId', 'Booking ID is required').not().isEmpty()
-], resendOTP);
+router.post('/resend-otp', auth, resendOTP);
 
 // @route   GET /api/bookings/user
 // @desc    Get user bookings
@@ -43,8 +34,8 @@ router.post('/resend-otp', auth, [
 router.get('/user', auth, getUserBookings);
 
 // @route   GET /api/bookings/all
-// @desc    Get all bookings (Admin)
-// @access  Private/Admin
+// @desc    Get all bookings (Host)
+// @access  Private/Host
 router.get('/all', hostAuth, getAllBookings);
 
 // @route   GET /api/bookings/:id
@@ -58,13 +49,13 @@ router.get('/:id', auth, getBooking);
 router.put('/:id/cancel', auth, cancelBooking);
 
 // @route   PUT /api/bookings/:id/confirm
-// @desc    Confirm booking (Admin)
-// @access  Private/Admin
+// @desc    Confirm booking (Host)
+// @access  Private/Host
 router.put('/:id/confirm', hostAuth, confirmBooking);
 
 // @route   PUT /api/bookings/:id/reject
-// @desc    Reject booking (Admin)
-// @access  Private/Admin
+// @desc    Reject booking (Host)
+// @access  Private/Host
 router.put('/:id/reject', hostAuth, rejectBooking);
 
 module.exports = router;

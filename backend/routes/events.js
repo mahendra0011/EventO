@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const { check } = require('express-validator');
 const {
   getEvents,
   getEvent,
@@ -35,17 +34,7 @@ router.get('/:id', getEvent);
 // @route   POST /api/events
 // @desc    Create event
 // @access  Private/Host
-router.post('/', hostAuth, [
-  check('title', 'Title is required').not().isEmpty(),
-  check('description', 'Description is required').not().isEmpty(),
-  check('date', 'Date is required').not().isEmpty(),
-  check('time', 'Time is required').not().isEmpty(),
-  check('venue', 'Venue is required').not().isEmpty(),
-  check('location', 'Location is required').not().isEmpty(),
-  check('category', 'Category is required').not().isEmpty(),
-  check('price', 'Price is required').isNumeric(),
-  check('totalTickets', 'Total tickets is required').isNumeric()
-], createEvent);
+router.post('/', hostAuth, createEvent);
 
 // @route   PUT /api/events/:id
 // @desc    Update event

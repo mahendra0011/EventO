@@ -1,63 +1,37 @@
 const express = require('express');
 const router = express.Router();
-const { check } = require('express-validator');
 const { register, login, getMe, updateProfile, hostRegister, hostLogin, hostKeywordLogin, hostKeywordRegister } = require('../controllers/authController');
 const { auth } = require('../middleware/auth');
 
 // @route   POST /api/auth/register
 // @desc    Register user
 // @access  Public
-router.post('/register', [
-  check('name', 'Name is required').not().isEmpty(),
-  check('email', 'Please include a valid email').isEmail(),
-  check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 })
-], register);
+router.post('/register', register);
 
 // @route   POST /api/auth/host-register
 // @desc    Register host with custom secret keyword
 // @access  Public
-router.post('/host-register', [
-  check('name', 'Name is required').not().isEmpty(),
-  check('email', 'Please include a valid email').isEmail(),
-  check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 }),
-  check('secretKeyword', 'Secret keyword is required').not().isEmpty()
-], hostRegister);
+router.post('/host-register', hostRegister);
 
 // @route   POST /api/auth/login
 // @desc    Login user
 // @access  Public
-router.post('/login', [
-  check('email', 'Please include a valid email').isEmail(),
-  check('password', 'Password is required').exists()
-], login);
+router.post('/login', login);
 
 // @route   POST /api/auth/host-login
 // @desc    Host login with email, password, and custom secret keyword
 // @access  Public
-router.post('/host-login', [
-  check('email', 'Email is required').isEmail(),
-  check('password', 'Password is required').exists(),
-  check('secretKeyword', 'Secret keyword is required').not().isEmpty()
-], hostLogin);
+router.post('/host-login', hostLogin);
 
 // @route   POST /api/auth/host-keyword-login
 // @desc    Host login with email, password, and host keyword
 // @access  Public
-router.post('/host-keyword-login', [
-  check('email', 'Email is required').isEmail(),
-  check('password', 'Password is required').exists(),
-  check('hostKeyword', 'Host keyword is required').not().isEmpty()
-], hostKeywordLogin);
+router.post('/host-keyword-login', hostKeywordLogin);
 
 // @route   POST /api/auth/host-keyword-register
 // @desc    Register host with custom secret keyword
 // @access  Public
-router.post('/host-keyword-register', [
-  check('name', 'Name is required').not().isEmpty(),
-  check('email', 'Please include a valid email').isEmail(),
-  check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 }),
-  check('secretKeyword', 'Secret keyword is required').not().isEmpty()
-], hostKeywordRegister);
+router.post('/host-keyword-register', hostKeywordRegister);
 
 // @route   GET /api/auth/me
 // @desc    Get current user
