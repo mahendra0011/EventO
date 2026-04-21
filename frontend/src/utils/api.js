@@ -56,12 +56,6 @@ export const hostKeywordLogin = async (email, password, hostKeyword) => {
   return res.data;
 };
 
-// Host Keyword Login
-export const hostKeywordLogin = async (email, password, hostKeyword) => {
-  const res = await api.post('/auth/host-keyword-login', { email, password, hostKeyword });
-  return res.data;
-};
-
 // Host Keyword Register
 export const hostKeywordRegister = async (userData) => {
   const res = await api.post('/auth/host-keyword-register', userData);
