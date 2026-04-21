@@ -169,7 +169,7 @@ const Login = () => {
                <br />
                <strong className="text-secondary-700">Hosts:</strong> Check "Login as Host" and enter secret keyword.
                <br />
-               <Link to="/host-register" className="text-secondary-600 hover:text-secondary-700 font-semibold">
+               <Link to="/register" className="text-secondary-600 hover:text-secondary-700 font-semibold">
                  Register as Host
                </Link>
              </p>
