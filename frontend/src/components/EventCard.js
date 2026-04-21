@@ -37,18 +37,18 @@ const EventCard = ({ event, index = 0 }) => {
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed');
     }
-   };
+  };
 
-   const formatDate = (dateString) => {
-     const date = new Date(dateString);
-     return date.toLocaleDateString('en-US', {
-       month: 'short',
-       day: 'numeric',
-       year: 'numeric'
-     });
-   };
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
-   const isSoldOut = event.availableTickets === 0;
+  const isSoldOut = event.availableTickets === 0;
   const isLowStock = event.availableTickets > 0 && event.availableTickets <= 10;
 
   return (
@@ -135,7 +135,7 @@ const EventCard = ({ event, index = 0 }) => {
               </motion.div>
             )}
           </div>
-          
+           
           {/* Content */}
           <div className="p-5">
             <motion.h3 
