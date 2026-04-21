@@ -65,7 +65,7 @@ exports.createBooking = async (req, res) => {
   }
 };
 
-// Verify OTP
+// Verify OTP - Auto-confirm booking
 exports.verifyOTP = async (req, res) => {
   try {
     const { bookingId, otp } = req.body;
@@ -90,13 +90,24 @@ exports.verifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'Invalid OTP' });
     }
 
-    // Mark OTP as verified
+    // Auto-confirm booking
     booking.isOtpVerified = true;
     booking.otp = undefined;
     booking.otpExpires = undefined;
+    booking.status = 'confirmed';
+    booking.paymentStatus = 'completed';
+    booking.confirmedAt = new Date();
     await booking.save();
 
-    res.json({ message: 'OTP verified successfully. Your booking is pending host approval.' });
+    // Update event available tickets
+    const event = await Event.findById(booking.event);
+    event.availableTickets -= booking.numberOfTickets;
+    await event.save();
+
+    res.json({ 
+      message: 'Booking confirmed successfully.', 
+      booking 
+    });
   } catch (error) {
     console.error('Verify OTP error:', error);
     res.status(500).json({ message: 'Server error' });

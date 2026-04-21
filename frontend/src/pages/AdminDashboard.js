@@ -188,8 +188,8 @@ const AdminDashboard = () => {
 
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Ticket className="h-6 w-6 text-green-600" />
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Ticket className="h-6 w-6 text-blue-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-500">Total Bookings</p>
@@ -200,12 +200,12 @@ const AdminDashboard = () => {
 
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <Clock className="h-6 w-6 text-yellow-600" />
+              <div className="p-3 bg-green-100 rounded-lg">
+                <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm text-gray-500">Pending Approval</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.stats.pendingBookings || 0}</p>
+                <p className="text-sm text-gray-500">Confirmed</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.stats.confirmedBookings || 0}</p>
               </div>
             </div>
           </div>
@@ -431,26 +431,9 @@ const AdminDashboard = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             {getStatusBadge(booking.status)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            {booking.status === 'pending' && booking.isOtpVerified && (
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handleConfirmBooking(booking._id)}
-                                  className="text-green-600 hover:text-green-700"
-                                  title="Confirm"
-                                >
-                                  <Check className="h-5 w-5" />
-                                </button>
-                                <button
-                                  onClick={() => handleRejectBooking(booking._id)}
-                                  className="text-red-600 hover:text-red-700"
-                                  title="Reject"
-                                >
-                                  <X className="h-5 w-5" />
-                                </button>
-                              </div>
-                            )}
-                          </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm">
+                             {/* Manual confirmation removed - bookings auto-confirm after OTP */}
+                           </td>
                         </tr>
                       ))}
                     </tbody>
