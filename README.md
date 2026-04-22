@@ -1,13 +1,14 @@
-# 🎫 Evento - Full Stack MERN Event Booking Platform
+# 🎫 EVENTRA - World-Class Event Management Platform
 
 [![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-4.18.2-lightgrey.svg)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-7.6.3-green.svg)](https://www.mongodb.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.6-38bdf8.svg)](https://tailwindcss.com/)
+[![Framer Motion](https://img.shields.io/badge/Framer_Motion-12.38-blue.svg)](https://framer.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A production-ready event management and ticket booking system built with the MERN stack. Features include OTP verification, secure authentication, host dashboard with messaging, and booking approval workflow.
+A world-class event management and ticket booking platform. Discover extraordinary events, book tickets securely with OTP verification, and host unforgettable experiences with our premium platform.
 
 ![Evento Banner](https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200)
 
