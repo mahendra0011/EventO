@@ -23,6 +23,7 @@ import BookingConfirmation from './pages/BookingConfirmation';
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -36,15 +37,17 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // If route requires host/admin but user is not host, redirect to user dashboard
   if (adminOnly && user.role !== 'host') {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to="/dashboard" replace />;
   }
 
-  if (user.role === 'host') {
-    return <Navigate to="/host" />;
+  // If user is host and trying to access a non-host admin route, redirect to host panel
+  if (user.role === 'host' && !adminOnly) {
+    return <Navigate to="/host" replace />;
   }
 
   return children;
