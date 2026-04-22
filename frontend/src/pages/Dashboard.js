@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import api, { getWishlist } from '../utils/api';
+import api, { getWishlist, getInbox, getConversation, sendMessage, markConversationAsRead } from '../utils/api';
 import toast from 'react-hot-toast';
 import { 
   Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone, 
@@ -417,17 +417,17 @@ const Dashboard = () => {
                            <h4 className="font-semibold">Inbox</h4>
                          </div>
                          <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
-                           {conversations.map((conv) => (
-                             <div
-                               key={conv.user._id}
-                               onClick={() => {
-                                 setSelectedConversation(conv);
-                                 markConversationAsRead(conv.user._id);
-                               }}
-                               className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                                 selectedConversation?.user._id === conv.user._id ? 'bg-primary-50' : ''
-                               } ${!conv.lastMessage.isRead && conv.lastMessage.sender._id !== user?.id ? 'border-l-4 border-l-primary-500' : ''}`}
-                             >
+                        {conversations.map((conv) => (
+                          <div
+                            key={conv.user._id}
+                            onClick={() => {
+                              setSelectedConversation(conv);
+                              markConversationAsRead(conv.user._id);
+                            }}
+                            className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                              selectedConversation?.user._id === conv.user._id ? 'bg-primary-50' : ''
+                            } ${!conv.lastMessage.isRead && conv.lastMessage.sender._id !== user?.id ? 'border-l-4 border-l-primary-500' : ''}`}
+                          >
                                <div className="flex items-center gap-3">
                                  <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
                                    <User className="h-5 w-5 text-primary-600" />

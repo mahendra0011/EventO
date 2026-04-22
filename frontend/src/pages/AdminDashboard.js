@@ -38,6 +38,7 @@ const AdminDashboard = () => {
   const [attendees, setAttendees] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState('');
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
@@ -699,89 +700,6 @@ const AdminDashboard = () => {
                           <p>Select a conversation to view messages</p>
                         </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Event</label>
-                        <select
-                          value={selectedEvent}
-                          onChange={(e) => setSelectedEvent(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                          required
-                        >
-                          <option value="">Select event...</option>
-                          {events.map((event) => (
-                            <option key={event._id} value={event._id}>
-                              {event.title} - {formatDate(event.date)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                        <input
-                          type="text"
-                          value={subject}
-                          onChange={(e) => setSubject(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                          placeholder="Message subject"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
-                        <textarea
-                          value={content}
-                          onChange={(e) => setContent(e.target.value)}
-                          rows="4"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                          placeholder="Type your message..."
-                          required
-                        />
-                      </div>
-                      <button type="submit" disabled={sending || !selectedUser || !selectedEvent} className="btn-primary w-full">
-                        {sending ? 'Sending...' : 'Send Message'}
-                      </button>
-                    </form>
-                  </div>
-
-                  {/* Recent Conversations */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Conversations</h3>
-                    {conversations.length > 0 ? (
-                      <div className="space-y-3 max-h-80 overflow-y-auto">
-                        {conversations.slice(0, 5).map((conv) => (
-                          <div
-                            key={conv.user._id}
-                            className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer"
-                            onClick={() => {
-                              setSelectedUser(conv.user);
-                              // Load conversation messages (for now just fetch)
-                            }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                                <User className="h-4 w-4 text-primary-600" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{conv.user.name}</p>
-                                <p className="text-xs text-gray-500 truncate">{conv.lastMessage.subject || conv.lastMessage.content.substring(0, 30)}</p>
-                              </div>
-                              {conv.unreadCount > 0 && (
-                                <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                                  {conv.unreadCount}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-center text-gray-500 py-8">No conversations yet</p>
                     )}
                   </div>
                 </div>
