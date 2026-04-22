@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Message = require('../models/Message');
 const Event = require('../models/Event');
 const Booking = require('../models/Booking');
