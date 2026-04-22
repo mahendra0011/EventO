@@ -43,6 +43,10 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     return <Navigate to="/dashboard" />;
   }
 
+  if (user.role === 'host') {
+    return <Navigate to="/host" />;
+  }
+
   return children;
 };
 

@@ -7,7 +7,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.6-38bdf8.svg)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A production-ready event management and ticket booking system built with the MERN stack. Features include OTP verification, secure authentication, admin dashboard, and booking approval workflow.
+A production-ready event management and ticket booking system built with the MERN stack. Features include OTP verification, secure authentication, host dashboard with messaging, and booking approval workflow.
 
 ![Evento Banner](https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200)
 
@@ -19,18 +19,21 @@ A production-ready event management and ticket booking system built with the MER
 - 📊 Personal dashboard to track booking status
 - 👤 Profile management
 - 🔔 Real-time booking status updates
+- 💬 Direct messaging with event hosts
 
-### 👨‍💼 Admin Features
+### 👨‍💼 Host Features
 - 📈 Analytics dashboard with revenue and booking statistics
 - ✅ Confirm or reject booking requests
 - 🎨 Create, update, and delete events
-- 👥 User management
+- 💌 Broadcast messages to all users who booked an event
+- 💬 Individual messaging with users
 - 📊 Event-specific analytics
+- 👥 View event attendees
 
 ### 🔒 Security Features
 - 🔐 JWT-based authentication
 - 📧 Email OTP verification for bookings
-- 👥 Role-based access control (User/Admin)
+- 👥 Role-based access control (User/Host)
 - 🔑 Password hashing with bcrypt
 - 🛡️ Protected routes and API endpoints
 
@@ -45,8 +48,8 @@ A production-ready event management and ticket booking system built with the MER
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/evento.git
-cd evento
+git clone https://github.com/mahendra0011/EventO.git
+cd EventO
 
 # Install backend dependencies
 cd backend
@@ -74,23 +77,23 @@ npm start
 ## 📁 Project Structure
 
 ```
-evento/
+Evento/
 ├── backend/
 │   ├── controllers/        # Route controllers
 │   ├── models/             # MongoDB models
 │   ├── routes/             # API routes
-│   ├── middleware/         # Custom middleware
-│   ├── utils/              # Utility functions
-│   ├── server.js           # Express server
-│   └── seed.js             # Database seeder
+│   ├── middleware/        # Custom middleware
+│   ├── utils/             # Utility functions
+│   ├── server.js          # Express server
+│   └── seed.js           # Database seeder
 │
 ├── frontend/
-│   ├── public/             # Static files
+│   ├── public/            # Static files
 │   ├── src/
-│   │   ├── components/     # Reusable components
-│   │   ├── pages/          # Page components
-│   │   ├── context/        # React context
-│   │   └── utils/          # Utility functions
+│   │   ├── components/   # Reusable components
+│   │   ├── pages/       # Page components
+│   │   ├── context/     # React context
+│   │   └── utils/      # Utility functions
 │   └── package.json
 │
 └── README.md
@@ -115,6 +118,7 @@ evento/
 - **Axios** - HTTP client
 - **Lucide React** - Icon library
 - **React Hot Toast** - Toast notifications
+- **Framer Motion** - Animations
 
 ## 📊 API Endpoints
 
@@ -123,6 +127,8 @@ evento/
 |--------|----------|-------------|--------|
 | POST | /api/auth/register | Register user | Public |
 | POST | /api/auth/login | Login user | Public |
+| POST | /api/auth/host-keyword-login | Host login | Public |
+| POST | /api/auth/host-keyword-register | Host register | Public |
 | GET | /api/auth/me | Get current user | Private |
 | PUT | /api/auth/profile | Update profile | Private |
 
@@ -132,9 +138,9 @@ evento/
 | GET | /api/events | Get all events | Public |
 | GET | /api/events/featured | Get featured events | Public |
 | GET | /api/events/:id | Get single event | Public |
-| POST | /api/events | Create event | Admin |
-| PUT | /api/events/:id | Update event | Admin |
-| DELETE | /api/events/:id | Delete event | Admin |
+| POST | /api/events | Create event | Host |
+| PUT | /api/events/:id | Update event | Host |
+| DELETE | /api/events/:id | Delete event | Host |
 
 ### Bookings
 | Method | Endpoint | Description | Access |
@@ -145,44 +151,34 @@ evento/
 | GET | /api/bookings/user | Get user bookings | Private |
 | GET | /api/bookings/:id | Get single booking | Private |
 | PUT | /api/bookings/:id/cancel | Cancel booking | Private |
-| GET | /api/bookings/all | Get all bookings | Admin |
-| PUT | /api/bookings/:id/confirm | Confirm booking | Admin |
-| PUT | /api/bookings/:id/reject | Reject booking | Admin |
+| GET | /api/bookings/all | Get all bookings | Host |
+| PUT | /api/bookings/:id/confirm | Confirm booking | Host |
+| PUT | /api/bookings/:id/reject | Reject booking | Host |
 
-### Admin
+### Messages
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
-| GET | /api/admin/dashboard | Get dashboard stats | Admin |
-| GET | /api/admin/users | Get all users | Admin |
-| PUT | /api/admin/users/:id/role | Update user role | Admin |
-| GET | /api/admin/events/:id/analytics | Get event analytics | Admin |
+| POST | /api/messages | Send message | Private |
+| GET | /api/messages/inbox | Get inbox | Private |
+| GET | /api/messages/conversation/:userId | Get conversation | Private |
+| POST | /api/messages/broadcast | Broadcast to event bookers | Host |
+| GET | /api/host/events/:id/bookers | Get event bookers | Host |
+
+### Host Dashboard
+| Method | Endpoint | Description | Access |
+|--------|----------|-------------|--------|
+| GET | /api/host/dashboard | Get dashboard stats | Host |
+| GET | /api/host/events/:id/analytics | Get event analytics | Host |
 
 ## 🔄 Booking Workflow
 
-```mermaid
-graph TD
-    A[User Browses Events] --> B[Select Event]
-    B --> C[Request Booking]
-    C --> D[System Sends OTP]
-    D --> E[User Verifies OTP]
-    E --> F[Admin Reviews Booking]
-    F --> G{Admin Decision}
-    G -->|Confirm| H[Booking Confirmed]
-    G -->|Reject| I[Booking Rejected]
-    H --> J[User Receives Confirmation]
-    I --> K[User Notified]
 ```
-
-## 📸 Screenshots
-
-### Homepage
-![Homepage](https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800)
-
-### Event Detail
-![Event Detail](https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800)
-
-### Admin Dashboard
-![Admin Dashboard](https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800)
+User Browses Events → Select Event → Request Booking → System Sends OTP → User Verifies OTP → Admin Reviews Booking → Decision
+                                                                              ↓
+                                                     Confirmed ← Booking Confirmed
+                                                     ↓
+                                           User Receives Confirmation Email
+```
 
 ## 🤝 Contributing
 
@@ -200,8 +196,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Author
 
-**Evento Team**
-- GitHub: [@https://github.com/mahendra0011)
+**EventO Team**
+- GitHub: [@mahendra0011](https://github.com/mahendra0011)
 
 ## 🙏 Acknowledgments
 
@@ -210,6 +206,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [MongoDB](https://www.mongodb.com/) - Database
 - [Tailwind CSS](https://tailwindcss.com/) - CSS framework
 - [Lucide](https://lucide.dev/) - Icons
+- [Framer](https://framer.com/) - Animations
 
 ## 📞 Support
 
@@ -218,7 +215,6 @@ If you have any questions or need help, please open an issue on GitHub.
 ---
 
 <div align="center">
-  <p>Made with ❤️ by Evento Team</p>
+  <p>Made with ❤️ by EventO Team</p>
   <p>⭐ Star this repository if you found it helpful!</p>
 </div>
-"# EventBooking" 

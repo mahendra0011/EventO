@@ -136,3 +136,15 @@ export const getHostDashboardStats = async () => {
   const res = await api.get('/host/dashboard');
   return res.data;
 };
+
+// Broadcast message to all users who booked an event
+export const broadcastToEventBookers = async (eventId, subject, content) => {
+  const res = await api.post('/messages/broadcast', { eventId, subject, content });
+  return res.data;
+};
+
+// Get users who booked a specific event (for host)
+export const getEventBookers = async (eventId) => {
+  const res = await api.get(`/host/events/${eventId}/bookers`);
+  return res.data;
+};
