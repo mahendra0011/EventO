@@ -8,7 +8,8 @@ const {
   getHostConversations,
   getEventAttendees,
   markConversationAsRead,
-  deleteMessage
+  deleteMessage,
+  broadcastMessage
 } = require('../controllers/messageController');
 const { auth } = require('../middleware/auth');
 
@@ -16,6 +17,11 @@ const { auth } = require('../middleware/auth');
 // @desc    Send message (host to user)
 // @access  Private (Hosts only for sending)
 router.post('/', auth, sendMessage);
+
+// @route   POST /api/messages/broadcast
+// @desc    Broadcast message to all confirmed attendees of an event
+// @access  Private (Host only)
+router.post('/broadcast', auth, broadcastMessage);
 
 // @route   GET /api/messages/inbox
 // @desc    Get user's inbox (conversations)

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import api, { broadcastToEventBookers } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -28,7 +28,9 @@ import {
   User,
   Key,
   MessageSquare,
-  Search
+  Search,
+  Send,
+  Megaphone
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -39,10 +41,14 @@ const AdminDashboard = () => {
   const [conversations, setConversations] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState('');
+  const [individualSelectedEvent, setIndividualSelectedEvent] = useState('');
+  const [broadcastSelectedEvent, setBroadcastSelectedEvent] = useState('');
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
   const [sending, setSending] = useState(false);
+  const [broadcastSubject, setBroadcastSubject] = useState('');
+  const [broadcastContent, setBroadcastContent] = useState('');
+  const [broadcastSending, setBroadcastSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [bookingFilter, setBookingFilter] = useState('all');
@@ -147,31 +153,51 @@ const AdminDashboard = () => {
    };
 
    const handleSendMessage = async (e) => {
-     e.preventDefault();
-     if (!selectedUser || !selectedEvent) {
-       toast.error('Please select a user and event');
-       return;
-     }
-     setSending(true);
-     try {
-       await api.post('/messages', {
-         receiverId: selectedUser._id,
-         eventId: selectedEvent,
-         subject,
-         content
-       });
-       toast.success('Message sent successfully');
-       setSubject('');
-       setContent('');
-       setSelectedUser(null);
-       setSelectedEvent('');
-       fetchHostConversations();
-     } catch (error) {
-       toast.error(error.response?.data?.message || 'Failed to send message');
-     } finally {
-       setSending(false);
-     }
-   };
+      e.preventDefault();
+      if (!selectedUser || !individualSelectedEvent) {
+        toast.error('Please select a user and event');
+        return;
+      }
+      setSending(true);
+      try {
+        await api.post('/messages', {
+          receiverId: selectedUser._id,
+          eventId: individualSelectedEvent,
+          subject,
+          content
+        });
+        toast.success('Message sent successfully');
+        setSubject('');
+        setContent('');
+        setSelectedUser(null);
+        setIndividualSelectedEvent('');
+        fetchHostConversations();
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to send message');
+      } finally {
+        setSending(false);
+      }
+    };
+
+    const handleBroadcastMessage = async (e) => {
+      e.preventDefault();
+      if (!broadcastSelectedEvent || !broadcastSubject.trim() || !broadcastContent.trim()) {
+        toast.error('Please select an event and fill in both subject and message');
+        return;
+      }
+      setBroadcastSending(true);
+      try {
+        const res = await broadcastToEventBookers(broadcastSelectedEvent, broadcastSubject, broadcastContent);
+        toast.success(res.message);
+        setBroadcastSubject('');
+        setBroadcastContent('');
+        setBroadcastSelectedEvent('');
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to broadcast message');
+      } finally {
+        setBroadcastSending(false);
+      }
+    };
 
   const handleConfirmBooking = async (bookingId) => {
     try {
@@ -574,137 +600,217 @@ const AdminDashboard = () => {
               </div>
             )}
 
-            {activeTab === 'communications' && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Conversations List */}
-                  <div className="md:col-span-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
-                    <div className="p-4 border-b border-gray-200 bg-gray-50">
-                      <h3 className="font-semibold">Conversations</h3>
-                    </div>
-                    <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
-                      {conversations.length > 0 ? (
-                        conversations.map((conv) => (
-                          <div
-                            key={conv.user._id}
-                            onClick={() => setSelectedUser(conv.user)}
-                            className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                              selectedUser?._id === conv.user._id ? 'bg-primary-50' : ''
-                            } ${!conv.lastMessage.isRead && conv.lastMessage.sender._id !== user?.id ? 'border-l-4 border-l-primary-500' : ''}`}
+             {activeTab === 'communications' && (
+               <div className="space-y-6">
+                 {/* Broadcast Message Section */}
+                 <div className="bg-white border border-gray-200 rounded-lg p-6">
+                   <h3 className="text-lg font-semibold mb-4 flex items-center">
+                     <Megaphone className="h-5 w-5 mr-2 text-primary-600" />
+                     Broadcast to Event Attendees
+                   </h3>
+                   <p className="text-sm text-gray-600 mb-4">
+                     Send a message to all confirmed attendees of one of your events. The message will be delivered via in-app messaging and email.
+                   </p>
+                   <form onSubmit={handleBroadcastMessage} className="space-y-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Select Event</label>
+                          <select
+                            value={broadcastSelectedEvent}
+                            onChange={(e) => setBroadcastSelectedEvent(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            required
                           >
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                                <User className="h-4 w-4 text-primary-600" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{conv.user.name}</p>
-                                <p className="text-xs text-gray-500 truncate">
-                                  {conv.lastMessage.subject || conv.lastMessage.content.substring(0, 20)}...
-                                </p>
-                              </div>
-                              {conv.unreadCount > 0 && (
-                                <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                                  {conv.unreadCount}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="p-4 text-center text-gray-500 text-sm">No conversations</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Message Area */}
-                  <div className="md:col-span-2 border border-gray-200 rounded-lg overflow-hidden bg-white flex flex-col h-[500px]">
-                    {selectedUser ? (
-                      <>
-                        {/* Header */}
-                        <div className="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                              <User className="h-4 w-4 text-primary-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{selectedUser.name}</p>
-                              <p className="text-xs text-gray-500">{selectedUser.email}</p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => setSelectedUser(null)}
-                            className="text-gray-400 hover:text-gray-600"
-                          >
-                            <X className="h-5 w-5" />
-                          </button>
+                            <option value="">Choose an event...</option>
+                            {events.map((event) => (
+                              <option key={event._id} value={event._id}>
+                                {event.title} - {formatDate(event.date)}
+                              </option>
+                            ))}
+                          </select>
                         </div>
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                         <input
+                           type="text"
+                           value={broadcastSubject}
+                           onChange={(e) => setBroadcastSubject(e.target.value)}
+                           placeholder="Enter message subject"
+                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                           required
+                         />
+                       </div>
+                     </div>
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                       <textarea
+                         value={broadcastContent}
+                         onChange={(e) => setBroadcastContent(e.target.value)}
+                         placeholder="Write your broadcast message..."
+                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                         rows="4"
+                         required
+                       />
+                     </div>
+                     <button
+                       type="submit"
+                       disabled={broadcastSending}
+                       className="btn-primary inline-flex items-center"
+                     >
+                       <Send className="h-4 w-4 mr-2" />
+                       {broadcastSending ? 'Sending...' : 'Send Broadcast'}
+                     </button>
+                   </form>
+                 </div>
 
-                        {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                          {messages.map((msg) => (
-                            <div
-                              key={msg._id}
-                              className={`flex ${msg.sender._id === user?.id ? 'justify-end' : 'justify-start'}`}
-                            >
-                              <div
-                                className={`max-w-xs md:max-w-sm p-3 rounded-lg ${
-                                  msg.sender._id === user?.id
-                                    ? 'bg-primary-600 text-white'
-                                    : 'bg-gray-100 text-gray-800'
-                                }`}
-                              >
-                                {msg.subject && (
-                                  <p className={`text-sm font-semibold mb-1 ${msg.sender._id === user?.id ? 'text-primary-100' : 'text-gray-600'}`}>
-                                    {msg.subject}
-                                  </p>
-                                )}
-                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                                <p className={`text-xs mt-1 ${msg.sender._id === user?.id ? 'text-primary-100' : 'text-gray-500'}`}>
-                                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                 {/* Individual Messaging Section */}
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                   {/* Conversations List */}
+                   <div className="md:col-span-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
+                     <div className="p-4 border-b border-gray-200 bg-gray-50">
+                       <h3 className="font-semibold">Conversations</h3>
+                     </div>
+                     <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                       {conversations.length > 0 ? (
+                         conversations.map((conv) => (
+                           <div
+                             key={conv.user._id}
+                             onClick={() => setSelectedUser(conv.user)}
+                             className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                               selectedUser?._id === conv.user._id ? 'bg-primary-50' : ''
+                             } ${!conv.lastMessage.isRead && conv.lastMessage.sender._id !== user?.id ? 'border-l-4 border-l-primary-500' : ''}`}
+                           >
+                             <div className="flex items-center gap-2">
+                               <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                                 <User className="h-4 w-4 text-primary-600" />
+                               </div>
+                               <div className="flex-1 min-w-0">
+                                 <p className="font-medium text-sm truncate">{conv.user.name}</p>
+                                 <p className="text-xs text-gray-500 truncate">
+                                   {conv.lastMessage.subject || conv.lastMessage.content.substring(0, 20)}...
+                                 </p>
+                               </div>
+                               {conv.unreadCount > 0 && (
+                                 <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                                   {conv.unreadCount}
+                                 </span>
+                               )}
+                             </div>
+                           </div>
+                         ))
+                       ) : (
+                         <p className="p-4 text-center text-gray-500 text-sm">No conversations</p>
+                       )}
+                     </div>
+                   </div>
+
+                   {/* Message Area */}
+                   <div className="md:col-span-2 border border-gray-200 rounded-lg overflow-hidden bg-white flex flex-col h-[500px]">
+                     {selectedUser ? (
+                       <>
+                         {/* Header */}
+                         <div className="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                             <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                               <User className="h-4 w-4 text-primary-600" />
+                             </div>
+                             <div>
+                               <p className="font-medium text-sm">{selectedUser.name}</p>
+                               <p className="text-xs text-gray-500">{selectedUser.email}</p>
+                             </div>
+                           </div>
+                           <button
+                             onClick={() => setSelectedUser(null)}
+                             className="text-gray-400 hover:text-gray-600"
+                           >
+                             <X className="h-5 w-5" />
+                           </button>
+                         </div>
+
+                         {/* Messages */}
+                         <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                           {messages.map((msg) => (
+                             <div
+                               key={msg._id}
+                               className={`flex ${msg.sender._id === user?.id ? 'justify-end' : 'justify-start'}`}
+                             >
+                               <div
+                                 className={`max-w-xs md:max-w-sm p-3 rounded-lg ${
+                                   msg.sender._id === user?.id
+                                     ? 'bg-primary-600 text-white'
+                                     : 'bg-gray-100 text-gray-800'
+                                 }`}
+                               >
+                                 {msg.subject && (
+                                   <p className={`text-sm font-semibold mb-1 ${msg.sender._id === user?.id ? 'text-primary-100' : 'text-gray-600'}`}>
+                                     {msg.subject}
+                                   </p>
+                                 )}
+                                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                 <p className={`text-xs mt-1 ${msg.sender._id === user?.id ? 'text-primary-100' : 'text-gray-500'}`}>
+                                   {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                 </p>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
 
                         {/* Reply */}
                         <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-200">
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={subject}
-                              onChange={(e) => setSubject(e.target.value)}
-                              placeholder="Subject (optional)"
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
-                            />
-                          </div>
-                          <div className="flex gap-2 mt-2">
-                            <textarea
-                              value={content}
-                              onChange={(e) => setContent(e.target.value)}
-                              placeholder="Your message..."
-                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
-                              rows="2"
-                              required
-                            />
-                            <button type="submit" disabled={sending} className="btn-primary px-4">
-                              {sending ? '...' : 'Send'}
-                            </button>
+                          <div className="space-y-2">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Event</label>
+                              <select
+                                value={individualSelectedEvent}
+                                onChange={(e) => setIndividualSelectedEvent(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                                required
+                              >
+                                <option value="">Select an event...</option>
+                                {events.map((event) => (
+                                  <option key={event._id} value={event._id}>
+                                    {event.title} - {formatDate(event.date)}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={subject}
+                                onChange={(e) => setSubject(e.target.value)}
+                                placeholder="Subject (optional)"
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <textarea
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                placeholder="Your message..."
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                                rows="2"
+                                required
+                              />
+                              <button type="submit" disabled={sending} className="btn-primary px-4 self-start">
+                                {sending ? '...' : 'Send'}
+                              </button>
+                            </div>
                           </div>
                         </form>
-                      </>
-                    ) : (
-                      <div className="flex-1 flex items-center justify-center text-gray-500">
-                        <div className="text-center">
-                          <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                          <p>Select a conversation to view messages</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+                       </>
+                     ) : (
+                       <div className="flex-1 flex items-center justify-center text-gray-500">
+                         <div className="text-center">
+                           <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                           <p>Select a conversation to view messages</p>
+                         </div>
+                       </div>
+                     )}
+                   </div>
+                 </div>
+               </div>
+             )}
 
             {activeTab === 'analytics' && (
               <div className="space-y-8">

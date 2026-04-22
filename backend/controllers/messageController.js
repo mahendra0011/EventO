@@ -2,6 +2,7 @@ const Message = require('../models/Message');
 const Event = require('../models/Event');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
+const { sendHostMessageEmail } = require('../utils/email');
 
 // Send message from host to user
 exports.sendMessage = async (req, res) => {
@@ -48,6 +49,14 @@ exports.sendMessage = async (req, res) => {
     await message.save();
     await message.populate(['sender', 'receiver', 'event']);
 
+    // Send email notification to receiver
+    try {
+      await sendHostMessageEmail(receiver.email, receiver.name, subject, content, event.title, req.user.name);
+    } catch (emailErr) {
+      console.error('Failed to send email notification:', emailErr);
+      // Don't fail the request if email fails
+    }
+
     // Create notification for receiver
     const Notification = require('../models/Notification');
     await Notification.create({
@@ -61,6 +70,95 @@ exports.sendMessage = async (req, res) => {
     res.status(201).json({ message: 'Message sent successfully', data: message });
   } catch (error) {
     console.error('Send message error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Broadcast message to all confirmed attendees of an event
+exports.broadcastMessage = async (req, res) => {
+  try {
+    const { eventId, subject, content } = req.body;
+
+    // Verify sender is a host
+    if (req.user.role !== 'host') {
+      return res.status(403).json({ message: 'Only hosts can broadcast messages' });
+    }
+
+    // Validate event exists and belongs to host
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+    if (event.organizer.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'You can only broadcast for your own events' });
+    }
+
+    // Get all confirmed bookings for this event
+    const bookings = await Booking.find({
+      event: eventId,
+      status: 'confirmed'
+    }).populate('user', 'name email');
+
+    if (bookings.length === 0) {
+      return res.status(400).json({ message: 'No confirmed attendees found for this event' });
+    }
+
+    // Get unique users (in case same user booked multiple times)
+    const uniqueUsers = [...new Map(bookings.map(b => [b.user._id.toString(), b.user])).values()];
+
+    // Send message to each user
+    const sentMessages = [];
+    const failedEmails = [];
+
+    for (const user of uniqueUsers) {
+      try {
+        const message = new Message({
+          sender: req.user.id,
+          receiver: user._id,
+          event: eventId,
+          booking: null, // No specific booking for broadcast
+          subject,
+          content
+        });
+
+        await message.save();
+        sentMessages.push(message);
+
+        // Send email notification
+        try {
+          await sendHostMessageEmail(user.email, user.name, subject, content, event.title, req.user.name);
+        } catch (emailErr) {
+          console.error(`Failed to send email to ${user.email}:`, emailErr);
+          failedEmails.push(user.email);
+        }
+
+        // Create notification
+        const Notification = require('../models/Notification');
+        await Notification.create({
+          user: user._id,
+          title: `Broadcast from ${req.user.name} - ${event.title}`,
+          message: subject,
+          type: 'system',
+          link: '/dashboard/messages'
+        });
+      } catch (err) {
+        console.error(`Failed to send message to ${user.name}:`, err);
+      }
+    }
+
+    // Populate messages for response
+    await Promise.all(sentMessages.map(msg => msg.populate(['sender', 'receiver', 'event'])));
+
+    res.status(201).json({
+      message: `Broadcast sent to ${sentMessages.length} users`,
+      data: {
+        totalSent: sentMessages.length,
+        failedEmails: failedEmails.length,
+        recipients: uniqueUsers.length
+      }
+    });
+  } catch (error) {
+    console.error('Broadcast message error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

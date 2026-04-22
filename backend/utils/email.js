@@ -101,4 +101,50 @@ const sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDeta
   }
 };
 
-module.exports = { sendOTPEmail, sendBookingConfirmationEmail };
+const sendHostMessageEmail = async (recipientEmail, recipientName, subject, content, eventTitle, senderName) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: recipientEmail,
+    subject: `Evento - Message from ${senderName} regarding ${eventTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0;">Evento</h1>
+          <p style="color: white; margin-top: 10px;">Event Booking Platform</p>
+        </div>
+        <div style="padding: 30px; background: #f9f9f9;">
+          <h2 style="color: #333;">Message from Event Host</h2>
+          <p style="color: #666; font-size: 16px;">Hello ${recipientName},</p>
+          <p style="color: #666; font-size: 16px;">You have received a message from <strong>${senderName}</strong> regarding <strong>${eventTitle}</strong>:</p>
+
+          <div style="background: white; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px;">
+            ${content.split('\n').map(line => `<p style="color: #333; margin: 5px 0;">${line}</p>`).join('')}
+          </div>
+
+          <p style="color: #666; font-size: 14px;">
+            You can reply to this message by logging into your Evento dashboard.
+          </p>
+          <p style="color: #666; font-size: 14px;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard/messages" style="color: #667eea; text-decoration: none; font-weight: bold;">
+              Go to Messages
+            </a>
+          </p>
+        </div>
+        <div style="background: #333; padding: 20px; text-align: center;">
+          <p style="color: #999; margin: 0; font-size: 12px;">© 2024 Evento. All rights reserved.</p>
+        </div>
+      </div>
+    `
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Host message email sent to:', recipientEmail, info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Host message email error:', error.message);
+    return false;
+  }
+};
+
+module.exports = { sendOTPEmail, sendBookingConfirmationEmail, sendHostMessageEmail };

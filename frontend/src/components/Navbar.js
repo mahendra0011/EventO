@@ -133,27 +133,29 @@ const Navbar = () => {
               </motion.div>
             ))}
 
-            {user ? (
-              <motion.div 
-                className="flex items-center space-x-2 ml-4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    to="/dashboard"
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                      isActive('/dashboard')
-                        ? 'bg-primary-50 text-primary-600'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <User className="h-4 w-4" />
-                    <span>Dashboard</span>
-                  </Link>
-                </motion.div>
-                
+             {user ? (
+               <motion.div 
+                 className="flex items-center space-x-2 ml-4"
+                 initial={{ opacity: 0, x: 20 }}
+                 animate={{ opacity: 1, x: 0 }}
+                 transition={{ delay: 0.3 }}
+               >
+                 {user.role !== 'host' && (
+                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                     <Link
+                       to="/dashboard"
+                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                         isActive('/dashboard')
+                           ? 'bg-primary-50 text-primary-600'
+                           : 'text-gray-700 hover:bg-gray-100'
+                       }`}
+                     >
+                       <User className="h-4 w-4" />
+                       <span>Dashboard</span>
+                     </Link>
+                   </motion.div>
+                 )}
+                 
                  {user.role === 'host' && (
                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                      <Link
@@ -331,27 +333,29 @@ const Navbar = () => {
                   </motion.div>
                 ))}
 
-                {user ? (
-                  <>
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      <Link
-                        to="/dashboard"
-                        className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
-                          isActive('/dashboard')
-                            ? 'bg-primary-50 text-primary-600'
-                            : 'text-gray-700 hover:bg-gray-100'
-                        }`}
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <User className="h-4 w-4" />
-                        <span>Dashboard</span>
-                      </Link>
-                    </motion.div>
-                    
+                 {user ? (
+                   <>
+                     {user.role !== 'host' && (
+                       <motion.div
+                         initial={{ opacity: 0, x: -20 }}
+                         animate={{ opacity: 1, x: 0 }}
+                         transition={{ delay: 0.2 }}
+                       >
+                         <Link
+                           to="/dashboard"
+                           className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
+                             isActive('/dashboard')
+                               ? 'bg-primary-50 text-primary-600'
+                               : 'text-gray-700 hover:bg-gray-100'
+                           }`}
+                           onClick={() => setIsMenuOpen(false)}
+                         >
+                           <User className="h-4 w-4" />
+                           <span>Dashboard</span>
+                         </Link>
+                       </motion.div>
+                     )}
+                     
                      {user.role === 'host' && (
                        <motion.div
                          initial={{ opacity: 0, x: -20 }}
