@@ -121,5 +121,25 @@ module.exports = {
       },
     },
   },
+  safelist: [
+    // Gradients for Why Choose section
+    'from-blue-400', 'to-blue-600',
+    'from-green-400', 'to-emerald-600',
+    'from-purple-400', 'to-purple-600',
+    'from-pink-400', 'to-rose-600',
+    'from-orange-400', 'to-amber-600',
+    'from-teal-400', 'to-cyan-600',
+    'from-red-400', 'to-rose-600',
+    'from-yellow-400', 'to-orange-500',
+    // Gradients for Categories
+    'from-rose-400', 'to-pink-500',
+    'from-purple-400', 'to-indigo-500',
+    'from-blue-400', 'to-cyan-500',
+    'from-amber-400', 'to-orange-500',
+    'from-green-400', 'to-emerald-500',
+    // Shadow classes
+    'hover:shadow-rose-200', 'hover:shadow-purple-200', 'hover:shadow-blue-200',
+    'hover:shadow-pink-200', 'hover:shadow-amber-200', 'hover:shadow-green-200',
+  ],
   plugins: [],
 }
