@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import api, { broadcastToEventBookers, getCommunityMessages, postCommunityMessage } from '../utils/api';
+import api, { broadcastToEventBookers, getCommunityMessages, getNotifications, markAllNotificationsAsRead, postCommunityMessage } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -62,12 +62,16 @@ const AdminDashboard = () => {
      phone: user?.phone || ''
    });
    const [updatingProfile, setUpdatingProfile] = useState(false);
-   const [sendingNotification, setSendingNotification] = useState(false);
-   
-   // Community chat states
-   const [selectedCommunityEvent, setSelectedCommunityEvent] = useState(null);
-   const [communityMessages, setCommunityMessages] = useState([]);
-   const [communityMessageContent, setCommunityMessageContent] = useState('');
+    const [sendingNotification, setSendingNotification] = useState(false);
+    
+    // Notification states
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    
+    // Community chat states
+    const [selectedCommunityEvent, setSelectedCommunityEvent] = useState(null);
+    const [communityMessages, setCommunityMessages] = useState([]);
+    const [communityMessageContent, setCommunityMessageContent] = useState('');
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -114,13 +118,14 @@ const AdminDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-    if (user && user.role === 'host') {
-      fetchAttendees();
-      fetchHostConversations();
-    }
-  }, []);
+   useEffect(() => {
+     fetchDashboardData();
+     if (user && user.role === 'host') {
+       fetchAttendees();
+       fetchHostConversations();
+       fetchNotifications();
+     }
+   }, []);
 
    const fetchDashboardData = async () => {
      try {
@@ -150,16 +155,26 @@ const AdminDashboard = () => {
      }
    };
 
-    const fetchHostConversations = async () => {
-      try {
-        const res = await api.get('/messages/conversations');
-        setConversations(res.data.conversations || []);
-      } catch (error) {
-        console.error('Error fetching conversations:', error);
-      }
-    };
+     const fetchHostConversations = async () => {
+       try {
+         const res = await api.get('/messages/conversations');
+         setConversations(res.data.conversations || []);
+       } catch (error) {
+         console.error('Error fetching conversations:', error);
+       }
+     };
 
-     const fetchCommunityMessages = async (eventId, page = 1, limit = 50) => {
+      const fetchNotifications = async () => {
+       try {
+         const res = await getNotifications();
+         setNotifications(res.notifications || []);
+         setUnreadCount(res.unreadCount || 0);
+       } catch (error) {
+         console.error('Error fetching notifications:', error);
+       }
+     };
+
+      const fetchCommunityMessages = async (eventId, page = 1, limit = 50) => {
        try {
          const res = await getCommunityMessages(eventId, page, limit);
          setCommunityMessages(res.messages || []);
@@ -425,29 +440,45 @@ const AdminDashboard = () => {
                  >
                    <Mail className="h-4 w-4 inline mr-2" />
                    Messages
-                 </button>
-                 <button
-                   onClick={() => setActiveTab('community')}
-                   className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
-                     activeTab === 'community'
-                       ? 'border-primary-500 text-primary-600'
-                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                   }`}
-                 >
-                   <MessageCircle className="h-4 w-4 inline mr-2" />
-                   Community
-                 </button>
-                 <button
-                   onClick={() => setActiveTab('settings')}
-                   className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
-                     activeTab === 'settings'
-                       ? 'border-primary-500 text-primary-600'
-                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                   }`}
-                 >
-                   <Settings className="h-4 w-4 inline mr-2" />
-                   Settings
-                 </button>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('community')}
+                    className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
+                      activeTab === 'community'
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <MessageCircle className="h-4 w-4 inline mr-2" />
+                    Community
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('notifications')}
+                    className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
+                      activeTab === 'notifications'
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <Bell className="h-4 w-4 inline mr-2" />
+                    Notifications
+                    {unreadCount > 0 && (
+                      <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('settings')}
+                    className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
+                      activeTab === 'settings'
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <Settings className="h-4 w-4 inline mr-2" />
+                    Settings
+                  </button>
                </nav>
             </div>
 
@@ -1090,6 +1121,108 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               </div>
+            )}
+
+            {activeTab === 'notifications' && (
+              <motion.div key="notifications" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900">Event Notifications</h3>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await api.put('/notifications/read-all');
+                          setNotifications([]);
+                          setUnreadCount(0);
+                          toast.success('All notifications marked as read');
+                        } catch (error) {
+                          console.error('Error marking all as read:', error);
+                        }
+                      }}
+                      className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                    >
+                      Mark all as read
+                    </button>
+                  )}
+                </div>
+                {notifications.length === 0 ? (
+                  <div className="text-center py-12 bg-white rounded-xl shadow-lg">
+                    <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-500">No notifications</h3>
+                    <p className="text-gray-400">You're all caught up!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {notifications.filter(n => !n.isRead).length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-xs font-medium text-primary-600 px-2 py-1 bg-primary-50 rounded">
+                          NEW ({notifications.filter(n => !n.isRead).length})
+                        </div>
+                        {notifications.filter(n => !n.isRead).map((notification) => (
+                          <motion.div
+                            key={notification._id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="p-4 bg-blue-50 border border-blue-100 rounded-lg hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                <Bell className="h-4 w-4 text-blue-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 text-sm">{notification.title}</p>
+                                <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                                <p className="text-xs text-gray-400 mt-2">
+                                  {new Date(notification.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await api.put(`/notifications/${notification._id}/read`);
+                                    setNotifications(prev => prev.map(n => 
+                                      n._id === notification._id ? { ...n, isRead: true } : n
+                                    ));
+                                    setUnreadCount(prev => Math.max(0, prev - 1));
+                                  } catch (error) {
+                                    console.error('Error marking as read:', error);
+                                  }
+                                }}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium whitespace-nowrap"
+                              >
+                                Mark as read
+                              </button>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                    {notifications.filter(n => n.isRead).length > 0 && (
+                      <div className="space-y-2 mt-4">
+                        {notifications.filter(n => n.isRead).map((notification) => (
+                          <div
+                            key={notification._id}
+                            className="p-4 bg-gray-50 border border-gray-200 rounded-lg opacity-75"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                <Bell className="h-4 w-4 text-gray-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 text-sm">{notification.title}</p>
+                                <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                                <p className="text-xs text-gray-400 mt-2">
+                                  {new Date(notification.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
             )}
 
             {activeTab === 'settings' && (

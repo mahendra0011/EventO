@@ -80,7 +80,7 @@ const Dashboard = () => {
   const fetchWishlist = async () => {
     try {
       const res = await getWishlist();
-      const data = Array.isArray(res.data) ? res.data : [];
+      const data = Array.isArray(res) ? res : [];
       setSavedEvents(data);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
