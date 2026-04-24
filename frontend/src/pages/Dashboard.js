@@ -2,13 +2,14 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import api, { getWishlist, getInbox, getConversation, sendMessage, markConversationAsRead } from '../utils/api';
+import api, { getWishlist, getInbox, getConversation, sendMessage, markConversationAsRead, 
+  getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../utils/api';
 import toast from 'react-hot-toast';
 import { 
   Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone, 
   Edit3, Save, X, QrCode, Heart, CreditCard, Star, Search, Bell, Trash2, 
   Download, Eye, Filter, TrendingUp, MapPin, IndianRupee, History,
-  HelpCircle, MessageCircle, Calendar as CalendarIcon, MessageSquare
+  HelpCircle, MessageCircle, Calendar as CalendarIcon, MessageSquare, Plus
 } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, AnimatedContainer, GradientText } from '../components/animated';
 
@@ -27,6 +28,19 @@ const Dashboard = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [editMode, setEditMode] = useState(false);
   const [notification, setNotification] = useState(true);
+
+  // New states for messaging and notifications
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+  const [userEvents, setUserEvents] = useState([]);
+  const [newMessageForm, setNewMessageForm] = useState({
+    eventId: '',
+    hostId: '',
+    subject: '',
+    content: ''
+  });
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     phone: user?.phone || ''
@@ -39,13 +53,15 @@ const Dashboard = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    fetchBookings();
-    if (user) {
-      fetchWishlist();
-      fetchConversations();
-    }
-  }, [user]);
+   useEffect(() => {
+     fetchBookings();
+     if (user) {
+       fetchWishlist();
+       fetchConversations();
+       fetchUserEvents();
+       fetchNotifications();
+     }
+   }, [user]);
 
   // Fetch messages when viewing a conversation
   useEffect(() => {
@@ -83,14 +99,39 @@ const Dashboard = () => {
     }
   };
 
-  const fetchConversations = async () => {
-    try {
-      const res = await getInbox();
-      setConversations(res.data.conversations || []);
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-    }
-  };
+   const fetchConversations = async () => {
+     try {
+       const res = await getInbox();
+       setConversations(res.data.conversations || []);
+     } catch (error) {
+       console.error('Error fetching conversations:', error);
+     }
+   };
+
+   const fetchUserEvents = async () => {
+     try {
+       const res = await api.get('/bookings/user');
+       const userBookings = res.data || [];
+       // Get unique events from confirmed and pending bookings
+       const events = [...new Map(userBookings
+         .filter(b => b.event)
+         .map(b => b.event)
+         .map(event => [event._id, event])).values()];
+       setUserEvents(events);
+     } catch (error) {
+       console.error('Error fetching user events:', error);
+     }
+   };
+
+   const fetchNotifications = async () => {
+     try {
+       const res = await getNotifications();
+       setNotifications(res.data.notifications || []);
+       setUnreadCount(res.data.unreadCount || 0);
+     } catch (error) {
+       console.error('Error fetching notifications:', error);
+     }
+   };
 
   const fetchMessages = async (userId) => {
     try {
@@ -102,27 +143,55 @@ const Dashboard = () => {
     }
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!selectedConversation) return;
+   const handleSendMessage = async (e) => {
+     e.preventDefault();
+     if (!selectedConversation) return;
 
-    try {
-      await sendMessage({
-        receiverId: selectedConversation.user._id,
-        eventId: selectedConversation.lastMessage.event?._id || '',
-        subject: messageSubject,
-        content: messageContent,
-        bookingId: selectedConversation.lastMessage.booking?._id || null
-      });
-      toast.success('Message sent');
-      setMessageContent('');
-      setMessageSubject('');
-      fetchMessages(selectedConversation.user._id);
-      fetchConversations();
-    } catch (error) {
-      toast.error('Failed to send message');
-    }
-  };
+     try {
+       await sendMessage({
+         receiverId: selectedConversation.user._id,
+         eventId: selectedConversation.lastMessage.event?._id || '',
+         subject: messageSubject,
+         content: messageContent,
+         bookingId: selectedConversation.lastMessage.booking?._id || null
+       });
+       toast.success('Message sent');
+       setMessageContent('');
+       setMessageSubject('');
+       fetchMessages(selectedConversation.user._id);
+       fetchConversations();
+     } catch (error) {
+       toast.error('Failed to send message');
+     }
+   };
+
+   const handleNewMessageSubmit = async (e) => {
+     e.preventDefault();
+     if (!newMessageForm.eventId || !newMessageForm.hostId) {
+       toast.error('Please select an event');
+       return;
+     }
+     if (!newMessageForm.content.trim()) {
+       toast.error('Please enter a message');
+       return;
+     }
+
+     try {
+       await sendMessage({
+         receiverId: newMessageForm.hostId,
+         eventId: newMessageForm.eventId,
+         subject: newMessageForm.subject,
+         content: newMessageForm.content,
+         bookingId: null
+       });
+       toast.success('Message sent successfully');
+       setShowNewMessageModal(false);
+       setNewMessageForm({ eventId: '', hostId: '', subject: '', content: '' });
+       fetchConversations();
+     } catch (error) {
+       toast.error(error.response?.data?.message || 'Failed to send message');
+     }
+   };
 
   const handleCancelBooking = async (bookingId) => {
     if (!window.confirm('Are you sure you want to cancel this booking?')) {
@@ -178,13 +247,131 @@ const Dashboard = () => {
     rejected: bookings.filter(b => b.status === 'rejected').length
   };
 
-  const statCards = [
-    { label: 'Total Bookings', value: stats.total, icon: Ticket, color: 'primary', bgColor: 'bg-primary-100' },
-    { label: 'Confirmed', value: stats.confirmed, icon: CheckCircle, color: 'green', bgColor: 'bg-green-100' },
-    { label: 'Pending', value: stats.pending, icon: Clock, color: 'yellow', bgColor: 'bg-yellow-100' },
-    { label: 'Cancelled', value: stats.cancelled, icon: XCircle, color: 'red', bgColor: 'bg-red-100' },
-    { label: 'Rejected', value: stats.rejected, icon: AlertCircle, color: 'gray', bgColor: 'bg-gray-100' }
-  ];
+   const statCards = [
+     { label: 'Total Bookings', value: stats.total, icon: Ticket, color: 'primary', bgColor: 'bg-primary-100' },
+     { label: 'Confirmed', value: stats.confirmed, icon: CheckCircle, color: 'green', bgColor: 'bg-green-100' },
+     { label: 'Pending', value: stats.pending, icon: Clock, color: 'yellow', bgColor: 'bg-yellow-100' },
+     { label: 'Cancelled', value: stats.cancelled, icon: XCircle, color: 'red', bgColor: 'bg-red-100' },
+     { label: 'Rejected', value: stats.rejected, icon: AlertCircle, color: 'gray', bgColor: 'bg-gray-100' }
+   ];
+
+   // Notification Center Component
+   const NotificationCenter = () => {
+     const handleMarkAsRead = async (notificationId) => {
+       try {
+         await api.put(`/notifications/${notificationId}/read`);
+         setNotifications(prev => prev.map(n => 
+           n._id === notificationId ? { ...n, isRead: true } : n
+         ));
+         setUnreadCount(prev => Math.max(0, prev - 1));
+       } catch (error) {
+         console.error('Error marking notification as read:', error);
+       }
+     };
+
+     const handleMarkAllAsRead = async () => {
+       try {
+         await api.put('/notifications/read-all');
+         setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+         setUnreadCount(0);
+         toast.success('All notifications marked as read');
+       } catch (error) {
+         console.error('Error marking all as read:', error);
+       }
+     };
+
+     const unreadNotifications = notifications.filter(n => !n.isRead);
+     const readNotifications = notifications.filter(n => n.isRead);
+
+     return (
+       <div className="space-y-4">
+         <div className="flex items-center justify-between">
+           <div className="flex items-center gap-2">
+             <Bell className="h-5 w-5 text-primary-600" />
+             <span className="text-sm text-gray-500">
+               {unreadCount > 0 ? `${unreadCount} unread` : 'All notifications read'}
+             </span>
+           </div>
+           {unreadCount > 0 && (
+             <button
+               onClick={handleMarkAllAsRead}
+               className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+             >
+               Mark all as read
+             </button>
+           )}
+         </div>
+
+         {notifications.length === 0 ? (
+           <div className="text-center py-12">
+             <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+             <h3 className="text-lg font-semibold text-gray-500">No notifications</h3>
+             <p className="text-gray-400">You're all caught up!</p>
+           </div>
+         ) : (
+           <div className="space-y-2 max-h-[600px] overflow-y-auto">
+             {unreadNotifications.length > 0 && (
+               <div className="space-y-2">
+                 <div className="text-xs font-medium text-primary-600 px-2 py-1 bg-primary-50 rounded">
+                   NEW ({unreadNotifications.length})
+                 </div>
+                 {unreadNotifications.map((notification) => (
+                   <motion.div
+                     key={notification._id}
+                     initial={{ opacity: 0, x: -10 }}
+                     animate={{ opacity: 1, x: 0 }}
+                     className="p-4 bg-blue-50 border border-blue-100 rounded-lg hover:shadow-md transition-shadow"
+                   >
+                     <div className="flex items-start gap-3">
+                       <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                         <Bell className="h-4 w-4 text-blue-600" />
+                       </div>
+                       <div className="flex-1 min-w-0">
+                         <p className="font-medium text-gray-900 text-sm">{notification.title}</p>
+                         <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                         <p className="text-xs text-gray-400 mt-2">
+                           {new Date(notification.createdAt).toLocaleDateString()}
+                         </p>
+                       </div>
+                       <button
+                         onClick={() => handleMarkAsRead(notification._id)}
+                         className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                       >
+                         Mark as read
+                       </button>
+                     </div>
+                   </motion.div>
+                 ))}
+               </div>
+             )}
+             {readNotifications.length > 0 && (
+               <div className="space-y-2 mt-4">
+                 {readNotifications.map((notification) => (
+                   <div
+                     key={notification._id}
+                     className="p-4 bg-gray-50 border border-gray-200 rounded-lg opacity-75"
+                   >
+                     <div className="flex items-start gap-3">
+                       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                         <Bell className="h-4 w-4 text-gray-600" />
+                       </div>
+                       <div className="flex-1 min-w-0">
+                         <p className="font-medium text-gray-900 text-sm">{notification.title}</p>
+                         <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                         <p className="text-xs text-gray-400 mt-2">
+                           {new Date(notification.createdAt).toLocaleDateString()}
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             )}
+           </div>
+         )}
+       </div>
+     );
+   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
@@ -218,18 +405,19 @@ const Dashboard = () => {
         <AnimatedCard className="overflow-hidden">
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px overflow-x-auto">
-               {["bookings", "upcoming", "calendar", "wishlist", "messages", "payments", "reviews", "support", "profile"].map((tabId) => {
-                 const tabDef = {
-                   bookings: { icon: Ticket, label: 'My Bookings' },
-                   upcoming: { icon: CalendarIcon, label: 'Upcoming' },
-                   calendar: { icon: Calendar, label: 'Calendar' },
-                   wishlist: { icon: Heart, label: 'Wishlist' },
-                   messages: { icon: MessageSquare, label: 'Messages' },
-                   payments: { icon: CreditCard, label: 'Payment History' },
-                   reviews: { icon: Star, label: 'Reviews' },
-                   support: { icon: HelpCircle, label: 'Support' },
-                   profile: { icon: User, label: 'Profile' }
-                 };
+                {["bookings", "upcoming", "calendar", "wishlist", "messages", "notifications", "payments", "reviews", "support", "profile"].map((tabId) => {
+                  const tabDef = {
+                    bookings: { icon: Ticket, label: 'My Bookings' },
+                    upcoming: { icon: CalendarIcon, label: 'Upcoming' },
+                    calendar: { icon: Calendar, label: 'Calendar' },
+                    wishlist: { icon: Heart, label: 'Wishlist' },
+                    messages: { icon: MessageSquare, label: 'Messages' },
+                    notifications: { icon: Bell, label: 'Notifications' },
+                    payments: { icon: CreditCard, label: 'Payment History' },
+                    reviews: { icon: Star, label: 'Reviews' },
+                    support: { icon: HelpCircle, label: 'Support' },
+                    profile: { icon: User, label: 'Profile' }
+                  };
                  const { icon, label } = tabDef[tabId];
                  return (
                    <button
@@ -407,8 +595,18 @@ const Dashboard = () => {
 
                {/* Messages Tab */}
                {activeTab === 'messages' && (
-                 <motion.div key="messages" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                   <h3 className="text-lg font-semibold mb-4">Messages</h3>
+                  <motion.div key="messages" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold">Messages</h3>
+                      <AnimatedButton
+                        variant="primary"
+                        className="text-sm py-2 px-4"
+                        onClick={() => setShowNewMessageModal(true)}
+                      >
+                        <Plus className="h-4 w-4 inline mr-2" />
+                        New Message
+                      </AnimatedButton>
+                    </div>
                    {conversations.length > 0 ? (
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                        {/* Conversation List */}
@@ -542,10 +740,126 @@ const Dashboard = () => {
                        <h3 className="text-lg font-semibold">No messages yet</h3>
                        <p className="text-gray-600">When hosts message you, they'll appear here</p>
                      </div>
-                   )}
-                 </motion.div>
-               )}
-               {activeTab === 'payments' && (
+                    )}
+                  {/* New Message Modal */}
+                  <AnimatePresence>
+                    {showNewMessageModal && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+                        onClick={() => setShowNewMessageModal(false)}
+                      >
+                        <motion.div
+                          initial={{ scale: 0.95, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.95, opacity: 0 }}
+                          className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                            <h3 className="text-xl font-semibold">New Message</h3>
+                            <button
+                              onClick={() => setShowNewMessageModal(false)}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <X className="h-6 w-6" />
+                            </button>
+                          </div>
+                          <form onSubmit={handleNewMessageSubmit} className="p-6 space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Select Event <span className="text-red-500">*</span>
+                              </label>
+                              <select
+                                value={newMessageForm.eventId}
+                                onChange={(e) => {
+                                  const event = userEvents.find(ev => ev._id === e.target.value);
+                                  setNewMessageForm({
+                                    ...newMessageForm,
+                                    eventId: e.target.value,
+                                    hostId: event?.organizer?._id || ''
+                                  });
+                                }}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                required
+                              >
+                                <option value="">Choose an event...</option>
+                                {userEvents.map((event) => (
+                                  <option key={event._id} value={event._id}>
+                                    {event.title} - {new Date(event.date).toLocaleDateString()}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {newMessageForm.hostId && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <div className="flex items-center gap-2 text-sm text-blue-700">
+                                  <User className="h-4 w-4" />
+                                  <span>
+                                    Message will be sent to: <span className="font-medium">{userEvents.find(e => e._id === newMessageForm.eventId)?.organizer?.name}</span>
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Subject (optional)
+                              </label>
+                              <input
+                                type="text"
+                                value={newMessageForm.subject}
+                                onChange={(e) => setNewMessageForm({ ...newMessageForm, subject: e.target.value })}
+                                placeholder="Brief summary of your message"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Message <span className="text-red-500">*</span>
+                              </label>
+                              <textarea
+                                value={newMessageForm.content}
+                                onChange={(e) => setNewMessageForm({ ...newMessageForm, content: e.target.value })}
+                                placeholder="Write your message here..."
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                rows="4"
+                                required
+                              />
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                              <button
+                                type="button"
+                                onClick={() => setShowNewMessageModal(false)}
+                                className="flex-1 btn-secondary py-2"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="submit"
+                                className="flex-1 btn-primary py-2"
+                              >
+                                Send Message
+                              </button>
+                            </div>
+                          </form>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+
+                {/* Notifications Tab */}
+                {activeTab === 'notifications' && (
+                  <motion.div key="notifications" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <h3 className="text-lg font-semibold mb-4">Event Notifications</h3>
+                    <NotificationCenter />
+                  </motion.div>
+                )}
+
+                {activeTab === 'payments' && (
                  <motion.div key="payments" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                    <h3 className="text-lg font-semibold mb-4">Payment History</h3>
                    {bookings.filter(b => b.paymentStatus === 'completed').length > 0 ? (

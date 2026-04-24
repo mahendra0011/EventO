@@ -5,14 +5,15 @@ const Booking = require('../models/Booking');
 const User = require('../models/User');
 const { sendHostMessageEmail } = require('../utils/email');
 
-// Send message from host to user
+// Send message from user or host
 exports.sendMessage = async (req, res) => {
   try {
     const { receiverId, eventId, subject, content, bookingId } = req.body;
 
-    // Verify sender is a host
-    if (req.user.role !== 'host') {
-      return res.status(403).json({ message: 'Only hosts can send messages' });
+    // Validate sender exists
+    const sender = await User.findById(req.user.id);
+    if (!sender) {
+      return res.status(404).json({ message: 'Sender not found' });
     }
 
     // Validate receiver exists
@@ -21,20 +22,46 @@ exports.sendMessage = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Validate event exists and belongs to host
+    // Validate event exists
     const event = await Event.findById(eventId);
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
-    if (event.organizer.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'You can only send messages for your own events' });
-    }
 
-    // Validate booking if provided
-    if (bookingId) {
-      const booking = await Booking.findById(bookingId);
-      if (!booking || booking.event.toString() !== eventId || booking.user.toString() !== receiverId) {
-        return res.status(400).json({ message: 'Invalid booking for this event and user' });
+    // Authorization checks based on sender role
+    if (sender.role === 'user') {
+      // Users can only message event hosts (organizers)
+      if (receiver.role !== 'host') {
+        return res.status(403).json({ message: 'You can only message event hosts' });
+      }
+      // Verify the host is the organizer of this event
+      if (event.organizer.toString() !== receiverId) {
+        return res.status(403).json({ message: 'You can only message the organizer of this event' });
+      }
+      // For users, event is required
+      if (!eventId) {
+        return res.status(400).json({ message: 'Event is required when messaging a host' });
+      }
+    } else if (sender.role === 'host') {
+      // Hosts can only message users who have booked their events
+      if (event.organizer.toString() !== req.user.id) {
+        return res.status(403).json({ message: 'You can only send messages for your own events' });
+      }
+      // Verify the receiver has booked this event (confirmed booking)
+      const booking = await Booking.findOne({
+        event: eventId,
+        user: receiverId,
+        status: 'confirmed'
+      });
+      if (!booking) {
+        return res.status(403).json({ message: 'User has not confirmed attendance for this event' });
+      }
+      // Validate bookingId if provided
+      if (bookingId) {
+        const specifiedBooking = await Booking.findById(bookingId);
+        if (!specifiedBooking || specifiedBooking.event.toString() !== eventId || specifiedBooking.user.toString() !== receiverId) {
+          return res.status(400).json({ message: 'Invalid booking for this event and user' });
+        }
       }
     }
 
@@ -44,25 +71,18 @@ exports.sendMessage = async (req, res) => {
       event: eventId,
       booking: bookingId || null,
       subject,
-      content
+      content,
+      isPublic: false
     });
 
     await message.save();
     await message.populate(['sender', 'receiver', 'event']);
 
-    // Send email notification to receiver
-    try {
-      await sendHostMessageEmail(receiver.email, receiver.name, subject, content, event.title, req.user.name);
-    } catch (emailErr) {
-      console.error('Failed to send email notification:', emailErr);
-      // Don't fail the request if email fails
-    }
-
     // Create notification for receiver
     const Notification = require('../models/Notification');
     await Notification.create({
       user: receiverId,
-      title: `New message from ${req.user.name}`,
+      title: `New message from ${sender.name}`,
       message: subject,
       type: 'system',
       link: '/dashboard/messages'
@@ -71,6 +91,96 @@ exports.sendMessage = async (req, res) => {
     res.status(201).json({ message: 'Message sent successfully', data: message });
   } catch (error) {
     console.error('Send message error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Post public message for community chat (event attendees)
+exports.postCommunityMessage = async (req, res) => {
+  try {
+    const { eventId, content } = req.body;
+
+    // Validate event exists
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Verify user is attending this event (has a confirmed booking)
+    const booking = await Booking.findOne({
+      event: eventId,
+      user: req.user.id,
+      status: 'confirmed'
+    });
+    if (!booking) {
+      return res.status(403).json({ message: 'Only attendees can post in community chat' });
+    }
+
+    const message = new Message({
+      sender: req.user.id,
+      receiver: event.organizer, // Store organizer as receiver for reference
+      event: eventId,
+      booking: booking._id,
+      subject: 'Community Chat',
+      content,
+      isPublic: true
+    });
+
+    await message.save();
+    await message.populate(['sender', 'event']);
+
+    res.status(201).json({ message: 'Message posted to community chat', data: message });
+  } catch (error) {
+    console.error('Post community message error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get public messages for an event (community chat)
+exports.getCommunityMessages = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { page = 1, limit = 50 } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Validate event exists
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Verify user is attending this event
+    const booking = await Booking.findOne({
+      event: eventId,
+      user: req.user.id,
+      status: 'confirmed'
+    });
+    if (!booking) {
+      return res.status(403).json({ message: 'Only attendees can view community chat' });
+    }
+
+    const messages = await Message.find({
+      event: eventId,
+      isPublic: true
+    })
+    .populate('sender', 'name email')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit * 1);
+
+    const total = await Message.countDocuments({
+      event: eventId,
+      isPublic: true
+    });
+
+    res.json({
+      messages: messages.reverse(), // Reverse to show oldest first
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      totalMessages: total
+    });
+  } catch (error) {
+    console.error('Get community messages error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

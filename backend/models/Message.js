@@ -20,6 +20,10 @@ const messageSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Booking'
   },
+  isPublic: {
+    type: Boolean,
+    default: false
+  },
   subject: {
     type: String,
     required: [true, 'Subject is required'],

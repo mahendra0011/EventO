@@ -9,19 +9,31 @@ const {
   getEventAttendees,
   markConversationAsRead,
   deleteMessage,
-  broadcastMessage
+  broadcastMessage,
+  postCommunityMessage,
+  getCommunityMessages
 } = require('../controllers/messageController');
 const { auth } = require('../middleware/auth');
 
 // @route   POST /api/messages
-// @desc    Send message (host to user)
-// @access  Private (Hosts only for sending)
+// @desc    Send message (user or host)
+// @access  Private
 router.post('/', auth, sendMessage);
 
 // @route   POST /api/messages/broadcast
 // @desc    Broadcast message to all confirmed attendees of an event
 // @access  Private (Host only)
 router.post('/broadcast', auth, broadcastMessage);
+
+// @route   POST /api/messages/community
+// @desc    Post public message for community chat
+// @access  Private
+router.post('/community', auth, postCommunityMessage);
+
+// @route   GET /api/messages/community/:eventId
+// @desc    Get public messages for an event (community chat)
+// @access  Private
+router.get('/community/:eventId', auth, getCommunityMessages);
 
 // @route   GET /api/messages/inbox
 // @desc    Get user's inbox (conversations)
