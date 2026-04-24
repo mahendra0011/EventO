@@ -159,15 +159,15 @@ const AdminDashboard = () => {
       }
     };
 
-    const fetchCommunityMessages = async (eventId, page = 1, limit = 50) => {
-      try {
-        const res = await getCommunityMessages(eventId, page, limit);
-        setCommunityMessages(res.data.messages || []);
-      } catch (error) {
-        console.error('Error fetching community messages:', error);
-        setCommunityMessages([]);
-      }
-    };
+     const fetchCommunityMessages = async (eventId, page = 1, limit = 50) => {
+       try {
+         const res = await getCommunityMessages(eventId, page, limit);
+         setCommunityMessages(res.messages || []);
+       } catch (error) {
+         console.error('Error fetching community messages:', error);
+         setCommunityMessages([]);
+       }
+     };
 
     const handleSendMessage = async (e) => {
       e.preventDefault();
