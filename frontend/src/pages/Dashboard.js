@@ -2,18 +2,17 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import api, { 
-  getWishlist, getInbox, getConversation, sendMessage, markConversationAsRead, 
+import api, {
+  getWishlist,
   getNotifications, markNotificationAsRead, markAllNotificationsAsRead,
   getCommunityMessages, postCommunityMessage
 } from '../utils/api';
 import toast from 'react-hot-toast';
-import { 
-   Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone, 
-   Edit3, Save, X, QrCode, Heart, CreditCard, Star, Search, Bell, Trash2, 
-   Download, Eye, Filter, TrendingUp, MapPin, IndianRupee, History,
-   HelpCircle, MessageCircle, Calendar as CalendarIcon, MessageSquare, Plus, Users
-} from 'lucide-react';
+import {
+    Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone,
+    Edit3, Save, X, QrCode, Heart, CreditCard, Star, Search, Filter, TrendingUp, MapPin, IndianRupee, History,
+    HelpCircle, MessageCircle, Calendar as CalendarIcon, Bell, Eye, Users
+ } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, AnimatedContainer, GradientText } from '../components/animated';
 
 const Dashboard = () => {
@@ -21,28 +20,16 @@ const Dashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [savedEvents, setSavedEvents] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [conversations, setConversations] = useState([]);
-  const [selectedConversation, setSelectedConversation] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [messageSubject, setMessageSubject] = useState('');
-  const [messageContent, setMessageContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('bookings');
   const [filterStatus, setFilterStatus] = useState('all');
   const [editMode, setEditMode] = useState(false);
   const [notification, setNotification] = useState(true);
 
-  // New states for messaging and notifications
-  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
-  const [userEvents, setUserEvents] = useState([]);
-  const [newMessageForm, setNewMessageForm] = useState({
-    eventId: '',
-    hostId: '',
-    subject: '',
-    content: ''
-  });
+  // New states for notifications and community
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [userEvents, setUserEvents] = useState([]);
 
    const [profileData, setProfileData] = useState({
      name: user?.name || '',
@@ -61,22 +48,16 @@ const Dashboard = () => {
      }
    }, [user]);
 
-   useEffect(() => {
-     fetchBookings();
-     if (user) {
-       fetchWishlist();
-       fetchConversations();
-       fetchUserEvents();
-       fetchNotifications();
-     }
-   }, [user]);
+    useEffect(() => {
+      fetchBookings();
+      if (user) {
+        fetchWishlist();
+        fetchNotifications();
+        fetchUserEvents();
+      }
+    }, [user]);
 
-  // Fetch messages when viewing a conversation
-  useEffect(() => {
-    if (selectedConversation) {
-      fetchMessages(selectedConversation.user._id);
-    }
-  }, [selectedConversation]);
+
 
   // Refresh wishlist when switching to wishlist tab
   useEffect(() => {
@@ -107,111 +88,24 @@ const Dashboard = () => {
     }
   };
 
-   const fetchConversations = async () => {
-     try {
-       const res = await getInbox();
-       setConversations(res.data.conversations || []);
-     } catch (error) {
-       console.error('Error fetching conversations:', error);
-     }
-   };
 
-   const fetchUserEvents = async () => {
-     try {
-       const res = await api.get('/bookings/user');
-       const userBookings = res.data || [];
-       // Get unique events from confirmed and pending bookings
-       const events = [...new Map(userBookings
-         .filter(b => b.event)
-         .map(b => b.event)
-         .map(event => [event._id, event])).values()];
-       setUserEvents(events);
-     } catch (error) {
-       console.error('Error fetching user events:', error);
-     }
-   };
 
-    const fetchNotifications = async () => {
+    const fetchUserEvents = async () => {
       try {
-        const res = await getNotifications();
-        setNotifications(res.data.notifications || []);
-        setUnreadCount(res.data.unreadCount || 0);
+        const res = await api.get('/bookings/user');
+        const userBookings = res.data || [];
+        // Get unique events from confirmed and pending bookings
+        const events = [...new Map(userBookings
+          .filter(b => b.event)
+          .map(b => b.event)
+          .map(event => [event._id, event])).values()];
+        setUserEvents(events);
       } catch (error) {
-        console.error('Error fetching notifications:', error);
+        console.error('Error fetching user events:', error);
       }
     };
 
-    const fetchCommunityMessages = async (eventId, page = 1, limit = 50) => {
-      try {
-        const res = await getCommunityMessages(eventId, page, limit);
-        setCommunityMessages(res.data.messages || []);
-      } catch (error) {
-        console.error('Error fetching community messages:', error);
-        setCommunityMessages([]);
-      }
-    };
-
-   const fetchMessages = async (userId) => {
-    try {
-      const res = await getConversation(userId);
-      setMessages(res.data.messages || []);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      setMessages([]);
-    }
-  };
-
-   const handleSendMessage = async (e) => {
-     e.preventDefault();
-     if (!selectedConversation) return;
-
-     try {
-       await sendMessage({
-         receiverId: selectedConversation.user._id,
-         eventId: selectedConversation.lastMessage.event?._id || '',
-         subject: messageSubject,
-         content: messageContent,
-         bookingId: selectedConversation.lastMessage.booking?._id || null
-       });
-       toast.success('Message sent');
-       setMessageContent('');
-       setMessageSubject('');
-       fetchMessages(selectedConversation.user._id);
-       fetchConversations();
-     } catch (error) {
-       toast.error('Failed to send message');
-     }
-   };
-
-   const handleNewMessageSubmit = async (e) => {
-     e.preventDefault();
-     if (!newMessageForm.eventId || !newMessageForm.hostId) {
-       toast.error('Please select an event');
-       return;
-     }
-     if (!newMessageForm.content.trim()) {
-       toast.error('Please enter a message');
-       return;
-     }
-
-     try {
-       await sendMessage({
-         receiverId: newMessageForm.hostId,
-         eventId: newMessageForm.eventId,
-         subject: newMessageForm.subject,
-         content: newMessageForm.content,
-         bookingId: null
-       });
-       toast.success('Message sent successfully');
-       setShowNewMessageModal(false);
-       setNewMessageForm({ eventId: '', hostId: '', subject: '', content: '' });
-       fetchConversations();
-      } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to send message');
-      }
-    };
-
-    const handleCommunityMessageSubmit = async (e) => {
+     const handleCommunityMessageSubmit = async (e) => {
       e.preventDefault();
       if (!selectedCommunityEvent) {
         toast.error('Please select an event');
@@ -231,6 +125,32 @@ const Dashboard = () => {
         toast.error(error.response?.data?.message || 'Failed to send message');
       }
     };
+
+     const fetchNotifications = async () => {
+      try {
+        const res = await getNotifications();
+        setNotifications(res.data.notifications || []);
+        setUnreadCount(res.data.unreadCount || 0);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    const fetchCommunityMessages = async (eventId, page = 1, limit = 50) => {
+      try {
+        const res = await getCommunityMessages(eventId, page, limit);
+        setCommunityMessages(res.data.messages || []);
+      } catch (error) {
+        console.error('Error fetching community messages:', error);
+        setCommunityMessages([]);
+      }
+    };
+
+
+
+
+
+
 
   const handleCancelBooking = async (bookingId) => {
     if (!window.confirm('Are you sure you want to cancel this booking?')) {
@@ -444,20 +364,19 @@ const Dashboard = () => {
         <AnimatedCard className="overflow-hidden">
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px overflow-x-auto">
-                {["bookings", "upcoming", "calendar", "wishlist", "messages", "community", "notifications", "payments", "reviews", "support", "profile"].map((tabId) => {
-                  const tabDef = {
-                  bookings: { icon: Ticket, label: 'My Bookings' },
-                  upcoming: { icon: CalendarIcon, label: 'Upcoming' },
-                  calendar: { icon: Calendar, label: 'Calendar' },
-                  wishlist: { icon: Heart, label: 'Wishlist' },
-                  messages: { icon: MessageSquare, label: 'Messages' },
-                  community: { icon: MessageCircle, label: 'Community' },
-                  notifications: { icon: Bell, label: 'Notifications' },
-                  payments: { icon: CreditCard, label: 'Payment History' },
-                  reviews: { icon: Star, label: 'Reviews' },
-                  support: { icon: HelpCircle, label: 'Support' },
-                  profile: { icon: User, label: 'Profile' }
-                  };
+                 {["bookings", "upcoming", "calendar", "wishlist", "community", "notifications", "payments", "reviews", "support", "profile"].map((tabId) => {
+                   const tabDef = {
+                   bookings: { icon: Ticket, label: 'My Bookings' },
+                   upcoming: { icon: CalendarIcon, label: 'Upcoming' },
+                   calendar: { icon: Calendar, label: 'Calendar' },
+                   wishlist: { icon: Heart, label: 'Wishlist' },
+                   community: { icon: MessageCircle, label: 'Community' },
+                   notifications: { icon: Bell, label: 'Notifications' },
+                   payments: { icon: CreditCard, label: 'Payment History' },
+                   reviews: { icon: Star, label: 'Reviews' },
+                   support: { icon: HelpCircle, label: 'Support' },
+                   profile: { icon: User, label: 'Profile' }
+                   };
                  const { icon, label } = tabDef[tabId];
                  return (
                    <button
@@ -630,266 +549,8 @@ const Dashboard = () => {
                       <Link to="/events" className="btn-primary">Browse Events</Link>
                     </div>
                   )}
-                 </motion.div>
-               )}
-
-               {/* Messages Tab */}
-               {activeTab === 'messages' && (
-                  <motion.div key="messages" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">Messages</h3>
-                      <AnimatedButton
-                        variant="primary"
-                        className="text-sm py-2 px-4"
-                        onClick={() => setShowNewMessageModal(true)}
-                      >
-                        <Plus className="h-4 w-4 inline mr-2" />
-                        New Message
-                      </AnimatedButton>
-                    </div>
-                   {conversations.length > 0 ? (
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                       {/* Conversation List */}
-                       <div className="md:col-span-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
-                         <div className="p-4 border-b border-gray-200 bg-gray-50">
-                           <h4 className="font-semibold">Inbox</h4>
-                         </div>
-                         <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
-                        {conversations.map((conv) => (
-                          <div
-                            key={conv.user._id}
-                            onClick={() => {
-                              setSelectedConversation(conv);
-                              markConversationAsRead(conv.user._id);
-                            }}
-                            className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                              selectedConversation?.user._id === conv.user._id ? 'bg-primary-50' : ''
-                            } ${!conv.lastMessage.isRead && conv.lastMessage.sender._id !== user?.id ? 'border-l-4 border-l-primary-500' : ''}`}
-                          >
-                               <div className="flex items-center gap-3">
-                                 <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                                   <User className="h-5 w-5 text-primary-600" />
-                                 </div>
-                                 <div className="flex-1 min-w-0">
-                                   <p className="font-medium truncate">{conv.user.name}</p>
-                                   <p className="text-xs text-gray-500 truncate">{conv.lastMessage.subject}</p>
-                                   <p className="text-xs text-gray-400">
-                                     {new Date(conv.lastMessage.createdAt).toLocaleDateString()}
-                                   </p>
-                                 </div>
-                                 {conv.unreadCount > 0 && (
-                                   <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                                     {conv.unreadCount}
-                                   </span>
-                                 )}
-                               </div>
-                             </div>
-                           ))}
-                         </div>
-                       </div>
-
-                       {/* Message Thread */}
-                       <div className="md:col-span-2 border border-gray-200 rounded-lg overflow-hidden bg-white flex flex-col h-[500px]">
-                         {selectedConversation ? (
-                           <>
-                             {/* Header */}
-                             <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-                               <div className="flex items-center gap-3">
-                                 <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                                   <User className="h-4 w-4 text-primary-600" />
-                                 </div>
-                                 <div>
-                                   <p className="font-medium">{selectedConversation.user.name}</p>
-                                   <p className="text-xs text-gray-500">{selectedConversation.user.email}</p>
-                                 </div>
-                               </div>
-                               <button
-                                 onClick={() => setSelectedConversation(null)}
-                                 className="text-gray-400 hover:text-gray-600"
-                               >
-                                 <X className="h-5 w-5" />
-                               </button>
-                             </div>
-
-                             {/* Messages */}
-                             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                               {messages.map((msg) => (
-                                 <div
-                                   key={msg._id}
-                                   className={`flex ${msg.sender._id === user?.id ? 'justify-end' : 'justify-start'}`}
-                                 >
-                                   <div
-                                     className={`max-w-xs md:max-w-md p-3 rounded-lg ${
-                                       msg.sender._id === user?.id
-                                         ? 'bg-primary-600 text-white'
-                                         : 'bg-gray-100 text-gray-800'
-                                     }`}
-                                   >
-                                     {msg.sender._id !== user?.id && (
-                                       <p className="text-xs font-semibold mb-1 opacity-75">{msg.sender.name}</p>
-                                     )}
-                                     {msg.subject && (
-                                       <p className="text-sm font-semibold mb-1">{msg.subject}</p>
-                                     )}
-                                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                                     <p className={`text-xs mt-1 ${msg.sender._id === user?.id ? 'text-primary-100' : 'text-gray-500'}`}>
-                                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                     </p>
-                                   </div>
-                                 </div>
-                               ))}
-                             </div>
-
-                             {/* Reply Form */}
-                             <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
-                               <div className="space-y-2">
-                                 <input
-                                   type="text"
-                                   value={messageSubject}
-                                   onChange={(e) => setMessageSubject(e.target.value)}
-                                   placeholder="Subject (optional)"
-                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
-                                 />
-                                 <textarea
-                                   value={messageContent}
-                                   onChange={(e) => setMessageContent(e.target.value)}
-                                   placeholder="Write your message..."
-                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
-                                   rows="2"
-                                   required
-                                 />
-                                 <button type="submit" className="btn-primary text-sm py-2">
-                                   Send
-                                 </button>
-                               </div>
-                             </form>
-                           </>
-                         ) : (
-                           <div className="flex-1 flex items-center justify-center text-gray-500">
-                             <div className="text-center">
-                               <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                               <p>Select a conversation to read messages</p>
-                             </div>
-                           </div>
-                         )}
-                       </div>
-                     </div>
-                   ) : (
-                     <div className="text-center py-12">
-                       <MessageSquare className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                       <h3 className="text-lg font-semibold">No messages yet</h3>
-                       <p className="text-gray-600">When hosts message you, they'll appear here</p>
-                     </div>
-                    )}
-                  {/* New Message Modal */}
-                  <AnimatePresence>
-                    {showNewMessageModal && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-                        onClick={() => setShowNewMessageModal(false)}
-                      >
-                        <motion.div
-                          initial={{ scale: 0.95, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.95, opacity: 0 }}
-                          className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
-                          onClick={e => e.stopPropagation()}
-                        >
-                          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-                            <h3 className="text-xl font-semibold">New Message</h3>
-                            <button
-                              onClick={() => setShowNewMessageModal(false)}
-                              className="text-gray-400 hover:text-gray-600"
-                            >
-                              <X className="h-6 w-6" />
-                            </button>
-                          </div>
-                          <form onSubmit={handleNewMessageSubmit} className="p-6 space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Select Event <span className="text-red-500">*</span>
-                              </label>
-                              <select
-                                value={newMessageForm.eventId}
-                                onChange={(e) => {
-                                  const event = userEvents.find(ev => ev._id === e.target.value);
-                                  setNewMessageForm({
-                                    ...newMessageForm,
-                                    eventId: e.target.value,
-                                    hostId: event?.organizer?._id || ''
-                                  });
-                                }}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                required
-                              >
-                                <option value="">Choose an event...</option>
-                                {userEvents.map((event) => (
-                                  <option key={event._id} value={event._id}>
-                                    {event.title} - {new Date(event.date).toLocaleDateString()}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            {newMessageForm.hostId && (
-                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                <div className="flex items-center gap-2 text-sm text-blue-700">
-                                  <User className="h-4 w-4" />
-                                  <span>
-                                    Message will be sent to: <span className="font-medium">{userEvents.find(e => e._id === newMessageForm.eventId)?.organizer?.name}</span>
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Subject (optional)
-                              </label>
-                              <input
-                                type="text"
-                                value={newMessageForm.subject}
-                                onChange={(e) => setNewMessageForm({ ...newMessageForm, subject: e.target.value })}
-                                placeholder="Brief summary of your message"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Message <span className="text-red-500">*</span>
-                              </label>
-                              <textarea
-                                value={newMessageForm.content}
-                                onChange={(e) => setNewMessageForm({ ...newMessageForm, content: e.target.value })}
-                                placeholder="Write your message here..."
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                rows="4"
-                                required
-                              />
-                            </div>
-                            <div className="flex gap-3 pt-4">
-                              <button
-                                type="button"
-                                onClick={() => setShowNewMessageModal(false)}
-                                className="flex-1 btn-secondary py-2"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="submit"
-                                className="flex-1 btn-primary py-2"
-                              >
-                                Send Message
-                              </button>
-                            </div>
-                          </form>
-                        </motion.div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              )}
+                  </motion.div>
+                )}
 
                  {/* Notifications Tab */}
                  {activeTab === 'notifications' && (
