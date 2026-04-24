@@ -148,3 +148,14 @@ export const getEventBookers = async (eventId) => {
   const res = await api.get(`/host/events/${eventId}/bookers`);
   return res.data;
 };
+
+// Community Chat
+export const postCommunityMessage = async (eventId, content) => {
+  const res = await api.post('/messages/community', { eventId, content });
+  return res.data;
+};
+
+export const getCommunityMessages = async (eventId, page = 1, limit = 50) => {
+  const res = await api.get(`/messages/community/${eventId}?page=${page}&limit=${limit}`);
+  return res.data;
+};

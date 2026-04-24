@@ -41,17 +41,22 @@ const Dashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const [profileData, setProfileData] = useState({
-    name: user?.name || '',
-    phone: user?.phone || ''
-  });
+   const [profileData, setProfileData] = useState({
+     name: user?.name || '',
+     phone: user?.phone || ''
+   });
 
-  // Keep profileData in sync with user context
-  useEffect(() => {
-    if (user) {
-      setProfileData({ name: user.name || '', phone: user.phone || '' });
-    }
-  }, [user]);
+   // Community chat states
+   const [selectedCommunityEvent, setSelectedCommunityEvent] = useState(null);
+   const [communityMessages, setCommunityMessages] = useState([]);
+   const [communityMessageContent, setCommunityMessageContent] = useState('');
+
+   // Keep profileData in sync with user context
+   useEffect(() => {
+     if (user) {
+       setProfileData({ name: user.name || '', phone: user.phone || '' });
+     }
+   }, [user]);
 
    useEffect(() => {
      fetchBookings();
@@ -123,17 +128,27 @@ const Dashboard = () => {
      }
    };
 
-   const fetchNotifications = async () => {
-     try {
-       const res = await getNotifications();
-       setNotifications(res.data.notifications || []);
-       setUnreadCount(res.data.unreadCount || 0);
-     } catch (error) {
-       console.error('Error fetching notifications:', error);
-     }
-   };
+    const fetchNotifications = async () => {
+      try {
+        const res = await getNotifications();
+        setNotifications(res.data.notifications || []);
+        setUnreadCount(res.data.unreadCount || 0);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
 
-  const fetchMessages = async (userId) => {
+    const fetchCommunityMessages = async (eventId, page = 1, limit = 50) => {
+      try {
+        const res = await getCommunityMessages(eventId, page, limit);
+        setCommunityMessages(res.data.messages || []);
+      } catch (error) {
+        console.error('Error fetching community messages:', error);
+        setCommunityMessages([]);
+      }
+    };
+
+   const fetchMessages = async (userId) => {
     try {
       const res = await getConversation(userId);
       setMessages(res.data.messages || []);
@@ -188,10 +203,31 @@ const Dashboard = () => {
        setShowNewMessageModal(false);
        setNewMessageForm({ eventId: '', hostId: '', subject: '', content: '' });
        fetchConversations();
-     } catch (error) {
-       toast.error(error.response?.data?.message || 'Failed to send message');
-     }
-   };
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to send message');
+      }
+    };
+
+    const handleCommunityMessageSubmit = async (e) => {
+      e.preventDefault();
+      if (!selectedCommunityEvent) {
+        toast.error('Please select an event');
+        return;
+      }
+      if (!communityMessageContent.trim()) {
+        toast.error('Please enter a message');
+        return;
+      }
+
+      try {
+        await postCommunityMessage(selectedCommunityEvent, communityMessageContent);
+        toast.success('Message sent to community');
+        setCommunityMessageContent('');
+        fetchCommunityMessages(selectedCommunityEvent);
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to send message');
+      }
+    };
 
   const handleCancelBooking = async (bookingId) => {
     if (!window.confirm('Are you sure you want to cancel this booking?')) {
@@ -405,18 +441,19 @@ const Dashboard = () => {
         <AnimatedCard className="overflow-hidden">
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px overflow-x-auto">
-                {["bookings", "upcoming", "calendar", "wishlist", "messages", "notifications", "payments", "reviews", "support", "profile"].map((tabId) => {
+                {["bookings", "upcoming", "calendar", "wishlist", "messages", "community", "notifications", "payments", "reviews", "support", "profile"].map((tabId) => {
                   const tabDef = {
-                    bookings: { icon: Ticket, label: 'My Bookings' },
-                    upcoming: { icon: CalendarIcon, label: 'Upcoming' },
-                    calendar: { icon: Calendar, label: 'Calendar' },
-                    wishlist: { icon: Heart, label: 'Wishlist' },
-                    messages: { icon: MessageSquare, label: 'Messages' },
-                    notifications: { icon: Bell, label: 'Notifications' },
-                    payments: { icon: CreditCard, label: 'Payment History' },
-                    reviews: { icon: Star, label: 'Reviews' },
-                    support: { icon: HelpCircle, label: 'Support' },
-                    profile: { icon: User, label: 'Profile' }
+                  bookings: { icon: Ticket, label: 'My Bookings' },
+                  upcoming: { icon: CalendarIcon, label: 'Upcoming' },
+                  calendar: { icon: Calendar, label: 'Calendar' },
+                  wishlist: { icon: Heart, label: 'Wishlist' },
+                  messages: { icon: MessageSquare, label: 'Messages' },
+                  community: { icon: MessageCircle, label: 'Community' },
+                  notifications: { icon: Bell, label: 'Notifications' },
+                  payments: { icon: CreditCard, label: 'Payment History' },
+                  reviews: { icon: Star, label: 'Reviews' },
+                  support: { icon: HelpCircle, label: 'Support' },
+                  profile: { icon: User, label: 'Profile' }
                   };
                  const { icon, label } = tabDef[tabId];
                  return (
@@ -851,15 +888,147 @@ const Dashboard = () => {
                 </motion.div>
               )}
 
-                {/* Notifications Tab */}
-                {activeTab === 'notifications' && (
-                  <motion.div key="notifications" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <h3 className="text-lg font-semibold mb-4">Event Notifications</h3>
-                    <NotificationCenter />
-                  </motion.div>
-                )}
+                 {/* Notifications Tab */}
+                 {activeTab === 'notifications' && (
+                   <motion.div key="notifications" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                     <h3 className="text-lg font-semibold mb-4">Event Notifications</h3>
+                     <NotificationCenter />
+                   </motion.div>
+                 )}
 
-                {activeTab === 'payments' && (
+                 {/* Community Tab */}
+                 {activeTab === 'community' && (
+                   <motion.div key="community" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                     <h3 className="text-lg font-semibold mb-4">Community Chat</h3>
+                     <p className="text-sm text-gray-600 mb-6">
+                       Join the community conversation for events you're attending. Share experiences, ask questions, and connect with other attendees.
+                     </p>
+                     <div className="space-y-6">
+                       {/* Community Chat List - will show events with community chat */}
+                       <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                         <div className="p-4 border-b border-gray-200 bg-gray-50">
+                           <h4 className="font-semibold">Event Chats</h4>
+                         </div>
+                         <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+                           {userEvents.length > 0 ? (
+                             userEvents.map((event) => (
+                               <div
+                                 key={event._id}
+                                 onClick={() => {
+                                   setSelectedCommunityEvent(event._id);
+                                   fetchCommunityMessages(event._id);
+                                 }}
+                                 className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                                   selectedCommunityEvent === event._id ? 'bg-primary-50' : ''
+                                 }`}
+                               >
+                                 <div className="flex items-center gap-3">
+                                   <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                                     <Calendar className="h-5 w-5 text-primary-600" />
+                                   </div>
+                                   <div className="flex-1 min-w-0">
+                                     <p className="font-medium">{event.title}</p>
+                                     <p className="text-sm text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
+                                   </div>
+                                   {communityMessages.length > 0 && selectedCommunityEvent === event._id && (
+                                     <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                                       {communityMessages.length}
+                                     </span>
+                                   )}
+                                 </div>
+                               )
+                             ))
+                           ) : (
+                             <p className="p-4 text-center text-gray-500">
+                               No events with community chat. Book confirmed events to access community chat.
+                             </p>
+                           )}
+                         </div>
+                       </div>
+
+                       {/* Community Messages */}
+                       <div className="border border-gray-200 rounded-lg overflow-hidden bg-white flex flex-col h-[500px]">
+                         {selectedCommunityEvent ? (
+                           <>
+                             {/* Header */}
+                             <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                               <div className="flex items-center gap-3">
+                                 <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                                   <Users className="h-4 w-4 text-primary-600" />
+                                 </div>
+                                 <div>
+                                   <p className="font-medium">{userEvents.find(e => e._id === selectedCommunityEvent)?.title || 'Event'}</p>
+                                   <p className="text-xs text-gray-500">Community Chat</p>
+                                 </div>
+                               </div>
+                               <button
+                                 onClick={() => {
+                                   setSelectedCommunityEvent(null);
+                                   setCommunityMessages([]);
+                                 }}
+                                 className="text-gray-400 hover:text-gray-600"
+                               >
+                                 <X className="h-5 w-5" />
+                               </button>
+                             </div>
+
+                             {/* Messages List */}
+                             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                               {communityMessages.length > 0 ? (
+                                 communityMessages.map((msg) => (
+                                   <div
+                                     key={msg._id}
+                                     className="flex items-start"
+                                   >
+                                     <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                       <User className="h-5 w-5 text-primary-600" />
+                                     </div>
+                                     <div className="flex-1 min-w-0 space-y-1">
+                                       <p className="font-medium text-gray-900">{msg.sender.name}</p>
+                                       <p className="text-sm text-gray-600 whitespace-pre-wrap">{msg.content}</p>
+                                       <p className="text-xs text-gray-400">
+                                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                       </p>
+                                     </div>
+                                   </div>
+                                 ))
+                               ) : (
+                                 <div className="flex-1 flex items-center justify-center text-gray-500 py-12">
+                                   <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                                   <p>No messages yet. Start the conversation!</p>
+                                 </div>
+                               )}
+                             </div>
+
+                             {/* Message Input */}
+                             <form onSubmit={handleCommunityMessageSubmit} className="p-4 border-t border-gray-200">
+                               <div className="space-y-2">
+                                 <textarea
+                                   value={communityMessageContent}
+                                   onChange={(e) => setCommunityMessageContent(e.target.value)}
+                                   placeholder="Write a message to the community..."
+                                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                                   rows="2"
+                                   required
+                                 />
+                                 <button type="submit" className="btn-primary w-full text-sm py-2">
+                                   Send
+                                 </button>
+                               </div>
+                             </form>
+                           </>
+                         ) : (
+                           <div className="flex-1 flex items-center justify-center text-gray-500 py-12">
+                             <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                             <p>Select an event to view community chat</p>
+                           </div>
+                         )}
+                       </div>
+                     </div>
+                   </motion.div>
+                 )}
+
+                 {activeTab === 'payments' && (
                  <motion.div key="payments" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                    <h3 className="text-lg font-semibold mb-4">Payment History</h3>
                    {bookings.filter(b => b.paymentStatus === 'completed').length > 0 ? (
