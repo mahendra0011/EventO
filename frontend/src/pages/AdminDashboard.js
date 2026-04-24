@@ -1,36 +1,38 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import api, { broadcastToEventBookers } from '../utils/api';
+import api, { broadcastToEventBookers, getCommunityMessages, postCommunityMessage } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import {
-  Calendar,
-  Ticket,
-  IndianRupee,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Plus,
-  Eye,
-  Check,
-  X,
-  TrendingUp,
-  Users,
-  DollarSign,
-  BarChart3,
-  Settings,
-  Edit,
-  Trash2,
-  QrCode,
-  Mail,
-  Bell,
-  LogOut,
-  User,
-  Key,
-  MessageSquare,
-  Search,
-  Send,
-  Megaphone
+   Calendar,
+   Ticket,
+   IndianRupee,
+   Clock,
+   CheckCircle,
+   XCircle,
+   Plus,
+   Eye,
+   Check,
+   X,
+   TrendingUp,
+   Users,
+   DollarSign,
+   BarChart3,
+   Settings,
+   Edit,
+   Trash2,
+   QrCode,
+   Mail,
+   Bell,
+   LogOut,
+   User,
+   Key,
+   MessageSquare,
+   MessageCircle,
+   Search,
+   Send,
+   Megaphone
 } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -871,41 +873,43 @@ const AdminDashboard = () => {
                          <div className="p-4 border-b border-gray-200 bg-gray-50">
                            <h4 className="font-semibold">Your Events</h4>
                          </div>
-                         <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
-                           {events.length > 0 ? (
-                             events.map((event) => (
-                               <div
-                                 key={event._id}
-                                 onClick={() => {
-                                   setSelectedCommunityEvent(event._id);
-                                   fetchCommunityMessages(event._id);
-                                 }}
-                                 className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                                   selectedCommunityEvent === event._id ? 'bg-primary-50' : ''
-                                 }`}
-                               >
-                                 <div className="flex items-center gap-3">
-                                   <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                                     <Calendar className="h-5 w-5 text-primary-600" />
-                                   </div>
-                                   <div className="flex-1 min-w-0">
-                                     <p className="font-medium">{event.title}</p>
-                                     <p className="text-sm text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
-                                   </div>
-                                   {communityMessages.length > 0 && selectedCommunityEvent === event._id && (
-                                     <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                                       {communityMessages.length}
-                                     </span>
-                                   )}
-                                 </div>
-                               )
-                             ))
-                           ) : (
-                             <p className="p-4 text-center text-gray-500">
-                               No events found. Create events to enable community chat.
-                             </p>
-                           )}
-                         </div>
+                        <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+                            {events.length > 0 ? (
+                              <>
+                                {events.map((event) => (
+                                  <div
+                                    key={event._id}
+                                    onClick={() => {
+                                      setSelectedCommunityEvent(event._id);
+                                      fetchCommunityMessages(event._id);
+                                    }}
+                                    className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                                      selectedCommunityEvent === event._id ? 'bg-primary-50' : ''
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                                        <Calendar className="h-5 w-5 text-primary-600" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium">{event.title}</p>
+                                        <p className="text-sm text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
+                                      </div>
+                                      {communityMessages.length > 0 && selectedCommunityEvent === event._id && (
+                                        <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                                          {communityMessages.length}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </>
+                            ) : (
+                              <p className="p-4 text-center text-gray-500">
+                                No events found. Create events to enable community chat.
+                              </p>
+                            )}
+                          </div>
                        </div>
 
                        {/* Community Messages */}

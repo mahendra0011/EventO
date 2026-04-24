@@ -2,14 +2,17 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import api, { getWishlist, getInbox, getConversation, sendMessage, markConversationAsRead, 
-  getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../utils/api';
+import api, { 
+  getWishlist, getInbox, getConversation, sendMessage, markConversationAsRead, 
+  getNotifications, markNotificationAsRead, markAllNotificationsAsRead,
+  getCommunityMessages, postCommunityMessage
+} from '../utils/api';
 import toast from 'react-hot-toast';
 import { 
-  Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone, 
-  Edit3, Save, X, QrCode, Heart, CreditCard, Star, Search, Bell, Trash2, 
-  Download, Eye, Filter, TrendingUp, MapPin, IndianRupee, History,
-  HelpCircle, MessageCircle, Calendar as CalendarIcon, MessageSquare, Plus
+   Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone, 
+   Edit3, Save, X, QrCode, Heart, CreditCard, Star, Search, Bell, Trash2, 
+   Download, Eye, Filter, TrendingUp, MapPin, IndianRupee, History,
+   HelpCircle, MessageCircle, Calendar as CalendarIcon, MessageSquare, Plus, Users
 } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, AnimatedContainer, GradientText } from '../components/animated';
 
@@ -909,41 +912,43 @@ const Dashboard = () => {
                          <div className="p-4 border-b border-gray-200 bg-gray-50">
                            <h4 className="font-semibold">Event Chats</h4>
                          </div>
-                         <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
-                           {userEvents.length > 0 ? (
-                             userEvents.map((event) => (
-                               <div
-                                 key={event._id}
-                                 onClick={() => {
-                                   setSelectedCommunityEvent(event._id);
-                                   fetchCommunityMessages(event._id);
-                                 }}
-                                 className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                                   selectedCommunityEvent === event._id ? 'bg-primary-50' : ''
-                                 }`}
-                               >
-                                 <div className="flex items-center gap-3">
-                                   <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                                     <Calendar className="h-5 w-5 text-primary-600" />
-                                   </div>
-                                   <div className="flex-1 min-w-0">
-                                     <p className="font-medium">{event.title}</p>
-                                     <p className="text-sm text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
-                                   </div>
-                                   {communityMessages.length > 0 && selectedCommunityEvent === event._id && (
-                                     <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                                       {communityMessages.length}
-                                     </span>
-                                   )}
-                                 </div>
-                               )
-                             ))
-                           ) : (
-                             <p className="p-4 text-center text-gray-500">
-                               No events with community chat. Book confirmed events to access community chat.
-                             </p>
-                           )}
-                         </div>
+                          <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+                            {userEvents.length > 0 ? (
+                              <>
+                                {userEvents.map((event) => (
+                                  <div
+                                    key={event._id}
+                                    onClick={() => {
+                                      setSelectedCommunityEvent(event._id);
+                                      fetchCommunityMessages(event._id);
+                                    }}
+                                    className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                                      selectedCommunityEvent === event._id ? 'bg-primary-50' : ''
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                                        <Calendar className="h-5 w-5 text-primary-600" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium">{event.title}</p>
+                                        <p className="text-sm text-gray-500">{new Date(event.date).toLocaleDateString()}</p>
+                                      </div>
+                                      {communityMessages.length > 0 && selectedCommunityEvent === event._id && (
+                                        <span className="bg-primary-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                                          {communityMessages.length}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </>
+                            ) : (
+                              <p className="p-4 text-center text-gray-500">
+                                No events with community chat. Book confirmed events to access community chat.
+                              </p>
+                            )}
+                          </div>
                        </div>
 
                        {/* Community Messages */}
