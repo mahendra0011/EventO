@@ -65,8 +65,13 @@ router.get('/attendees', auth, getEventAttendees);
 // @access  Private
 router.put('/read/:userId', auth, markConversationAsRead);
 
+// @route   PUT /api/messages/:id/pin
+// @desc    Pin/Unpin a community message (host only for their event)
+// @access  Private (Host only)
+router.put('/:id/pin', auth, pinMessage);
+
 // @route   DELETE /api/messages/:id
-// @desc    Delete a message
+// @desc    Delete a message (only sender or host can delete)
 // @access  Private
 router.delete('/:id', auth, deleteMessage);
 

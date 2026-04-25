@@ -173,11 +173,19 @@ exports.getCommunityMessages = async (req, res) => {
       isPublic: true
     });
 
+    // Get pinned message for this event if any
+    const pinnedMessage = await Message.findOne({
+      event: eventId,
+      isPublic: true,
+      isPinned: true
+    }).populate('sender', 'name email');
+
     res.json({
       messages: messages.reverse(), // Reverse to show oldest first
       totalPages: Math.ceil(total / limit),
       currentPage: page,
-      totalMessages: total
+      totalMessages: total,
+      pinnedMessage: pinnedMessage || null
     });
   } catch (error) {
     console.error('Get community messages error:', error);
@@ -547,6 +555,44 @@ exports.deleteMessage = async (req, res) => {
     res.json({ message: 'Message deleted successfully' });
   } catch (error) {
     console.error('Delete message error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Pin/Unpin a community message (host only)
+exports.pinMessage = async (req, res) => {
+  try {
+    const message = await Message.findById(req.params.id)
+      .populate('event', 'organizer');
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Only host of the event can pin messages
+    if (message.event.organizer.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Only event host can pin messages' });
+    }
+
+    // Update pinned status
+    message.isPinned = req.body.pinned !== undefined ? req.body.pinned : true;
+    await message.save();
+
+    // If pinning, unpin other messages in this event
+    if (message.isPinned) {
+      await Message.updateMany(
+        {
+          event: message.event._id,
+          _id: { $ne: message._id }
+        },
+        { $set: { isPinned: false } }
+      );
+    }
+
+    await message.populate('sender', 'name email');
+    res.json({ message: 'Message pinned successfully', data: message });
+  } catch (error) {
+    console.error('Pin message error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

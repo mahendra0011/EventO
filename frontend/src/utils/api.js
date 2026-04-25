@@ -160,3 +160,19 @@ export const getCommunityMessages = async (eventId, page = 1, limit = 50) => {
   return res.data;
 };
 
+// Pin/Unpin a community message (host only)
+export const pinMessage = async (messageId, pinned) => {
+  const res = await api.put(`/messages/${messageId}/pin`, { pinned });
+  return res.data;
+};
+
+export const getEventAttendees = async (eventId) => {
+  const res = await api.get(`/messages/attendees/${eventId}`);
+  return res.data;
+};
+
+export const getAllEventAttendees = async () => {
+  const res = await api.get('/messages/attendees');
+  return res.data;
+};
+

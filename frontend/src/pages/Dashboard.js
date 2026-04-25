@@ -6,7 +6,7 @@ import api, { getWishlist, getNotifications } from '../utils/api';
 import toast from 'react-hot-toast';
 import {
   Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone,
-  Edit3, Heart, CreditCard, Star, MessageCircle, Calendar as CalendarIcon, Bell, Eye, MapPin, HelpCircle
+  Edit3, Heart, CreditCard, Star, MessageCircle, MessageSquare, Calendar as CalendarIcon, Bell, Eye, Users, MapPin, HelpCircle
 } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, GradientText } from '../components/animated';
 
@@ -18,8 +18,11 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('bookings');
   const [filterStatus, setFilterStatus] = useState('all');
   const [editMode, setEditMode] = useState(false);
+
+  // States for notifications and community
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [userEvents, setUserEvents] = useState([]);
 
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -46,7 +49,6 @@ const Dashboard = () => {
       setBookings(res.data);
     } catch (error) {
       console.error('Error fetching bookings:', error);
-      toast.error('Failed to load bookings');
     }
   };
 
@@ -58,6 +60,22 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error fetching wishlist:', error);
       setSavedEvents([]);
+    }
+  };
+
+  const fetchUserEvents = async () => {
+    try {
+      const res = await api.get('/bookings/user');
+      const userBookings = res.data || [];
+      // Get unique confirmed events
+      const events = [...new Map(userBookings
+        .filter(b => b.event && b.status === 'confirmed')
+        .map(b => b.event)
+        .map(event => [event._id, event])).values()];
+      setUserEvents(events);
+    } catch (error) {
+      console.error('Error fetching user events:', error);
+      setUserEvents([]);
     }
   };
 
@@ -78,6 +96,7 @@ const Dashboard = () => {
     if (user) {
       Promise.all([
         fetchBookings(),
+        fetchUserEvents(),
         fetchNotifications()
       ]).catch(err => {
         console.error('Initial data fetch error:', err);
@@ -299,18 +318,19 @@ const Dashboard = () => {
         <AnimatedCard className="overflow-hidden">
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px overflow-x-auto">
-              {["bookings", "upcoming", "calendar", "wishlist", "notifications", "payments", "reviews", "support", "profile"].map((tabId) => {
-                const tabDef = {
-                  bookings: { icon: Ticket, label: 'My Bookings' },
-                  upcoming: { icon: CalendarIcon, label: 'Upcoming' },
-                  calendar: { icon: Calendar, label: 'Calendar' },
-                  wishlist: { icon: Heart, label: 'Wishlist' },
-                  notifications: { icon: Bell, label: 'Notifications' },
-                  payments: { icon: CreditCard, label: 'Payment History' },
-                  reviews: { icon: Star, label: 'Reviews' },
-                  support: { icon: MessageCircle, label: 'Support' },
-                  profile: { icon: User, label: 'Profile' }
-                };
+               {["bookings", "upcoming", "calendar", "wishlist", "community", "notifications", "payments", "reviews", "support", "profile"].map((tabId) => {
+                 const tabDef = {
+                   bookings: { icon: Ticket, label: 'My Bookings' },
+                   upcoming: { icon: CalendarIcon, label: 'Upcoming' },
+                   calendar: { icon: Calendar, label: 'Calendar' },
+                   wishlist: { icon: Heart, label: 'Wishlist' },
+                   community: { icon: Users, label: 'Community' },
+                   notifications: { icon: Bell, label: 'Notifications' },
+                   payments: { icon: CreditCard, label: 'Payment History' },
+                   reviews: { icon: Star, label: 'Reviews' },
+                   support: { icon: MessageCircle, label: 'Support' },
+                   profile: { icon: User, label: 'Profile' }
+                 };
                 const { icon, label } = tabDef[tabId];
                 return (
                   <button
@@ -422,10 +442,91 @@ const Dashboard = () => {
                       <Link to="/events" className="btn-primary">Browse Events</Link>
                     </div>
                   )}
-                </motion.div>
-              )}
+                 </motion.div>
+               )}
 
-              {/* Notifications Tab */}
+               {/* Community Tab */}
+               {activeTab === 'community' && (
+                 <motion.div key="community" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                   <div className="mb-6">
+                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Event Communities</h3>
+                     <p className="text-sm text-gray-600">
+                       Join the conversation! Connect with other attendees and the event host.
+                     </p>
+                   </div>
+
+                   {userEvents.length > 0 ? (
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                       {userEvents.map((event) => (
+                         <div
+                           key={event._id}
+                           className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group"
+                         >
+                           {/* Event Image */}
+                           <div className="relative h-40 overflow-hidden">
+                             <img
+                               src={event.image || 'https://images.unsplash.com/photo-1540575467083-2bdc3c5f8ebe?w=400'}
+                               alt={event.title}
+                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                             />
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                             <div className="absolute bottom-3 left-4">
+                               <h4 className="font-bold text-white text-lg line-clamp-2">{event.title}</h4>
+                               <p className="text-white/80 text-sm">
+                                 {new Date(event.date).toLocaleDateString()} • {event.time}
+                               </p>
+                               {event.venue && (
+                                 <p className="text-white/70 text-xs mt-1 flex items-center gap-1">
+                                   <MapPin className="w-3 h-3" /> {event.venue}
+                                 </p>
+                               )}
+                             </div>
+                           </div>
+
+                           {/* Event Actions */}
+                           <div className="p-4 bg-gray-50 border-t border-gray-100">
+                             <div className="flex items-center justify-between mb-3">
+                               <div className="flex items-center gap-2">
+                                 <Users className="w-4 h-4 text-primary-600" />
+                                 <span className="text-sm text-gray-600">
+                                   {event.bookings || 0} attending
+                                 </span>
+                               </div>
+                               <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                 Confirmed
+                               </span>
+                             </div>
+                             <Link
+                               to={`/events/${event._id}/chat`}
+                               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-lg font-medium text-sm hover:shadow-lg hover:shadow-amber-500/30 transition-all"
+                             >
+                               <MessageSquare className="w-4 h-4" />
+                               Open Community Chat
+                             </Link>
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   ) : (
+                     <div className="text-center py-16 bg-gray-50 rounded-xl border border-gray-200">
+                       <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 mx-auto mb-4 flex items-center justify-center">
+                         <MessageCircle className="w-10 h-10 text-amber-600" />
+                       </div>
+                       <h3 className="text-xl font-semibold text-gray-900 mb-2">No Community Access Yet</h3>
+                       <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                         Book and confirm tickets for events to join their community chats.
+                         Chat with other attendees, ask questions, and stay updated!
+                       </p>
+                       <Link to="/events" className="btn-primary inline-flex items-center gap-2">
+                         <Calendar className="w-4 h-4" />
+                         Browse Events
+                       </Link>
+                     </div>
+                   )}
+                 </motion.div>
+               )}
+
+               {/* Notifications Tab */}
               {activeTab === 'notifications' && (
                 <motion.div key="notifications" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <h3 className="text-lg font-semibold mb-4">Event Notifications</h3>
