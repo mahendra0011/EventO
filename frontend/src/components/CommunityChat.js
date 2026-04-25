@@ -203,7 +203,7 @@ const CommunityChat = () => {
   };
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950'>
+    <div className='min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden'>
       {/* Ambient background effects */}
       <div className='fixed inset-0 overflow-hidden pointer-events-none'>
         <div className='absolute top-0 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl' />
@@ -211,7 +211,7 @@ const CommunityChat = () => {
         <div className='absolute top-1/2 left-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.03),transparent_70%)]' />
       </div>
       
-       <div className='community-chat-container relative z-10 max-w-8xl mx-auto px-4 py-4 h-[calc(100vh-8rem)] overflow-hidden'>
+      <div className='community-chat-container relative z-10 max-w-8xl mx-auto px-4 py-4 h-[calc(100vh-6rem)] overflow-hidden flex flex-col'>
         {/* Header with role toggle */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
           className='flex items-center justify-between mb-4'>

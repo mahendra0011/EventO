@@ -290,7 +290,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   return (
     <div className='event-chat-container flex h-full'>
       {/* Main Chat Area */}
-      <div className={`flex-1 flex flex-col ${showParticipants ? 'hidden md:flex' : ''} md:flex`}>
+       <div className={`flex-1 flex flex-col min-h-0 ${showParticipants ? 'hidden md:flex' : ''} md:flex`}>
         {/* Chat Header */}
         <div className='p-3 border-b border-slate-800/50 bg-slate-900/30 flex items-center justify-between flex-shrink-0'>
           <div className='flex items-center gap-3'>
@@ -356,7 +356,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
         <div 
           ref={messagesContainerRef}
           onScroll={handleScroll}
-          className='flex-1 overflow-y-auto p-4 space-y-4 chat-scroll-container relative'
+          className='flex-1 min-h-0 overflow-y-auto p-4 space-y-4 chat-scroll-container relative'
         >
           {loading ? (
             <div className='flex items-center justify-center h-full'>
@@ -644,9 +644,9 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 300, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className='w-80 border-l border-slate-800/50 bg-slate-900/30 hidden md:block'
+            className='w-80 border-l border-slate-800/50 bg-slate-900/30 hidden md:block flex flex-col'
           >
-            <div className='p-4 border-b border-slate-800/50 flex items-center justify-between'>
+            <div className='p-4 border-b border-slate-800/50 flex items-center justify-between flex-shrink-0'>
               <h3 className='font-semibold text-white flex items-center gap-2'>
                 <Users className='w-4 h-4 text-amber-500' />
                 Participants
@@ -659,7 +659,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
               </button>
             </div>
 
-             <div className='p-3 space-y-2 max-h-[calc(100vh-12rem)] overflow-y-auto participants-scroll'>
+            <div className='flex-1 overflow-y-auto participants-scroll p-3 space-y-2'>
               {attendees.length > 0 ? (
                 attendees.map((attendee) => (
                   <div

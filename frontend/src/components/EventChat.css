@@ -1,7 +1,12 @@
 /* Event Chat Scrollbar Styles */
 
-.event-chat-container .chat-scroll-container {
+.event-chat-container {
+  display: flex;
+  flex-direction: column;
   height: 100%;
+}
+
+.event-chat-container .chat-scroll-container {
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
