@@ -40,19 +40,29 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     try {
       console.log('Fetching messages for event:', eventId);
       const response = await getCommunityMessages(eventId, 1, 100);
-      console.log('Messages response:', response.data);
+      console.log('Messages response:', response);
+      // Guard against missing data
+      if (!response || !response.data) {
+        console.warn('No response data received');
+        setMessages([]);
+        return;
+      }
       setMessages(response.data.messages || []);
       if (response.data.pinnedMessage) {
         setPinnedMessage(response.data.pinnedMessage);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
+      let errorMsg = 'Failed to load messages';
       if (error.response) {
         console.error('API error:', error.response.data);
-        toast.error(`Failed to load messages: ${error.response.data.message || 'Server error'}`);
+        errorMsg = error.response.data?.message || error.response.statusText || 'Server error';
+      } else if (error.request) {
+        errorMsg = 'No response from server';
       } else {
-        toast.error('Network error - check connection');
+        errorMsg = error.message;
       }
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -62,6 +72,12 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const fetchAttendees = useCallback(async () => {
     try {
       const response = await getEventAttendees(eventId);
+      // Guard against undefined response
+      if (!response || !response.data) {
+        console.warn('No attendees response data');
+        setAttendees([]);
+        return;
+      }
       const attendeeList = response.data.attendees || response.data.users || [];
       setAttendees(attendeeList);
       // Simulate online status (in real app, this would come from WebSocket)
@@ -72,11 +88,17 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       setOnlineUsers(online);
     } catch (error) {
       console.error('Error fetching attendees:', error);
+      let errorMsg = 'Failed to load attendees';
       if (error.response) {
-        toast.error(`Failed to load attendees: ${error.response.data.message || 'Server error'}`);
+        console.error('API error:', error.response.data);
+        errorMsg = error.response.data?.message || error.response.statusText || 'Server error';
+      } else if (error.request) {
+        errorMsg = 'No response from server';
       } else {
-        toast.error('Network error loading attendees');
+        errorMsg = error.message;
       }
+      toast.error(errorMsg);
+      setAttendees([]);
     }
   }, [eventId]);
 
