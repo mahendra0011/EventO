@@ -373,33 +373,44 @@ const AdminDashboard = () => {
                    <Ticket className="h-4 w-4 inline mr-2" />
                    Bookings
                  </button>
-                 <button
-                   onClick={() => setActiveTab('events')}
-                   className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
-                     activeTab === 'events'
-                       ? 'border-primary-500 text-primary-600'
-                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                   }`}
-                 >
-                   <Calendar className="h-4 w-4 inline mr-2" />
-                   Events
-                 </button>
-                   <button
-                     onClick={() => setActiveTab('notifications')}
-                     className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
-                       activeTab === 'notifications'
-                         ? 'border-primary-500 text-primary-600'
-                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                     }`}
-                   >
-                     <Bell className="h-4 w-4 inline mr-2" />
-                     Notifications
-                     {unreadCount > 0 && (
-                       <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                         {unreadCount}
-                       </span>
-                     )}
-                   </button>
+                  <button
+                    onClick={() => setActiveTab('events')}
+                    className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
+                      activeTab === 'events'
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <Calendar className="h-4 w-4 inline mr-2" />
+                    Events
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('communications')}
+                    className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
+                      activeTab === 'communications'
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <Mail className="h-4 w-4 inline mr-2" />
+                    Messages
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('notifications')}
+                    className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
+                      activeTab === 'notifications'
+                        ? 'border-primary-500 text-primary-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <Bell className="h-4 w-4 inline mr-2" />
+                    Notifications
+                    {unreadCount > 0 && (
+                      <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
                   <button
                     onClick={() => setActiveTab('settings')}
                     className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
