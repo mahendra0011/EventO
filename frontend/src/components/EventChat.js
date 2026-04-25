@@ -72,6 +72,11 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       setOnlineUsers(online);
     } catch (error) {
       console.error('Error fetching attendees:', error);
+      if (error.response) {
+        toast.error(`Failed to load attendees: ${error.response.data.message || 'Server error'}`);
+      } else {
+        toast.error('Network error loading attendees');
+      }
     }
   }, [eventId]);
 
