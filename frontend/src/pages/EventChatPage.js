@@ -62,7 +62,7 @@ const EventChatPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-3 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="mb-6">
@@ -97,7 +97,7 @@ const EventChatPage = () => {
         </div>
 
         {/* Chat Container */}
-        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-2xl overflow-hidden shadow-2xl h-[calc(100vh-10rem)]">
+        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-2xl overflow-hidden shadow-2xl h-[calc(100vh-8rem)]">
           <EventChat
             eventId={eventId}
             eventTitle={event.title}

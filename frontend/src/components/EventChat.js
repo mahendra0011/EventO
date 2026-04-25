@@ -44,20 +44,19 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       const data = await getCommunityMessages(eventId, 1, 100);
       console.log('Messages response:', data);
       setMessages(data.messages || []);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching messages:', error);
-      let errorMsg = 'Failed to load messages';
-      if (error.response) {
-        console.error('API error:', error.response.data);
-        errorMsg = error.response.data?.message || error.response.statusText || 'Server error';
-      } else if (error.request) {
-        errorMsg = 'No response from server';
-      } else {
-        errorMsg = error.message;
-      }
-      toast.error(errorMsg);
-    } finally {
       setLoading(false);
+      // Only show error toast if not due to auth/loading state
+      if (!error.response || error.response.status !== 403) {
+        let errorMsg = 'Failed to load messages';
+        if (error.response) {
+          const serverMsg = error.response.data?.message;
+          errorMsg = serverMsg || error.response.statusText || errorMsg;
+        }
+        toast.error(errorMsg);
+      }
     }
   }, [eventId]);
 
@@ -180,7 +179,6 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     if (!newMessage.trim() || sending) return;
 
     setSending(true);
-    // Enable auto-scroll after sending
     autoScrollRef.current = true;
     try {
       const response = await postCommunityMessage(eventId, newMessage.trim());
@@ -192,8 +190,25 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       toast.success('Message sent');
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMsg = error.response?.data?.message || error.message || 'Failed to send message. Please try again.';
-      toast.error(`Error: ${errorMsg}`);
+      let errorMsg = 'Failed to send message. Please try again.';
+      if (error.response) {
+        const status = error.response.status;
+        const serverMsg = error.response.data?.message;
+        if (status === 403) {
+          errorMsg = serverMsg || 'You do not have permission to send this message.';
+        } else if (status === 404) {
+          errorMsg = 'Event not found.';
+        } else if (status >= 500) {
+          errorMsg = 'Server error. Please try again later.';
+        } else {
+          errorMsg = serverMsg || errorMsg;
+        }
+      } else if (error.request) {
+        errorMsg = 'No response from server. Check your connection.';
+      } else {
+        errorMsg = error.message || errorMsg;
+      }
+      toast.error(errorMsg);
     } finally {
       setSending(false);
     }
@@ -277,7 +292,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       {/* Main Chat Area */}
       <div className={`flex-1 flex flex-col ${showParticipants ? 'hidden md:flex' : ''} md:flex`}>
         {/* Chat Header */}
-        <div className='p-4 border-b border-slate-800/50 bg-slate-900/30 flex items-center justify-between'>
+        <div className='p-3 border-b border-slate-800/50 bg-slate-900/30 flex items-center justify-between flex-shrink-0'>
           <div className='flex items-center gap-3'>
             <div>
               <h2 className='font-serif text-xl text-white'>{eventTitle}</h2>
@@ -413,16 +428,19 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                               </div>
                             )}
 
-                            {!isOwn && sender && (
-                              <div className='flex items-center gap-2 mb-1'>
-                                <p className='text-xs font-medium text-amber-400'>
-                                  {sender.name}
-                                </p>
-                                {sender.role === 'host' && (
-                                  <Crown className='w-3 h-3 text-amber-500' />
-                                )}
-                              </div>
-                            )}
+                             {!isOwn && sender && (
+                               <div className='flex items-center gap-2 mb-1.5'>
+                                 <p className='text-xs font-semibold text-amber-400'>
+                                   {sender.name}
+                                 </p>
+                                 {sender.role === 'host' && (
+                                   <span className='px-1.5 py-0.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-full text-[10px] font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1'>
+                                     <Crown className='w-2.5 h-2.5 fill-current' />
+                                     Host
+                                   </span>
+                                 )}
+                               </div>
+                             )}
 
                             <p className='text-sm leading-relaxed break-words whitespace-pre-wrap'>{msg.content}</p>
 
@@ -640,7 +658,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
               </button>
             </div>
 
-             <div className='p-4 space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto participants-scroll'>
+             <div className='p-3 space-y-2 max-h-[calc(100vh-12rem)] overflow-y-auto participants-scroll'>
               {attendees.length > 0 ? (
                 attendees.map((attendee) => (
                   <div
