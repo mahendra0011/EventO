@@ -581,6 +581,50 @@ exports.getEventAttendees = async (req, res) => {
   }
 };
 
+// Get attendees for a specific event (for chat participants)
+exports.getEventAttendeesByEvent = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    // Verify event exists
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Authorization: either the event host OR a confirmed attendee can view attendees
+    const isHost = event.organizer.toString() === req.user.id;
+    const hasBooking = await Booking.findOne({
+      event: eventId,
+      user: req.user.id,
+      status: 'confirmed'
+    });
+
+    if (!isHost && !hasBooking) {
+      return res.status(403).json({ message: 'Only event host or attendees can view participants' });
+    }
+
+    // Get all confirmed bookings for this event
+    const bookings = await Booking.find({
+      event: eventId,
+      status: 'confirmed'
+    }).populate('user', 'name email');
+
+    // Extract unique attendees
+    const attendees = bookings.map(booking => ({
+      _id: booking.user._id,
+      name: booking.user.name,
+      email: booking.user.email,
+      role: booking.user.role
+    }));
+
+    res.json({ attendees, total: attendees.length });
+  } catch (error) {
+    console.error('Get event attendees by event error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // Delete message (only sender can delete)
 exports.deleteMessage = async (req, res) => {
   try {
