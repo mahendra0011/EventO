@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Send, Smile, Users, Crown, MessageSquare, Pin, Trash2, UserX, Volume2,
+  Send, Smile, Users, Crown, MessageSquare, Trash2, UserX, Volume2,
   ThumbsUp, Heart, Laugh, Frown, Sparkles, MoreHorizontal, Phone, Video,
   FileText, Image, Paperclip, SmilePlus, BookOpen, Edit3, X
 } from 'lucide-react';
@@ -288,35 +288,9 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
               <span className='text-sm'>{attendees.length}</span>
             </button>
           </div>
-        </div>
+         </div>
 
-        {/* Pinned Message */}
-        <AnimatePresence>
-          {pinnedMessage && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className='px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 flex items-start gap-3'
-            >
-              <Pin className='w-4 h-4 text-amber-500 mt-0.5' />
-              <div className='flex-1'>
-                <p className='text-xs text-amber-400 font-medium'>Pinned by {pinnedMessage.pinnedBy?.name || 'Host'}</p>
-                <p className='text-sm text-slate-300'>{pinnedMessage.content}</p>
-              </div>
-              {isHost() && (
-                <button
-                  onClick={handleUnpinMessage}
-                  className='text-slate-400 hover:text-white text-sm'
-                >
-                  Unpin
-                </button>
-              )}
-            </motion.div>
-        )}
-      </AnimatePresence>
-
-        {/* Messages Area */}
+         {/* Messages Area */}
         <div className='flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar'>
           {loading ? (
             <div className='flex items-center justify-center h-full'>
