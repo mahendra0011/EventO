@@ -116,14 +116,16 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
 
     setSending(true);
     try {
-      await postCommunityMessage(eventId, newMessage.trim());
+      const response = await postCommunityMessage(eventId, newMessage.trim());
+      console.log('Message sent successfully:', response);
       setNewMessage('');
       setReplyingTo(null);
       setEditingMessage(null);
       await fetchMessages();
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Failed to send message. Please try again.');
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to send message. Please try again.';
+      alert(`Error: ${errorMsg}`);
     } finally {
       setSending(false);
     }

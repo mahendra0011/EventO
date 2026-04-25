@@ -106,21 +106,31 @@ exports.postCommunityMessage = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    // Verify user is attending this event (has a confirmed booking)
-    const booking = await Booking.findOne({
-      event: eventId,
-      user: req.user.id,
-      status: 'confirmed'
-    });
-    if (!booking) {
-      return res.status(403).json({ message: 'Only attendees can post in community chat' });
+    let booking = null;
+
+    // Authorization: hosts can always post to their event's community chat
+    if (req.user.role === 'host') {
+      // Verify host is the organizer of this event
+      if (event.organizer.toString() !== req.user.id) {
+        return res.status(403).json({ message: 'You can only post for your own events' });
+      }
+    } else {
+      // For regular users, verify they have a confirmed booking
+      booking = await Booking.findOne({
+        event: eventId,
+        user: req.user.id,
+        status: 'confirmed'
+      });
+      if (!booking) {
+        return res.status(403).json({ message: 'Only attendees can post in community chat' });
+      }
     }
 
     const message = new Message({
       sender: req.user.id,
       receiver: event.organizer, // Store organizer as receiver for reference
       event: eventId,
-      booking: booking._id,
+      booking: booking ? booking._id : null, // Hosts have no booking
       subject: 'Community Chat',
       content,
       isPublic: true
@@ -149,14 +159,20 @@ exports.getCommunityMessages = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    // Verify user is attending this event
-    const booking = await Booking.findOne({
-      event: eventId,
-      user: req.user.id,
-      status: 'confirmed'
-    });
-    if (!booking) {
-      return res.status(403).json({ message: 'Only attendees can view community chat' });
+    // Authorization: hosts can always view their event's community chat
+    // Regular users must have a confirmed booking
+    if (req.user.role !== 'host') {
+      const booking = await Booking.findOne({
+        event: eventId,
+        user: req.user.id,
+        status: 'confirmed'
+      });
+      if (!booking) {
+        return res.status(403).json({ message: 'Only attendees can view community chat' });
+      }
+    } else if (event.organizer.toString() !== req.user.id) {
+      // Hosts can only view their own events' community chat
+      return res.status(403).json({ message: 'You can only view community for your own events' });
     }
 
     const messages = await Message.find({
