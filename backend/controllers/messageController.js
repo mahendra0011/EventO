@@ -585,10 +585,12 @@ exports.getEventAttendees = async (req, res) => {
 exports.getEventAttendeesByEvent = async (req, res) => {
   try {
     const { eventId } = req.params;
+    console.log(`[getEventAttendeesByEvent] User ${req.user.id} fetching attendees for event ${eventId}`);
 
     // Verify event exists
     const event = await Event.findById(eventId);
     if (!event) {
+      console.log(`[getEventAttendeesByEvent] Event not found: ${eventId}`);
       return res.status(404).json({ message: 'Event not found' });
     }
 
@@ -618,10 +620,12 @@ exports.getEventAttendeesByEvent = async (req, res) => {
       role: booking.user.role
     }));
 
+    console.log(`[getEventAttendeesByEvent] Returning ${attendees.length} attendees for event ${eventId}`);
+
     res.json({ attendees, total: attendees.length });
   } catch (error) {
     console.error('Get event attendees by event error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
