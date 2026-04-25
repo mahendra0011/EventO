@@ -211,10 +211,10 @@ const CommunityChat = () => {
         <div className='absolute top-1/2 left-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.03),transparent_70%)]' />
       </div>
       
-       <div className='community-chat-container relative z-10 max-w-8xl mx-auto px-3 py-2 h-[calc(100vh-5rem)] overflow-hidden flex flex-col'>
+       <div className='community-chat-container relative z-10 max-w-8xl mx-auto px-4 py-4 h-[calc(100vh-7rem)] overflow-hidden flex flex-col'>
         {/* Header with role toggle */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-          className='flex items-center justify-between mb-2'>
+          className='flex items-center justify-between mb-4'>
           <div className='flex items-center gap-4'>
             <div className='w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20'>
               <MessageSquare className='w-6 h-6 text-slate-900' />
@@ -404,7 +404,7 @@ const CommunityChat = () => {
                   <div 
                     ref={messagesContainerRef}
                     onScroll={handleScroll}
-                    className='flex-1 overflow-y-auto p-2 space-y-2 chat-scroll-container relative'
+                    className='flex-1 overflow-y-auto p-3 space-y-3 chat-scroll-container relative'
                   >
                   {messages.length === 0 ? (
                      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}

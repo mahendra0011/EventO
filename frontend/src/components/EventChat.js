@@ -283,11 +283,11 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       {/* Main Chat Area */}
        <div className={`flex-1 flex flex-col min-h-0 ${showParticipants ? 'hidden md:flex' : ''} md:flex`}>
         {/* Chat Header */}
-        <div className='p-2 border-b border-slate-800/50 bg-slate-900/30 flex items-center justify-between flex-shrink-0'>
-          <div className='flex items-center gap-2'>
+        <div className='p-3 border-b border-slate-800/50 bg-slate-900/30 flex items-center justify-between flex-shrink-0'>
+          <div className='flex items-center gap-3'>
             <div>
-              <h2 className='font-serif text-lg text-white'>{eventTitle}</h2>
-              <p className='text-[11px] text-slate-400'>
+              <h2 className='font-serif text-xl text-white'>{eventTitle}</h2>
+              <p className='text-sm text-slate-400'>
                 {attendees.length} participants • {messages.length} messages
               </p>
             </div>
@@ -298,7 +298,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
               </div>
             )}
           </div>
-          <div className='flex items-center gap-1.5'>
+          <div className='flex items-center gap-2'>
             {/* Typing Indicator */}
             <AnimatePresence>
               {typingUsers.length > 0 && (
@@ -306,7 +306,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className='flex items-center gap-1.5 px-2 py-0.5 bg-slate-800/50 rounded-full text-[10px] text-slate-400'
+                  className='flex items-center gap-2 px-3 py-1 bg-slate-800/50 rounded-full text-sm text-slate-400'
                 >
                   <div className='flex gap-1'>
                     <span className='w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce' style={{ animationDelay: '0ms' }}></span>
@@ -323,22 +323,22 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
             {/* Participants Toggle (Mobile) */}
             <button
                onClick={() => setShowParticipants(!showParticipants)}
-               className='p-1.5 text-slate-400 hover:text-amber-500 rounded-lg hover:bg-slate-800/50 md:hidden'
+               className='p-2 text-slate-400 hover:text-amber-500 rounded-lg hover:bg-slate-800/50 md:hidden'
              >
-               <Users className='w-4 h-4' />
+               <Users className='w-5 h-5' />
             </button>
 
             {/* Participants Toggle (Desktop) */}
             <button
               onClick={() => setShowParticipants(!showParticipants)}
-               className={`hidden md:flex items-center gap-1.5 px-2 py-1 rounded-lg transition-colors ${
+               className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
                  showParticipants
                    ? 'bg-amber-500/20 text-amber-400'
                    : 'text-slate-400 hover:text-amber-500 hover:bg-slate-800/50'
                }`}
              >
-               <Users className='w-3.5 h-3.5' />
-               <span className='text-xs'>{attendees.length}</span>
+               <Users className='w-4 h-4' />
+               <span className='text-sm'>{attendees.length}</span>
             </button>
           </div>
          </div>
@@ -347,7 +347,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
         <div 
           ref={messagesContainerRef}
           onScroll={handleScroll}
-          className='flex-1 min-h-0 overflow-y-auto p-2 space-y-2 chat-scroll-container relative'
+          className='flex-1 min-h-0 overflow-y-auto p-3 space-y-3 chat-scroll-container relative'
         >
           {loading ? (
             <div className='flex items-center justify-center h-full'>
@@ -405,7 +405,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                           {!isOwn && !showAvatar && <div className='w-10 flex-shrink-0' />}
 
                             <div
-                              className={`relative px-3 py-1.5 shadow-sm group-hover:shadow-md transition-all duration-200 cursor-pointer
+                              className={`relative px-4 py-2 shadow group-hover:shadow-md transition-all duration-200 cursor-pointer
                                 ${isOwn
                                   ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl rounded-br-sm'
                                   : 'bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-xl rounded-bl-sm'
@@ -420,21 +420,21 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                             )}
 
                              {!isOwn && sender && (
-                               <div className='flex items-center gap-1.5 mb-1'>
+                               <div className='flex items-center gap-2 mb-1.5'>
                                  {sender.role === 'host' ? (
-                                   <span className='px-1.5 py-0.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 rounded-full text-[9px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1'>
-                                     <Crown className='w-2 h-2 fill-current' />
+                                   <span className='px-2 py-1 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 rounded-full text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5'>
+                                     <Crown className='w-2.5 h-2.5 fill-current' />
                                      Host
                                    </span>
                                  ) : (
-                                   <p className='text-[10px] font-semibold text-amber-400'>
+                                   <p className='text-xs font-semibold text-amber-400'>
                                      {sender.name}
                                    </p>
                                  )}
                                </div>
                              )}
 
-                             <p className='text-xs leading-relaxed break-words whitespace-pre-wrap'>{msg.content}</p>
+                             <p className='text-sm leading-relaxed break-whitespace-pre-wrap'>{msg.content}</p>
 
                             {/* Reactions */}
                             {msg.reactions && msg.reactions.length > 0 && (
@@ -455,8 +455,8 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                               </div>
                             )}
 
-                             <div className={`flex items-center justify-end gap-1.5 mt-0.5 ${isOwn ? 'text-slate-900/60' : 'text-slate-400'}`}>
-                               <span className='text-[9px] font-mono'>
+                             <div className={`flex items-center justify-end gap-2 mt-1.5 ${isOwn ? 'text-slate-900/60' : 'text-slate-400'}`}>
+                               <span className='text-[10px] font-mono'>
                                 {formatTime(msg.createdAt)}
                               </span>
                               {isOwn && (
@@ -581,23 +581,23 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
         )}
 
         {/* Message Input */}
-        <div className='p-2 border-t border-slate-800/50 bg-slate-900/30'>
-          <form onSubmit={handleSendMessage} className='flex items-end gap-2'>
+        <div className='p-3 border-t border-slate-800/50 bg-slate-900/30'>
+          <form onSubmit={handleSendMessage} className='flex items-end gap-3'>
             {/* Attachment Buttons */}
             <div className='flex gap-1'>
               <button
                 type='button'
-                className='p-1.5 text-slate-500 hover:text-amber-500 rounded-lg hover:bg-slate-800/50 transition-all'
+                className='p-2 text-slate-500 hover:text-amber-500 rounded-lg hover:bg-slate-800/50 transition-all'
                 title='Attach file'
               >
-                <Paperclip className='w-4 h-4' />
+                <Paperclip className='w-5 h-5' />
               </button>
               <button
                 type='button'
-                className='p-1.5 text-slate-500 hover:text-amber-500 rounded-lg hover:bg-slate-800/50 transition-all'
+                className='p-2 text-slate-500 hover:text-amber-500 rounded-lg hover:bg-slate-800/50 transition-all'
                 title='Add image'
               >
-                <Image className='w-4 h-4' />
+                <Image className='w-5 h-5' />
               </button>
             </div>
 
@@ -610,17 +610,17 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                 }}
                 placeholder='Type your message...'
                 rows={1}
-                className='w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all resize-none'
-                style={{ minHeight: '36px', maxHeight: '100px' }}
+                className='w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-2.5 text-slate-200 placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all resize-none'
+                style={{ minHeight: '44px', maxHeight: '120px' }}
               />
             </div>
 
             <button
               type='submit'
               disabled={!newMessage.trim() || sending}
-              className='px-3 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-medium text-xs hover:shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 transition-all flex items-center gap-1.5'
+              className='px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 transition-all flex items-center gap-2'
             >
-              <Send className='w-3.5 h-3.5' />
+              <Send className='w-4 h-4' />
               {sending ? '...' : 'Send'}
             </button>
           </form>
@@ -655,7 +655,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                 attendees.map((attendee) => (
                     <div
                       key={attendee._id}
-                      className={`flex items-center gap-2 p-2 rounded-lg transition-colors cursor-pointer
+                      className={`flex items-center gap-2.5 p-2.5 rounded-lg transition-colors cursor-pointer
                         ${attendee._id === currentUser?.id ? 'bg-amber-500/10 border border-amber-500/20' : 'hover:bg-slate-800/50'}
                       `}
                     >
@@ -670,7 +670,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                         )}
                       </div>
                       <div className='flex-1 min-w-0'>
-                        <p className='font-medium text-xs text-slate-200 truncate'>
+                        <p className='font-medium text-sm text-slate-200 truncate'>
                           {attendee.name}
                           {attendee._id === currentUser?.id && (
                           <span className='text-xs text-slate-400 ml-1'>(You)</span>
