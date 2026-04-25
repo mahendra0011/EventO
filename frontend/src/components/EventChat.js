@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Smile, Users, Crown, MessageSquare, Pin, Trash2, UserX, Volume2,
   ThumbsUp, Heart, Laugh, Frown, Sparkles, MoreHorizontal, Phone, Video,
-  FileText, Image, Paperclip, SmilePlus, BookOpen
+  FileText, Image, Paperclip, SmilePlus, BookOpen, Edit3, X
 } from 'lucide-react';
 import {
   getCommunityMessages,

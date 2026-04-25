@@ -19,6 +19,7 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import CreateEvent from './pages/CreateEvent';
 import BookingConfirmation from './pages/BookingConfirmation';
+import EventChatPage from './pages/EventChatPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -76,16 +77,26 @@ function AnimatedRoutes() {
             </PageTransition>
           } 
         />
-        <Route 
-          path="/events/:id" 
+        <Route
+          path="/events/:id"
           element={
             <PageTransition>
               <EventDetail />
             </PageTransition>
-          } 
+          }
         />
-        <Route 
-          path="/login" 
+        <Route
+          path="/events/:eventId/chat"
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <EventChatPage />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/login"
           element={
             <PageTransition>
               <Login />
