@@ -28,7 +28,6 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const [editingMessage, setEditingMessage] = useState(null);
   const [pinnedMessage, setPinnedMessage] = useState(null);
   const [showReactionPicker, setShowReactionPicker] = useState(null);
-  const [selectedMessage, setSelectedMessage] = useState(null);
 
   const chatEndRef = useRef(null);
   const pollingRef = useRef(null);
