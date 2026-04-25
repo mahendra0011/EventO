@@ -35,6 +35,10 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
 
   // Fetch community messages
   const fetchMessages = useCallback(async () => {
+    if (!eventId) {
+      console.warn('fetchMessages called with no eventId');
+      return;
+    }
     try {
       console.log('Fetching messages for event:', eventId);
       const response = await getCommunityMessages(eventId, 1, 100);
