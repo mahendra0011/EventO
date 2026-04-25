@@ -76,7 +76,7 @@ exports.sendMessage = async (req, res) => {
     });
 
     await message.save();
-    await message.populate(['sender', 'receiver', 'event']);
+    await message.populate('sender').populate('receiver').populate('event');
 
     // Create notification for receiver
     const Notification = require('../models/Notification');
@@ -148,7 +148,7 @@ exports.postCommunityMessage = async (req, res) => {
     });
 
     await message.save();
-    await message.populate(['sender', 'event']);
+    await message.populate('sender').populate('event');
 
     console.log('Community message posted:', {
       id: message._id,
@@ -180,10 +180,15 @@ exports.getCommunityMessages = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    console.log(`[getCommunityMessages] Event organizer: ${event.organizer.toString()}`);
+    console.log(`[getCommunityMessages] Event organizer: ${event.organizer.toString()}, User role: ${req.user.role}, User ID: ${req.user.id}`);
 
-    // Authorization: hosts can always view their event's community chat
-    // Regular users must have a confirmed booking
+    // Authorization: only the event host (organizer) and confirmed attendees can view community chat
+    const isHost = event.organizer.toString() === req.user.id;
+    if (req.user.role === 'host' && !isHost) {
+      console.log(`[getCommunityMessages] Host ${req.user.id} denied - not the organizer of event ${eventId} (organizer: ${event.organizer.toString()})`);
+      return res.status(403).json({ message: 'You can only view community for your own events' });
+    }
+
     if (req.user.role !== 'host') {
       const booking = await Booking.findOne({
         event: eventId,
@@ -194,10 +199,6 @@ exports.getCommunityMessages = async (req, res) => {
         console.log(`[getCommunityMessages] User ${req.user.id} denied - no confirmed booking for event ${eventId}`);
         return res.status(403).json({ message: 'Only attendees can view community chat' });
       }
-    } else if (event.organizer.toString() !== req.user.id) {
-      // Hosts can only view their own events' community chat
-      console.log(`[getCommunityMessages] Host ${req.user.id} denied - not organizer of event ${eventId} (organizer: ${event.organizer.toString()})`);
-      return res.status(403).json({ message: 'You can only view community for your own events' });
     }
 
     console.log(`[getCommunityMessages] User ${req.user.id} (${req.user.role}) authorized. Querying messages where event=${eventId}, isPublic=true`);
@@ -209,7 +210,7 @@ exports.getCommunityMessages = async (req, res) => {
     .populate('sender', 'name email')
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit * 1);
+    .limit(limit);
 
     console.log(`[getCommunityMessages] Query returned ${messages.length} messages`);
 
@@ -223,19 +224,11 @@ exports.getCommunityMessages = async (req, res) => {
       isPublic: true
     });
 
-    // Get pinned message for this event if any
-    const pinnedMessage = await Message.findOne({
-      event: eventId,
-      isPublic: true,
-      isPinned: true
-    }).populate('sender', 'name email');
-
     res.json({
       messages: messages.reverse(), // Reverse to show oldest first
       totalPages: Math.ceil(total / limit),
       currentPage: page,
-      totalMessages: total,
-      pinnedMessage: pinnedMessage || null
+      totalMessages: total
     });
   } catch (error) {
     console.error('Get community messages error:', error);
@@ -342,17 +335,18 @@ exports.getInbox = async (req, res) => {
     const conversations = await Message.aggregate([
       { $match: { receiver: mongoose.Types.ObjectId(req.user.id) } },
       { $sort: { createdAt: -1 } },
-      { $group: {
+      {
+        $group: {
           _id: '$sender',
           lastMessage: { $first: '$$ROOT' },
           count: { $sum: 1 },
-          unreadCount: { 
+          unreadCount: {
             $sum: { $cond: [{ $eq: ['$isRead', false] }, 1, 0] }
           }
         }
       },
       { $skip: skip },
-      { $limit: limit * 1 },
+      { $limit: limit },
       {
         $lookup: {
           from: 'users',
@@ -411,7 +405,7 @@ exports.getConversation = async (req, res) => {
     .populate('event', 'title date')
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit * 1);
+    .limit(limit);
 
     const total = await Message.countDocuments({
       $or: [
@@ -449,7 +443,7 @@ exports.getSentMessages = async (req, res) => {
       .populate('event', 'title')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit * 1);
+      .limit(limit);
 
     const total = await Message.countDocuments({ sender: req.user.id });
 
@@ -656,40 +650,3 @@ exports.deleteMessage = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
-// Pin/Unpin a community message (host only)
-exports.pinMessage = async (req, res) => {
-  try {
-    const message = await Message.findById(req.params.id)
-      .populate('event', 'organizer');
-
-    if (!message) {
-      return res.status(404).json({ message: 'Message not found' });
-    }
-
-    // Only host of the event can pin messages
-    if (message.event.organizer.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Only event host can pin messages' });
-    }
-
-    // Update pinned status
-    message.isPinned = req.body.pinned !== undefined ? req.body.pinned : true;
-    await message.save();
-
-    // If pinning, unpin other messages in this event
-    if (message.isPinned) {
-      await Message.updateMany(
-        {
-          event: message.event._id,
-          _id: { $ne: message._id }
-        },
-        { $set: { isPinned: false } }
-      );
-    }
-
-    await message.populate('sender', 'name email');
-    res.json({ message: 'Message pinned successfully', data: message });
-  } catch (error) {
-    console.error('Pin message error:', error);
-    res.status(500).json({ message: 'Server error' });
-         

@@ -53,18 +53,6 @@ const messageSchema = new mongoose.Schema({
   },
   // Reactions
   reactions: [reactionSchema],
-  // Pin status
-  isPinned: {
-    type: Boolean,
-    default: false
-  },
-  pinnedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  pinnedAt: {
-    type: Date
-  },
   // Edit tracking
   isEdited: {
     type: Boolean,
@@ -101,6 +89,5 @@ const messageSchema = new mongoose.Schema({
 messageSchema.index({ sender: 1, receiver: 1, createdAt: -1 });
 messageSchema.index({ receiver: 1, isRead: 1, createdAt: -1 });
 messageSchema.index({ event: 1, isPublic: 1, createdAt: -1 });
-messageSchema.index({ isPinned: 1, event: 1 });
 
 module.exports = mongoose.model('Message', messageSchema);

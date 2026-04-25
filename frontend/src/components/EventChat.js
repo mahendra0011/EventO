@@ -9,8 +9,7 @@ import {
   getCommunityMessages,
   postCommunityMessage,
   getEventAttendees,
-  deleteMessage,
-  pinMessage
+  deleteMessage
 } from '../utils/api';
 import ReactionPicker from './ReactionPicker';
 import toast from 'react-hot-toast';
@@ -27,7 +26,6 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
-  const [pinnedMessage, setPinnedMessage] = useState(null);
   const [showReactionPicker, setShowReactionPicker] = useState(null);
 
   const chatEndRef = useRef(null);
@@ -42,9 +40,6 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       const data = await getCommunityMessages(eventId, 1, 100);
       console.log('Messages response:', data);
       setMessages(data.messages || []);
-      if (data.pinnedMessage) {
-        setPinnedMessage(data.pinnedMessage);
-      }
     } catch (error) {
       console.error('Error fetching messages:', error);
       let errorMsg = 'Failed to load messages';
@@ -166,27 +161,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     }
   };
 
-  const handlePinMessage = async (messageId) => {
-    try {
-      const response = await pinMessage(messageId, true);
-      setPinnedMessage(response.data.pinnedMessage || response.data.message);
-      await fetchMessages();
-    } catch (error) {
-      console.error('Error pinning message:', error);
-    }
-  };
-
-  const handleUnpinMessage = async () => {
-    try {
-      await pinMessage(pinnedMessage._id, false);
-      setPinnedMessage(null);
-      await fetchMessages();
-    } catch (error) {
-      console.error('Error unpinning message:', error);
-    }
-  };
-
-  const handleReaction = async (messageId, emoji) => {
+   const handleReaction = async (messageId, emoji) => {
     try {
       // TODO: Implement reaction API
       console.log('Add reaction:', messageId, emoji);
@@ -338,8 +313,8 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                 </button>
               )}
             </motion.div>
-          )}
-        </AnimatePresence>
+        )}
+      </AnimatePresence>
 
         {/* Messages Area */}
         <div className='flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar'>
@@ -398,14 +373,13 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                           )}
                           {!isOwn && !showAvatar && <div className='w-10 flex-shrink-0' />}
 
-                          <div
-                            className={`relative px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 cursor-pointer
-                              ${isOwn
-                                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm'
-                                : 'bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm'
-                              }
-                               ${pinnedMessage?._id === msg._id ? 'ring-2 ring-amber-500' : ''}
-                             `}
+                           <div
+                             className={`relative px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 cursor-pointer
+                               ${isOwn
+                                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm'
+                                 : 'bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm'
+                               }
+                              `}
                            >
                             {/* Reply Reference */}
                             {msg.replyTo && (
@@ -488,18 +462,11 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                             {isHost() && !isOwn && (
                               <>
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); handlePinMessage(msg._id); }}
-                                  className='p-1 text-slate-400 hover:text-amber-500'
-                                  title='Pin'
-                                >
-                                  <Pin className='w-3 h-3' />
-                                </button>
-                                <button
                                   onClick={(e) => { e.stopPropagation(); /* mute user */ }}
-                                  className='p-1 text-slate-400 hover:text-red-500'
-                                  title='Mute User'
+                                  className='p-1.5 text-slate-400 hover:text-amber-500 hover:bg-slate-700/50 rounded'
+                                  title='Mute'
                                 >
-                                  <UserX className='w-3 h-3' />
+                                  <UserX className='w-4 h-4' />
                                 </button>
                               </>
                             )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, User, Check, CheckCheck, Pin, Send, Smile, Star, Crown, MessageSquare, Megaphone, Sparkles } from "lucide-react";
+import { Users, User, Check, CheckCheck, Send, Smile, Star, Crown, MessageSquare, Megaphone, Sparkles } from "lucide-react";
 import "./CommunityChat.css";
 
 const mockEvents = [
@@ -26,7 +26,7 @@ const mockAllMessages = {
   "event1_user1": [
     { id: "m1", senderId: "user1", senderRole: "user", content: "Excited for Web Dev Summit!", timestamp: "09:15", seen: true },
     { id: "m2", senderId: "host1", senderRole: "host", content: "Welcome! Starts at 10 AM.", timestamp: "09:20", seen: true },
-    { id: "m3", senderId: "host1", senderRole: "host", content: "[PINNED] Bring laptop for sessions", timestamp: "09:25", seen: false, pinned: true },
+    { id: "m3", senderId: "host1", senderRole: "host", content: "Bring laptop for sessions", timestamp: "09:25", seen: false },
   ],
   "event2_user2": [
     { id: "m4", senderId: "user2", senderRole: "user", content: "Is this beginner-friendly?", timestamp: "14:30", seen: true },
@@ -49,7 +49,7 @@ const CommunityChat = () => {
   const [activeTab, setActiveTab] = useState("direct"); // direct or community
   const [broadcastMessage, setBroadcastMessage] = useState("");
   const chatEndRef = useRef(null);
-  
+
   const currentUser = activeRole === "host" 
     ? mockAllHosts[0] 
     : mockAllUsers[0];
@@ -136,10 +136,6 @@ const CommunityChat = () => {
     setBroadcastMessage("");
   };
   
-  const handlePinMessage = (msg) => {
-    alert("Message pinned to top!");
-  };
-  
   const getUnreadCount = (eventId) => {
     const host = mockAllHosts.find(h => h.id === mockEvents.find(e => e.id === eventId)?.hostId);
     if (!host) return 0;
@@ -162,10 +158,8 @@ const CommunityChat = () => {
     if (!event) return null;
     return mockAllHosts.find(h => h.id === event.creatorId) || mockAllUsers.find(u => u.id === event.creatorId);
   };
- 
-  const pinnedMessage = messages.find(m => m.pinned);
 
-return (
+  return (
     <div className='min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950'>
       {/* Ambient background effects */}
       <div className='fixed inset-0 overflow-hidden pointer-events-none'>
@@ -391,15 +385,8 @@ return (
                         {messages.map((msg) => (
                           <motion.div key={msg.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
                             className={'flex ' + (msg.senderRole === activeRole && !msg._alignLeft ? "justify-end" : "justify-start")}>
-                            <div className={'group relative max-w-lg xl:max-w-md ' + (msg.senderRole === activeRole && !msg._alignLeft ? "" : "flex-row-reverse")}>
-                              {msg.pinned && (
-                                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                                  className='absolute -top-6 left-0 flex items-center gap-1 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-full px-2 py-0.5 backdrop-blur-sm'>
-                                  <Pin className='w-3 h-3 text-amber-400' />
-                                  <span className='text-xs text-amber-400 font-medium'>Pinned</span>
-                                </motion.div>
-                              )}
-                              {msg.type === "community" && (
+                             <div className={'group relative max-w-lg xl:max-w-md ' + (msg.senderRole === activeRole && !msg._alignLeft ? "" : "flex-row-reverse")}>
+                               {msg.type === "community" && (
                                 <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
                                   className='absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-gradient-to-r from-amber-500/10 to-transparent rounded-full px-2 py-0.5'>
                                   <MessageSquare className='w-3 h-3 text-amber-400/60' />
@@ -419,14 +406,14 @@ return (
                                     </span>
                                   </motion.div>
                                 )}
-                                   <div className={msg.senderRole === activeRole && !msg._alignLeft ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm ml-8 px-4 py-2.5 shadow-lg shadow-amber-500/20 group-hover:shadow-xl transition-all duration-300 relative" : (msg.type === "community" ? "bg-gradient-to-br from-slate-800/80 to-slate-900/80 text-slate-200 border border-amber-500/20 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative backdrop-blur-sm" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative")}>
-                                     {msg.senderRole !== activeRole && mockAllUsers.find(u => u.id === msg.senderId)?.isPremium && (
-                                       <Star className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
-                                     )}
-                                     {msg.senderRole === "host" && activeTab === "community" && msg.senderRole !== activeRole && (
-                                       <Crown className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
-                                     )}
-                                     <p className='text-sm leading-relaxed break-words'>{msg.content}</p>
+                            <div className={msg.senderRole === activeRole && !msg._alignLeft ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm ml-8 px-4 py-2.5 shadow-lg shadow-amber-500/20 group-hover:shadow-xl transition-all duration-300 relative" : (msg.type === "community" ? "bg-gradient-to-br from-slate-800/80 to-slate-900/80 text-slate-200 border border-amber-500/20 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative backdrop-blur-sm" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative")}>
+                                      {msg.senderRole !== activeRole && mockAllUsers.find(u => u.id === msg.senderId)?.isPremium && (
+                                        <Star className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
+                                      )}
+                                      {msg.senderRole === "host" && activeTab === "community" && msg.senderRole !== activeRole && (
+                                        <Crown className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
+                                      )}
+                                      <p className='text-sm leading-relaxed break-words'>{msg.content}</p>
                                   <div className='flex items-center justify-between mt-1.5'>
                                     {msg.senderName && msg.senderRole !== activeRole && (
                                       <span className='text-[10px] font-medium text-amber-400/80 uppercase tracking-wide'>

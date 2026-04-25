@@ -12,8 +12,7 @@ const {
   deleteMessage,
   broadcastMessage,
   postCommunityMessage,
-  getCommunityMessages,
-  pinMessage
+  getCommunityMessages
 } = require('../controllers/messageController');
 const { auth } = require('../middleware/auth');
 
@@ -71,11 +70,6 @@ router.get('/attendees', auth, getEventAttendees);
 // @desc    Mark conversation as read
 // @access  Private
 router.put('/read/:userId', auth, markConversationAsRead);
-
-// @route   PUT /api/messages/:id/pin
-// @desc    Pin/Unpin a community message (host only for their event)
-// @access  Private (Host only)
-router.put('/:id/pin', auth, pinMessage);
 
 // @route   DELETE /api/messages/:id
 // @desc    Delete a message (only sender or host can delete)
