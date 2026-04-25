@@ -36,13 +36,18 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   // Fetch community messages
   const fetchMessages = useCallback(async () => {
     try {
+      console.log('Fetching messages for event:', eventId);
       const response = await getCommunityMessages(eventId, 1, 100);
+      console.log('Messages response:', response.data);
       setMessages(response.data.messages || []);
       if (response.data.pinnedMessage) {
         setPinnedMessage(response.data.pinnedMessage);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
+      if (error.response) {
+        console.error('API error:', error.response.data);
+      }
     } finally {
       setLoading(false);
     }

@@ -139,6 +139,13 @@ exports.postCommunityMessage = async (req, res) => {
     await message.save();
     await message.populate(['sender', 'event']);
 
+    console.log('Community message posted:', {
+      id: message._id,
+      sender: message.sender.name,
+      event: message.event.title,
+      isPublic: message.isPublic
+    });
+
     res.status(201).json({ message: 'Message posted to community chat', data: message });
   } catch (error) {
     console.error('Post community message error:', error);
