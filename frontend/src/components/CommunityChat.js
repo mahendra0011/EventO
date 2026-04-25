@@ -90,6 +90,9 @@ const CommunityChat = () => {
       timestamp: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }),
       seen: false,
     };
+    if (activeTab === "community") {
+      msg.type = "community";
+    }
     setMessages(prev => [...prev, msg]);
     setNewMessage("");
   };
@@ -276,105 +279,191 @@ return (
                   )}
                 </div>
 
-                {/* Broadcast Panel for Hosts */}
-                {activeRole === "host" && activeTab === "community" && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                    className='p-4 border-b border-amber-500/20 bg-gradient-to-r from-amber-500/5 to-transparent'>
-                    <div className='flex items-center gap-3 mb-3'>
-                      <Megaphone className='w-5 h-5 text-amber-500' />
-                      <span className='font-medium text-amber-500'>Broadcast to All Attendees</span>
-                    </div>
-                    <form onSubmit={handleBroadcast} className='flex gap-2'>
-                       <input type='text' value={broadcastMessage} onChange={(e) => setBroadcastMessage(e.target.value)}
-                         placeholder='Send announcement to all event participants...' className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none' />
-                      <button type='submit' disabled={!broadcastMessage.trim()} className='px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-lg font-medium text-sm disabled:opacity-50'>Send</button>
-                    </form>
-                  </motion.div>
-                )}
+                 {/* Community Header for Hosts */}
+                 {activeTab === "community" && (
+                   <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                     className='p-4 border-b border-slate-800/50 bg-gradient-to-r from-amber-500/5 via-amber-500/5 to-transparent relative overflow-hidden'>
+                     <div className='absolute inset-0 opacity-20' style={{ background: 'radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.3), transparent 70%)' }} />
+                     <div className='relative flex items-center gap-3 mb-3'>
+                       <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/30 to-amber-600/30 border border-amber-500/30 flex items-center justify-center'>
+                         <Megaphone className='w-5 h-5 text-amber-400' />
+                       </div>
+                       <div>
+                         <span className='font-medium text-amber-500 text-sm uppercase tracking-wider'>Community Feed</span>
+                         <p className='text-slate-400 text-xs'>Connect with fellow attendees</p>
+                       </div>
+                     </div>
+                     <div className='flex items-center gap-2 mb-3'>
+                       <div className='flex -space-x-2'>
+                         {getEventParticipants(selectedEvent).slice(0, 3).map(user => (
+                           <img key={user.id} src={user.avatar} alt={user.name}
+                             className='w-7 h-7 rounded-full border-2 border-slate-900/50' />
+                         ))}
+                         {getEventParticipants(selectedEvent).length > 3 && (
+                           <div className='w-7 h-7 rounded-full bg-slate-800/80 border-2 border-slate-900/50 flex items-center justify-center text-xs text-slate-500'>
+                             +{getEventParticipants(selectedEvent).length - 3}
+                           </div>
+                         )}
+                       </div>
+                       <span className='text-xs text-slate-500'>{getEventParticipants(selectedEvent).length} attendees</span>
+                     </div>
+                   </motion.div>
+                 )}
+
+                 {/* Broadcast Panel for Hosts (inside community) */}
+                 {activeRole === "host" && activeTab === "community" && (
+                   <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+                     className='p-4 border-b border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-transparent'>
+                     <div className='flex items-center gap-3 mb-3'>
+                       <Crown className='w-5 h-5 text-amber-500' />
+                       <span className='font-medium text-amber-500'>Host Broadcast</span>
+                     </div>
+                     <form onSubmit={handleBroadcast} className='flex gap-2'>
+                        <input type='text' value={broadcastMessage} onChange={(e) => setBroadcastMessage(e.target.value)}
+                          placeholder='Send announcement to all event participants...' className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none' />
+                       <button type='submit' disabled={!broadcastMessage.trim()} className='px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-lg font-medium text-sm disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-amber-500/20'>
+                         <span className='flex items-center gap-1'>
+                           <Megaphone className='w-4 h-4' />
+                           Broadcast
+                         </span>
+                       </button>
+                     </form>
+                   </motion.div>
+                 )}
 
                 {/* Messages Area */}
                 <div className='flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar'>
                   {messages.length === 0 ? (
-                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                      className='flex flex-col items-center justify-center h-full text-center py-12'>
-                      <div className='w-20 h-20 rounded-full bg-slate-800/50 border border-slate-700/50 flex items-center justify-center mb-4'>
-                        <MessageSquare className='w-10 h-10 text-slate-600' />
-                      </div>
-                      <p className='text-slate-400 font-medium text-lg mb-2'>
-                        {activeTab === "community" ? "No community messages yet" : (selectedUser ? `Start a conversation with ${selectedUser.name}` : "Select a user to start chatting")}
-                      </p>
-                      <p className='text-slate-600 text-sm'>
-                        {activeTab === "community" ? "Be the first to post in the community feed!" : (activeRole === "host" && !selectedUser ? "Select an attendee to message them directly" : "Send a message to break the ice 👋")}
-                      </p>
-                    </motion.div>
+                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                       className='flex flex-col items-center justify-center h-full text-center py-12'>
+                       <div className='w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-800/50 flex items-center justify-center mb-4 shadow-lg'>
+                         {activeTab === "community" ? (
+                           <MessageSquare className='w-10 h-10 text-slate-600' />
+                         ) : (
+                           <Users className='w-10 h-10 text-slate-600' />
+                         )}
+                       </div>
+                       <p className='text-slate-400 font-medium text-lg mb-2'>
+                         {activeTab === "community" ? "No community messages yet" : (selectedUser ? `Start a conversation with ${selectedUser.name}` : "Select a user to start chatting")}
+                       </p>
+                       <p className='text-slate-600 text-sm'>
+                         {activeTab === "community" ? (
+                           <>
+                             {activeRole === "host" ? "Post an announcement or start the conversation!" : "Be the first to post in the community feed!"}
+                           </>
+                         ) : (activeRole === "host" && !selectedUser ? "Select an attendee to message them directly" : "Send a message to break the ice 👋")}
+                       </p>
+                     </motion.div>
                   ) : (
-                    <AnimatePresence initial={false}>
-                      {messages.map((msg) => (
-                        <motion.div key={msg.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-                          className={'flex ' + (msg.senderRole === activeRole ? "justify-end" : "justify-start")}>
-                          <div className={'group relative max-w-lg xl:max-w-md ' + (msg.senderRole === activeRole ? "" : "flex-row-reverse")}>
-                            {msg.pinned && (
-                              <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                                className='absolute -top-6 left-0 flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 rounded-full px-2 py-0.5'>
-                                <Pin className='w-3 h-3 text-amber-400' />
-                                <span className='text-xs text-amber-400 font-medium'>Pinned</span>
-                              </motion.div>
-                            )}
-                            <div className={'flex items-end gap-2 ' + (msg.senderRole === activeRole ? "flex-row-reverse" : "")}>
-                              {(msg.senderRole !== activeRole || activeTab === "community") && (
-                                <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
-                                  className={'w-8 h-8 rounded-full bg-gradient-to-br flex items-center justify-center flex-shrink-0 ' + (msg.senderRole === "host" ? "from-amber-500/30 to-amber-600/30 border border-amber-500/30" : "from-slate-700 to-slate-800 border border-slate-600/50")}>
-                                  <span className={'text-xs font-bold ' + (msg.senderRole === "host" ? "text-amber-400" : "text-slate-300")}>
-                                    {(msg.senderName || msg.senderId?.charAt(0) || "?").toUpperCase()}
-                                  </span>
-                                </motion.div>
-                              )}
-                              <div className={msg.senderRole === activeRole ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm ml-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative"}>
-                                {msg.senderRole !== activeRole && mockAllUsers.find(u => u.id === msg.senderId)?.isPremium && (
-                                  <Star className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
-                                )}
-                                <p className='text-sm leading-relaxed break-words'>{msg.content}</p>
-                                <div className='flex items-center justify-between mt-1.5'>
-                                  <span className='text-[10px] opacity-50 font-mono'>{msg.timestamp}</span>
-                                  {msg.senderRole === activeRole && (
-                                    <span className='flex items-center gap-0.5'>
-                                      {msg.seen ? <CheckCheck className='w-3 h-3 text-slate-400' /> : <Check className='w-3 h-3 text-slate-400' />}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className='absolute -bottom-6 left-0 right-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
-                                  {msg.senderRole !== activeRole && activeRole === "host" && (
-                                    <button onClick={() => handlePinMessage(msg)} className='p-1 bg-amber-500/20 hover:bg-amber-500/30 rounded-full transition-colors' title='Pin message'>
-                                      <Pin className='w-3 h-3 text-amber-400' />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
+                     <AnimatePresence initial={false}>
+                       {messages.map((msg) => (
+                         <motion.div key={msg.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+                           className={'flex ' + (msg.senderRole === activeRole ? "justify-end" : "justify-start")}>
+                           <div className={'group relative max-w-lg xl:max-w-md ' + (msg.senderRole === activeRole ? "" : "flex-row-reverse")}>
+                             {msg.pinned && (
+                               <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                                 className='absolute -top-6 left-0 flex items-center gap-1 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-full px-2 py-0.5 backdrop-blur-sm'>
+                                 <Pin className='w-3 h-3 text-amber-400' />
+                                 <span className='text-xs text-amber-400 font-medium'>Pinned</span>
+                               </motion.div>
+                             )}
+                             {msg.type === "community" && (
+                               <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                                 className='absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-gradient-to-r from-amber-500/10 to-transparent rounded-full px-2 py-0.5'>
+                                 <MessageSquare className='w-3 h-3 text-amber-400/60' />
+                                 <span className='text-xs text-amber-400/60 font-medium'>Community</span>
+                               </motion.div>
+                             )}
+                              <div className={`flex items-end gap-2 ${msg.senderRole === activeRole ? 'flex-row-reverse' : ''}`}>
+                               {(msg.senderRole !== activeRole || activeTab === "community") && (
+                                  <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
+                                    className={`w-8 h-8 rounded-xl bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-lg border ${
+                                      msg.senderRole === "host" 
+                                        ? "from-amber-500/20 to-amber-600/20 border-amber-500/30" 
+                                        : "from-slate-700 to-slate-800 border-slate-600/50"
+                                    }`}>
+                                   <span className={'text-xs font-bold ' + (msg.senderRole === "host" ? "text-amber-400" : "text-slate-300")}>
+                                     {(msg.senderName || msg.senderId?.charAt(0) || "?").toUpperCase()}
+                                   </span>
+                                 </motion.div>
+                               )}
+                                  <div className={msg.senderRole === activeRole ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm ml-8 px-4 py-2.5 shadow-lg shadow-amber-500/20 group-hover:shadow-xl transition-all duration-300 relative" : (msg.type === "community" ? "bg-gradient-to-br from-slate-800/80 to-slate-900/80 text-slate-200 border border-amber-500/20 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative backdrop-blur-sm" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative")}>
+                                    {msg.senderRole !== activeRole && mockAllUsers.find(u => u.id === msg.senderId)?.isPremium && (
+                                      <Star className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
+                                    )}
+                                    {msg.senderRole === "host" && activeTab === "community" && msg.senderRole !== activeRole && (
+                                      <Crown className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
+                                    )}
+                                    <p className='text-sm leading-relaxed break-words'>{msg.content}</p>
+                                 <div className='flex items-center justify-between mt-1.5'>
+                                   {msg.senderName && msg.senderRole !== activeRole && (
+                                     <span className='text-[10px] font-medium text-amber-400/80 uppercase tracking-wide'>
+                                       {msg.senderName}
+                                     </span>
+                                   )}
+                                   {msg.senderRole === activeRole && (
+                                     <span className='text-[10px] opacity-40 font-mono'>{msg.timestamp}</span>
+                                   )}
+                                   {msg.senderRole === activeRole && (
+                                     <span className='flex items-center gap-0.5'>
+                                       {msg.seen ? <CheckCheck className='w-3 h-3 text-slate-400' /> : <Check className='w-3 h-3 text-slate-400' />}
+                                     </span>
+                                   )}
+                                 </div>
+                               </div>
+                             </div>
+                           </div>
+                         </motion.div>
+                       ))}
+                     </AnimatePresence>
                   )}
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Message Input */}
-                {activeTab === "direct" && (activeRole === "user" || selectedUser) && (
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className='p-4 border-t border-slate-800/50 bg-slate-900/30'>
-                    <form onSubmit={handleSendMessage} className='flex items-end gap-3'>
-                      <button type='button' className='p-2.5 text-slate-500 hover:text-amber-500 rounded-xl hover:bg-slate-800/50 transition-all' title='Add emoji'>
-                        <Smile className='w-5 h-5' />
-                      </button>
-                      <input type='text' value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder={activeRole === "host" ? `Message ${selectedUser?.name || "attendee"}...` : `Message host...`}
-                        className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all' />
-                      <button type='submit' disabled={!newMessage.trim()} className='p-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl hover:shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 transition-all'>
-                        <Send className='w-5 h-5' />
-                      </button>
-                    </form>
-                  </motion.div>
-                )}
+                 {/* Message Input */}
+                 {activeTab === "direct" && (activeRole === "user" || selectedUser) && (
+                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className='p-4 border-t border-slate-800/50 bg-slate-900/30'>
+                     <form onSubmit={handleSendMessage} className='flex items-end gap-3'>
+                       <button type='button' className='p-2.5 text-slate-500 hover:text-amber-500 rounded-xl hover:bg-slate-800/50 transition-all' title='Add emoji'>
+                         <Smile className='w-5 h-5' />
+                       </button>
+                       <input type='text' value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
+                         placeholder={activeRole === "host" ? `Message ${selectedUser?.name || "attendee"}...` : `Message host...`}
+                         className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all' />
+                       <button type='submit' disabled={!newMessage.trim()} className='px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 transition-all flex items-center gap-2'>
+                         <Send className='w-4 h-4' />
+                         Send
+                       </button>
+                     </form>
+                   </motion.div>
+                 )}
+
+                 {/* Community Message Input */}
+                 {activeTab === "community" && selectedEvent && (
+                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className='p-4 border-t border-slate-800/50 bg-slate-900/30'>
+                     <div className='flex items-center gap-2 mb-3'>
+                       <div className='w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-amber-600/30 border border-amber-500/30 flex items-center justify-center'>
+                         <MessageSquare className='w-4 h-4 text-amber-400' />
+                       </div>
+                       <span className='text-sm text-slate-400'>Post to community feed</span>
+                       {activeRole === "host" && (
+                         <span className='ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium'>
+                           <Crown className='w-3 h-3' />
+                           Host
+                         </span>
+                       )}
+                     </div>
+                     <form onSubmit={handleSendMessage} className='flex gap-2'>
+                       <input type='text' value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
+                         placeholder={activeRole === "host" ? "Share an announcement with all attendees..." : "Share your thoughts with the community..."}
+                         className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all' />
+                       <button type='submit' disabled={!newMessage.trim()} className='px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 transition-all flex items-center gap-2'>
+                         <Send className='w-4 h-4' />
+                         Post
+                       </button>
+                     </form>
+                   </motion.div>
+                 )}
               </>
             ) : (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='flex-1 flex items-center justify-center text-center p-8'>
