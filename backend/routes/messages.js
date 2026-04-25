@@ -11,7 +11,8 @@ const {
   deleteMessage,
   broadcastMessage,
   postCommunityMessage,
-  getCommunityMessages
+  getCommunityMessages,
+  pinMessage
 } = require('../controllers/messageController');
 const { auth } = require('../middleware/auth');
 
