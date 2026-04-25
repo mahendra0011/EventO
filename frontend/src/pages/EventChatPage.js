@@ -63,40 +63,40 @@ const EventChatPage = () => {
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden flex flex-col">
-      <div className="max-w-7xl mx-auto px-4 w-full flex flex-col h-full">
+      <div className="max-w-7xl mx-auto px-3 w-full flex flex-col h-full">
         {/* Header */}
-        <div className="flex-shrink-0 pb-3">
+        <div className="flex-shrink-0 pb-2">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center text-slate-400 hover:text-amber-500 mb-3 transition-colors text-sm"
+            className="flex items-center text-slate-400 hover:text-amber-500 mb-2 transition-colors text-xs"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
             Back to {userRole === 'host' ? 'Host Panel' : 'Dashboard'}
           </button>
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-serif text-white tracking-tight">
+              <h1 className="text-xl font-serif text-white tracking-tight">
                 Community Chat
               </h1>
-              <p className="text-sm text-slate-400 mt-0.5">
+              <p className="text-[11px] text-slate-400">
                 {event.title} • {new Date(event.date).toLocaleDateString()}
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="px-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-xl">
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-amber-500" />
+              <div className="px-3 py-1 bg-slate-800/50 border border-slate-700/50 rounded-lg">
+                <div className="flex items-center gap-2 text-[11px]">
+                  <Users className="h-3.5 w-3.5 text-amber-500" />
                   <span className="text-slate-300">
                     Confirmed attendees can participate
                   </span>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+           </div>
+         </div>
 
-        {/* Chat Container - flex-1 takes remaining space */}
+         {/* Chat Container - flex-1 takes remaining space */}
         <div className="flex-1 min-h-0 bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-2xl overflow-hidden shadow-2xl">
           <EventChat
             eventId={eventId}
