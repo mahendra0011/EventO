@@ -211,10 +211,10 @@ const CommunityChat = () => {
         <div className='absolute top-1/2 left-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.03),transparent_70%)]' />
       </div>
       
-      <div className='community-chat-container relative z-10 max-w-8xl mx-auto px-4 py-6 h-[calc(100vh-5rem)] overflow-hidden'>
+       <div className='community-chat-container relative z-10 max-w-8xl mx-auto px-4 py-4 h-[calc(100vh-8rem)] overflow-hidden'>
         {/* Header with role toggle */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-          className='flex items-center justify-between mb-6'>
+          className='flex items-center justify-between mb-4'>
           <div className='flex items-center gap-4'>
             <div className='w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20'>
               <MessageSquare className='w-6 h-6 text-slate-900' />

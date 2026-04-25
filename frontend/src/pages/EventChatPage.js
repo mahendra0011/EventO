@@ -97,7 +97,7 @@ const EventChatPage = () => {
         </div>
 
         {/* Chat Container */}
-        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-2xl overflow-hidden shadow-2xl h-[calc(100vh-8rem)]">
+        <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-2xl overflow-hidden shadow-2xl h-[calc(100vh-7rem)]">
           <EventChat
             eventId={eventId}
             eventTitle={event.title}

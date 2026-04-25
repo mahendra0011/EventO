@@ -430,14 +430,15 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
 
                              {!isOwn && sender && (
                                <div className='flex items-center gap-2 mb-1.5'>
-                                 <p className='text-xs font-semibold text-amber-400'>
-                                   {sender.name}
-                                 </p>
-                                 {sender.role === 'host' && (
-                                   <span className='px-1.5 py-0.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-full text-[10px] font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1'>
-                                     <Crown className='w-2.5 h-2.5 fill-current' />
+                                 {sender.role === 'host' ? (
+                                   <span className='px-2 py-1 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 rounded-full text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 shadow-sm'>
+                                     <Crown className='w-3 h-3 fill-current' />
                                      Host
                                    </span>
+                                 ) : (
+                                   <p className='text-xs font-semibold text-amber-400'>
+                                     {sender.name}
+                                   </p>
                                  )}
                                </div>
                              )}
