@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Smile, Users, Crown, MessageSquare, Trash2, UserX, Volume2,
-  ThumbsUp, Heart, Laugh, Frown, Sparkles, MoreHorizontal, Phone, Video,
-  FileText, Image, Paperclip, SmilePlus, BookOpen, Edit3, X
+  Edit3, SmilePlus, Paperclip, Image, X, ChevronDown
 } from 'lucide-react';
 import {
   getCommunityMessages,
@@ -27,11 +26,15 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
-  const [showReactionPicker, setShowReactionPicker] = useState(null);
+   const [showReactionPicker, setShowReactionPicker] = useState(null);
 
   const chatEndRef = useRef(null);
   const pollingRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const autoScrollRef = useRef(true);
+  const prevMessagesLengthRef = useRef(0);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   // Fetch community messages
   const fetchMessages = useCallback(async () => {
@@ -126,16 +129,59 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     };
   }, [eventId, fetchMessages, fetchAttendees]);
 
-  // Scroll to bottom on new messages
+  // Reset auto-scroll when event changes
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    autoScrollRef.current = true;
+  }, [eventId]);
+
+  // Handle manual scroll detection
+  const handleScroll = useCallback(() => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    const threshold = 150;
+    const nearBottom = distanceFromBottom <= threshold;
+    
+    if (nearBottom) {
+      autoScrollRef.current = true;
+      setShowScrollBtn(false);
+    } else {
+      autoScrollRef.current = false;
+    }
+  }, []);
+
+  // Scroll to bottom when new messages arrive (if auto-scroll enabled)
+  useEffect(() => {
+    const prevLength = prevMessagesLengthRef.current;
+    prevMessagesLengthRef.current = messages.length;
+    
+    if (autoScrollRef.current) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } else if (messages.length > prevLength) {
+      // New message arrived while scrolled up - show scroll button
+      setShowScrollBtn(true);
+    }
   }, [messages]);
+
+  // Scroll to bottom manually
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+      autoScrollRef.current = true;
+      setShowScrollBtn(false);
+    }
+  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
 
     setSending(true);
+    // Enable auto-scroll after sending
+    autoScrollRef.current = true;
     try {
       const response = await postCommunityMessage(eventId, newMessage.trim());
       console.log('Message sent successfully:', response);
@@ -291,8 +337,12 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
           </div>
          </div>
 
-          {/* Messages Area */}
-         <div className='flex-1 overflow-y-auto p-4 space-y-4 chat-scroll-container'>
+        {/* Messages Area */}
+        <div 
+          ref={messagesContainerRef}
+          onScroll={handleScroll}
+          className='flex-1 overflow-y-auto p-4 space-y-4 chat-scroll-container relative'
+        >
           {loading ? (
             <div className='flex items-center justify-center h-full'>
               <div className='text-slate-400'>Loading messages...</div>
@@ -477,8 +527,19 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
               })}
             </AnimatePresence>
           )}
-          <div ref={chatEndRef} />
-        </div>
+           <div ref={chatEndRef} />
+           
+           {/* Scroll to bottom button */}
+           {showScrollBtn && (
+             <button
+               onClick={scrollToBottom}
+               className='absolute bottom-4 right-4 p-2 bg-amber-500 text-slate-900 rounded-full shadow-lg hover:bg-amber-400 transition-colors z-10 flex items-center justify-center'
+               aria-label='Scroll to bottom'
+             >
+               <ChevronDown className='w-5 h-5' />
+             </button>
+           )}
+         </div>
 
         {/* Reply/Edit Preview */}
         {(replyingTo || editingMessage) && (

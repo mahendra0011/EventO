@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, User, Check, CheckCheck, Send, Smile, Star, Crown, MessageSquare, Megaphone, Sparkles } from "lucide-react";
+import { Users, User, Check, CheckCheck, Send, Smile, Star, Crown, MessageSquare, Megaphone, Sparkles, ChevronDown } from "lucide-react";
 import "./CommunityChat.css";
 
 const mockEvents = [
@@ -49,6 +49,9 @@ const CommunityChat = () => {
   const [activeTab, setActiveTab] = useState("direct"); // direct or community
   const [broadcastMessage, setBroadcastMessage] = useState("");
   const chatEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const autoScrollRef = useRef(true);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   const currentUser = activeRole === "host" 
     ? mockAllHosts[0] 
@@ -85,7 +88,47 @@ const CommunityChat = () => {
       setMessages([]);
     }
   }, [selectedEvent, selectedUser, activeRole, activeTab, currentUser.id]);
-  
+
+  // Reset auto-scroll when event/tab changes
+  useEffect(() => {
+    autoScrollRef.current = true;
+  }, [selectedEvent, activeTab]);
+
+  // Handle manual scroll detection
+  const handleScroll = useCallback(() => {
+    if (!messagesContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    const threshold = 150;
+    const nearBottom = distanceFromBottom <= threshold;
+    
+    if (nearBottom) {
+      autoScrollRef.current = true;
+      setShowScrollBtn(false);
+    } else {
+      autoScrollRef.current = false;
+    }
+  }, []);
+
+  // Scroll to bottom when new messages arrive (if auto-scroll enabled)
+  useEffect(() => {
+    if (autoScrollRef.current) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  // Scroll to bottom manually
+  const scrollToBottom = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+      autoScrollRef.current = true;
+      setShowScrollBtn(false);
+    }
+  };
+
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -358,7 +401,11 @@ const CommunityChat = () => {
                  )}
 
                  {/* Messages Area */}
-                 <div className='flex-1 overflow-y-auto p-4 space-y-4 chat-scroll-container'>
+                 <div 
+                   ref={messagesContainerRef}
+                   onScroll={handleScroll}
+                   className='flex-1 overflow-y-auto p-4 space-y-4 chat-scroll-container relative'
+                 >
                   {messages.length === 0 ? (
                      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                        className='flex flex-col items-center justify-center h-full text-center py-12'>
@@ -434,10 +481,22 @@ const CommunityChat = () => {
                             </div>
                           </motion.div>
                         ))}
-                     </AnimatePresence>
-                  )}
-                  <div ref={chatEndRef} />
-                </div>
+                        </AnimatePresence>
+                      )}
+                   </AnimatePresence>
+                   <div ref={chatEndRef} />
+                   
+                   {/* Scroll to bottom button */}
+                   {showScrollBtn && (
+                     <button
+                       onClick={scrollToBottom}
+                       className='absolute bottom-4 right-4 p-2 bg-amber-500 text-slate-900 rounded-full shadow-lg hover:bg-amber-400 transition-colors z-10 flex items-center justify-center'
+                       aria-label='Scroll to bottom'
+                     >
+                       <ChevronDown className='w-5 h-5' />
+                     </button>
+                   )}
+                 </div>
 
                  {/* Message Input */}
                  {activeTab === "direct" && (activeRole === "user" || selectedUser) && (
