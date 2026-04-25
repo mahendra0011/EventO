@@ -218,17 +218,6 @@ exports.getCommunityMessages = async (req, res) => {
       console.log(`[getCommunityMessages] Message ${idx}: id=${msg._id}, sender=${msg.sender?.name}, content="${msg.content?.substring(0, 50)}", isPublic=${msg.isPublic}, createdAt=${msg.createdAt}`);
     });
 
-    const messages = await Message.find({
-      event: eventId,
-      isPublic: true
-    })
-    .populate('sender', 'name email')
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit * 1);
-
-    console.log(`[getCommunityMessages] Found ${messages.length} messages`);
-
     const total = await Message.countDocuments({
       event: eventId,
       isPublic: true
