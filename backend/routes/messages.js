@@ -57,15 +57,15 @@ router.get('/sent', auth, getSentMessages);
 // @access  Private (Host only)
 router.get('/conversations', auth, getHostConversations);
 
+// @route   GET /api/messages/attendees/:eventId
+// @desc    Get attendees for a specific event (for chat participants)
+// @access  Private (Host or confirmed attendee can view)
+router.get('/attendees/:eventId', auth, getEventAttendeesByEvent);
+
 // @route   GET /api/messages/attendees
 // @desc    Get all event attendees for host to message (host only)
 // @access  Private (Host only)
 router.get('/attendees', auth, getEventAttendees);
-
-// @route   GET /api/messages/attendees/:eventId
-// @desc    Get attendees for a specific event (for chat participants)
-// @access  Private
-router.get('/attendees/:eventId', auth, getEventAttendeesByEvent);
 
 // @route   PUT /api/messages/read/:userId
 // @desc    Mark conversation as read
