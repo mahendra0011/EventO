@@ -100,30 +100,41 @@ exports.postCommunityMessage = async (req, res) => {
   try {
     const { eventId, content } = req.body;
 
+    console.log(`[postCommunityMessage] User ${req.user.id} (${req.user.role}) posting to event ${eventId}: "${content.substring(0, 50)}"`);
+
     // Validate event exists
     const event = await Event.findById(eventId);
     if (!event) {
+      console.log(`[postCommunityMessage] Event not found: ${eventId}`);
       return res.status(404).json({ message: 'Event not found' });
     }
+
+    console.log(`[postCommunityMessage] Event found: ${event.title}, organizer: ${event.organizer.toString()}`);
 
     let booking = null;
 
     // Authorization: hosts can always post to their event's community chat
     if (req.user.role === 'host') {
       // Verify host is the organizer of this event
+      console.log(`[postCommunityMessage] Checking if host ${req.user.id} is organizer ${event.organizer.toString()}`);
       if (event.organizer.toString() !== req.user.id) {
+        console.log(`[postCommunityMessage] Host denied - not the organizer`);
         return res.status(403).json({ message: 'You can only post for your own events' });
       }
+      console.log(`[postCommunityMessage] Host authorized (is organizer)`);
     } else {
       // For regular users, verify they have a confirmed booking
+      console.log(`[postCommunityMessage] Regular user, checking for confirmed booking...`);
       booking = await Booking.findOne({
         event: eventId,
         user: req.user.id,
         status: 'confirmed'
       });
       if (!booking) {
+        console.log(`[postCommunityMessage] User denied - no confirmed booking`);
         return res.status(403).json({ message: 'Only attendees can post in community chat' });
       }
+      console.log(`[postCommunityMessage] User has confirmed booking: ${booking._id}`);
     }
 
     const message = new Message({
@@ -149,7 +160,7 @@ exports.postCommunityMessage = async (req, res) => {
     res.status(201).json({ message: 'Message posted to community chat', data: message });
   } catch (error) {
     console.error('Post community message error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
@@ -160,11 +171,16 @@ exports.getCommunityMessages = async (req, res) => {
     const { page = 1, limit = 50 } = req.query;
     const skip = (page - 1) * limit;
 
+    console.log(`[getCommunityMessages] User: ${req.user.id} (${req.user.role}), Event: ${eventId}`);
+
     // Validate event exists
     const event = await Event.findById(eventId);
     if (!event) {
+      console.log(`[getCommunityMessages] Event not found: ${eventId}`);
       return res.status(404).json({ message: 'Event not found' });
     }
+
+    console.log(`[getCommunityMessages] Event organizer: ${event.organizer.toString()}`);
 
     // Authorization: hosts can always view their event's community chat
     // Regular users must have a confirmed booking
@@ -175,12 +191,16 @@ exports.getCommunityMessages = async (req, res) => {
         status: 'confirmed'
       });
       if (!booking) {
+        console.log(`[getCommunityMessages] User ${req.user.id} denied - no confirmed booking for event ${eventId}`);
         return res.status(403).json({ message: 'Only attendees can view community chat' });
       }
     } else if (event.organizer.toString() !== req.user.id) {
       // Hosts can only view their own events' community chat
+      console.log(`[getCommunityMessages] Host ${req.user.id} denied - not organizer of event ${eventId} (organizer: ${event.organizer.toString()})`);
       return res.status(403).json({ message: 'You can only view community for your own events' });
     }
+
+    console.log(`[getCommunityMessages] User ${req.user.id} (${req.user.role}) authorized. Querying messages where event=${eventId}, isPublic=true`);
 
     const messages = await Message.find({
       event: eventId,
@@ -190,6 +210,24 @@ exports.getCommunityMessages = async (req, res) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit * 1);
+
+    console.log(`[getCommunityMessages] Query returned ${messages.length} messages`);
+
+    // Log message details for debugging
+    messages.forEach((msg, idx) => {
+      console.log(`[getCommunityMessages] Message ${idx}: id=${msg._id}, sender=${msg.sender?.name}, content="${msg.content?.substring(0, 50)}", isPublic=${msg.isPublic}, createdAt=${msg.createdAt}`);
+    });
+
+    const messages = await Message.find({
+      event: eventId,
+      isPublic: true
+    })
+    .populate('sender', 'name email')
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit * 1);
+
+    console.log(`[getCommunityMessages] Found ${messages.length} messages`);
 
     const total = await Message.countDocuments({
       event: eventId,
@@ -212,7 +250,7 @@ exports.getCommunityMessages = async (req, res) => {
     });
   } catch (error) {
     console.error('Get community messages error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
