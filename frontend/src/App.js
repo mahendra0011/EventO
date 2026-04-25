@@ -22,7 +22,7 @@ import BookingConfirmation from './pages/BookingConfirmation';
 import EventChatPage from './pages/EventChatPage';
 
 // Protected Route Component
-const ProtectedRoute = ({ children, adminOnly = false }) => {
+const ProtectedRoute = ({ children, adminOnly = false, allowHosts = false }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -47,7 +47,8 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   }
 
   // If user is host and trying to access a non-host admin route, redirect to host panel
-  if (user.role === 'host' && !adminOnly) {
+  // Unless the route explicitly allows hosts (allowHosts prop)
+  if (user.role === 'host' && !adminOnly && !allowHosts) {
     return <Navigate to="/host" replace />;
   }
 
@@ -88,7 +89,7 @@ function AnimatedRoutes() {
         <Route
           path="/events/:eventId/chat"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowHosts>
               <PageTransition>
                 <EventChatPage />
               </PageTransition>
