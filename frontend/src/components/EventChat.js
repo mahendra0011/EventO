@@ -68,17 +68,17 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     }
   }, [eventId]);
 
-  // Fetch event attendees
   const fetchAttendees = useCallback(async () => {
     try {
       const response = await getEventAttendees(eventId);
-      // Guard against undefined response
-      if (!response || !response.data) {
-        console.warn('No attendees response data');
+      // Defensive: ensure response and data exist
+      if (!response) {
+        console.warn('getEventAttendees returned undefined');
         setAttendees([]);
         return;
       }
-      const attendeeList = response.data.attendees || response.data.users || [];
+      const data = response.data || {};
+      const attendeeList = data.attendees || data.users || [];
       setAttendees(attendeeList);
       // Simulate online status (in real app, this would come from WebSocket)
       const online = {};
