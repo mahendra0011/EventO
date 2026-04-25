@@ -6,7 +6,7 @@ import api, { getWishlist, getNotifications } from '../utils/api';
 import toast from 'react-hot-toast';
 import {
   Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone,
-  Edit3, Heart, CreditCard, Star, MessageCircle, Calendar as CalendarIcon, Bell, Eye
+  Edit3, Heart, CreditCard, Star, MessageCircle, Calendar as CalendarIcon, Bell, Eye, MapPin, HelpCircle
 } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, GradientText } from '../components/animated';
 
@@ -507,6 +507,137 @@ const Dashboard = () => {
                       </AnimatedButton>
                     </div>
                   )}
+                </motion.div>
+              )}
+
+              {/* Upcoming Tab */}
+              {activeTab === 'upcoming' && (
+                <motion.div key="upcoming" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold mb-4">Upcoming Events</h3>
+                  {bookings.filter(b => b.status === 'confirmed').length > 0 ? (
+                    <div className="space-y-4">
+                      {bookings.filter(b => b.status === 'confirmed').map((booking) => (
+                        <div key={booking._id} className="border border-gray-200 rounded-lg p-4 flex items-center bg-green-50">
+                          <img src={booking.event?.image} alt={booking.event?.title} className="w-16 h-16 rounded-lg object-cover" />
+                          <div className="ml-4 flex-1">
+                            <h4 className="font-semibold">{booking.event?.title}</h4>
+                            <p className="text-sm text-gray-500">{formatDate(booking.event?.date)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">No upcoming events</div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Calendar Tab */}
+              {activeTab === 'calendar' && (
+                <motion.div key="calendar" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold mb-4">My Event Calendar</h3>
+                  {bookings.filter(b => b.status === 'confirmed').length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {bookings
+                        .filter(b => b.status === 'confirmed')
+                        .sort((a, b) => new Date(a.event.date) - new Date(b.event.date))
+                        .map((booking) => (
+                          <div key={booking._id} className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className="bg-primary-100 p-2 rounded-lg">
+                                <Calendar className="h-5 w-5 text-primary-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-sm line-clamp-1">{booking.event?.title}</h4>
+                                <p className="text-xs text-gray-500">{formatDate(booking.event?.date)}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Clock className="h-4 w-4 mr-1" />
+                              {booking.event?.time}
+                            </div>
+                            <div className="flex items-center text-sm text-gray-600 mt-1">
+                              <MapPin className="h-4 w-4 mr-1" />
+                              {booking.event?.venue}, {booking.event?.location}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold">No upcoming events</h3>
+                      <p className="text-gray-600">Confirmed bookings will appear here</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Payments Tab */}
+              {activeTab === 'payments' && (
+                <motion.div key="payments" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold mb-4">Payment History</h3>
+                  {bookings.filter(b => b.paymentStatus === 'completed').length > 0 ? (
+                    <div className="space-y-4">
+                      {bookings
+                        .filter(b => b.paymentStatus === 'completed')
+                        .map((booking) => (
+                          <div key={booking._id} className="border border-gray-200 rounded-lg p-4 flex items-center bg-white">
+                            <img src={booking.event?.image} alt={booking.event?.title} className="w-16 h-16 rounded-lg object-cover" />
+                            <div className="ml-4 flex-1">
+                              <h4 className="font-semibold">{booking.event?.title}</h4>
+                              <p className="text-sm text-gray-500">{formatDate(booking.event?.date)}</p>
+                              <p className="text-sm text-gray-500">{booking.numberOfTickets} ticket(s)</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xl font-bold text-green-600">₹{booking.totalPrice?.toLocaleString('en-IN')}</p>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Paid
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <CreditCard className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold">No payments yet</h3>
+                      <p className="text-gray-600">Your payment history will appear here</p>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Reviews Tab */}
+              {activeTab === 'reviews' && (
+                <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold mb-4">Reviews & Feedback</h3>
+                  <div className="text-center py-12">
+                    <Star className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold">Reviews Coming Soon</h3>
+                    <p className="text-gray-600">Share your event experiences here</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Support Tab */}
+              {activeTab === 'support' && (
+                <motion.div key="support" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <h3 className="text-lg font-semibold mb-4">Help & Support</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-primary-50 border border-primary-200 rounded-lg p-6">
+                      <HelpCircle className="h-8 w-8 text-primary-600 mb-3" />
+                      <h4 className="font-semibold">FAQs</h4>
+                      <p className="text-sm text-gray-600 mt-2">Frequently asked questions</p>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                      <MessageCircle className="h-8 w-8 text-blue-600 mb-3" />
+                      <h4 className="font-semibold">Contact Us</h4>
+                      <p className="text-sm text-gray-600 mt-2">Get in touch with our support team</p>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
