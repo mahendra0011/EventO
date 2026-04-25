@@ -316,7 +316,7 @@ exports.broadcastMessage = async (req, res) => {
     }
 
     // Populate messages for response
-    await Promise.all(sentMessages.map(msg => msg.populate(['sender', 'receiver', 'event'])));
+    await Promise.all(sentMessages.map(msg => msg.populate('sender').populate('receiver').populate('event')));
 
     res.status(201).json({
       message: `Broadcast sent to ${sentMessages.length} users`,
@@ -692,5 +692,4 @@ exports.pinMessage = async (req, res) => {
   } catch (error) {
     console.error('Pin message error:', error);
     res.status(500).json({ message: 'Server error' });
-  }
-};
+         
