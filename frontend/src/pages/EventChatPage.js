@@ -63,23 +63,23 @@ const EventChatPage = () => {
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden flex flex-col">
-      <div className="max-w-7xl mx-auto px-4 w-full flex flex-col h-full">
+      <div className="max-w-7xl mx-auto px-3 w-full flex flex-col h-full">
         {/* Header */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 pb-2">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center text-slate-400 hover:text-amber-500 mb-2 transition-colors text-sm"
+            className="flex items-center text-slate-400 hover:text-amber-500 mb-2 transition-colors text-xs"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
             Back to {userRole === 'host' ? 'Host Panel' : 'Dashboard'}
           </button>
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-serif text-white tracking-tight">
+              <h1 className="text-xl font-serif text-white tracking-tight">
                 Community Chat
               </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-[10px] text-slate-400">
                 {event.title} • {new Date(event.date).toLocaleDateString()}
               </p>
             </div>
