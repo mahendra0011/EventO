@@ -168,7 +168,7 @@ const CommunityChat = () => {
         <div className='absolute top-1/2 left-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.03),transparent_70%)]' />
       </div>
       
-      <div className='relative z-10 max-w-8xl mx-auto px-4 py-6'>
+      <div className='community-chat-container relative z-10 max-w-8xl mx-auto px-4 py-6'>
         {/* Header with role toggle */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
           className='flex items-center justify-between mb-6'>
@@ -357,8 +357,8 @@ const CommunityChat = () => {
                    </motion.div>
                  )}
 
-                {/* Messages Area */}
-                <div className='flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar'>
+                 {/* Messages Area */}
+                 <div className='flex-1 overflow-y-auto p-4 space-y-4 chat-scroll-container'>
                   {messages.length === 0 ? (
                      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                        className='flex flex-col items-center justify-center h-full text-center py-12'>

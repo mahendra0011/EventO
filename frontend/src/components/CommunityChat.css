@@ -4,6 +4,52 @@
 
 .community-chat-container {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Ensure chat panels have proper scroll container */
+.community-chat-container .chat-scroll-container {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 158, 11, 0.5) rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scrollbar - Chrome, Safari, Edge */
+.community-chat-container .chat-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.community-chat-container .chat-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+  margin: 4px 0;
+}
+
+.community-chat-container .chat-scroll-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.6), rgba(245, 158, 11, 0.3));
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  min-height: 40px;
+  transition: background 0.2s ease;
+}
+
+.community-chat-container .chat-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.8), rgba(245, 158, 11, 0.5));
+}
+
+.community-chat-container .chat-scroll-container::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.9), rgba(245, 158, 11, 0.6));
+}
+
+/* Corner when both scrollbars present */
+.community-chat-container .chat-scroll-container::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Community feed specific animations */

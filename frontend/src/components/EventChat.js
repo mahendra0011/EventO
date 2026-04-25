@@ -13,6 +13,7 @@ import {
 } from '../utils/api';
 import ReactionPicker from './ReactionPicker';
 import toast from 'react-hot-toast';
+import './EventChat.css';
 
 const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const [messages, setMessages] = useState([]);
@@ -226,7 +227,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   }
 
   return (
-    <div className='flex h-full'>
+    <div className='event-chat-container flex h-full'>
       {/* Main Chat Area */}
       <div className={`flex-1 flex flex-col ${showParticipants ? 'hidden md:flex' : ''} md:flex`}>
         {/* Chat Header */}
@@ -290,8 +291,8 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
           </div>
          </div>
 
-         {/* Messages Area */}
-        <div className='flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar'>
+          {/* Messages Area */}
+         <div className='flex-1 overflow-y-auto p-4 space-y-4 chat-scroll-container'>
           {loading ? (
             <div className='flex items-center justify-center h-full'>
               <div className='text-slate-400'>Loading messages...</div>
@@ -578,7 +579,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
               </button>
             </div>
 
-            <div className='p-4 space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto'>
+             <div className='p-4 space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto participants-scroll'>
               {attendees.length > 0 ? (
                 attendees.map((attendee) => (
                   <div
