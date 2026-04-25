@@ -376,10 +376,9 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm'
                                 : 'bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm'
                               }
-                              ${pinnedMessage?._id === msg._id ? 'ring-2 ring-amber-500' : ''}
-                            `}
-                            onClick={() => setSelectedMessage(msg)}
-                          >
+                               ${pinnedMessage?._id === msg._id ? 'ring-2 ring-amber-500' : ''}
+                             `}
+                           >
                             {/* Reply Reference */}
                             {msg.replyTo && (
                               <div className='mb-2 px-2 py-1 bg-black/10 border-l-2 border-slate-400 rounded text-xs text-slate-400'>
