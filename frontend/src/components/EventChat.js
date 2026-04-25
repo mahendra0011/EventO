@@ -13,6 +13,7 @@ import {
   pinMessage
 } from '../utils/api';
 import ReactionPicker from './ReactionPicker';
+import toast from 'react-hot-toast';
 
 const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const [messages, setMessages] = useState([]);
@@ -35,10 +36,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
 
   // Fetch community messages
   const fetchMessages = useCallback(async () => {
-    if (!eventId) {
-      console.warn('fetchMessages called with no eventId');
-      return;
-    }
+    if (!eventId) return;
     try {
       console.log('Fetching messages for event:', eventId);
       const response = await getCommunityMessages(eventId, 1, 100);
@@ -51,6 +49,9 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       console.error('Error fetching messages:', error);
       if (error.response) {
         console.error('API error:', error.response.data);
+        toast.error(`Failed to load messages: ${error.response.data.message || 'Server error'}`);
+      } else {
+        toast.error('Network error - check connection');
       }
     } finally {
       setLoading(false);
@@ -131,10 +132,11 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       setReplyingTo(null);
       setEditingMessage(null);
       await fetchMessages();
+      toast.success('Message sent');
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMsg = error.response?.data?.message || error.message || 'Failed to send message. Please try again.';
-      alert(`Error: ${errorMsg}`);
+      toast.error(`Error: ${errorMsg}`);
     } finally {
       setSending(false);
     }
