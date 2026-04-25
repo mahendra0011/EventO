@@ -75,8 +75,10 @@ const CommunityChat = () => {
     } else if (activeTab === "community" && selectedEvent) {
       const key = `${selectedEvent}_community`;
       setMessages(mockAllMessages[key] || []);
+    } else {
+      setMessages([]);
     }
-  }, [selectedEvent, selectedUser, activeRole, activeTab]);
+  }, [selectedEvent, selectedUser, activeRole, activeTab, currentUser.id]);
   
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -92,6 +94,12 @@ const CommunityChat = () => {
     };
     if (activeTab === "community") {
       msg.type = "community";
+      // Add to persistent mock data so it persists across tab switches
+      const communityKey = `${selectedEvent}_community`;
+      if (!mockAllMessages[communityKey]) {
+        mockAllMessages[communityKey] = [];
+      }
+      mockAllMessages[communityKey].push(msg);
     }
     setMessages(prev => [...prev, msg]);
     setNewMessage("");
@@ -100,7 +108,23 @@ const CommunityChat = () => {
   const handleBroadcast = (e) => {
     e.preventDefault();
     if (!broadcastMessage.trim()) return;
-    alert("Broadcast sent to all event participants!");
+    const msg = {
+      id: Date.now().toString(),
+      senderId: currentUser.id,
+      senderRole: activeRole,
+      senderName: currentUser.name,
+      content: `📢 Broadcast: ${broadcastMessage}`,
+      timestamp: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }),
+      seen: false,
+      type: "community",
+    };
+    // Add to persistent mock data
+    const communityKey = `${selectedEvent}_community`;
+    if (!mockAllMessages[communityKey]) {
+      mockAllMessages[communityKey] = [];
+    }
+    mockAllMessages[communityKey].push(msg);
+    setMessages(prev => [...prev, msg]);
     setBroadcastMessage("");
   };
   
