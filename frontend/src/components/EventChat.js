@@ -35,6 +35,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const autoScrollRef = useRef(true);
   const prevMessagesLengthRef = useRef(0);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [activeMenu, setActiveMenu] = useState(null);
 
   // Fetch community messages
   const fetchMessages = useCallback(async () => {
@@ -174,6 +175,39 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     }
   };
 
+  const toggleActionMenu = useCallback((messageId) => {
+    setActiveMenu(activeMenu === messageId ? null : messageId);
+  }, [activeMenu]);
+
+  const handleReply = (message) => {
+    setReplyingTo(message);
+    setActiveMenu(null);
+  };
+
+  const handleDelete = async (messageId) => {
+    try {
+      await deleteMessage(messageId);
+      await fetchMessages();
+      toast.success('Message deleted');
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast.error('Failed to delete message');
+    }
+    setActiveMenu(null);
+  };
+
+  const handleReaction = async (messageId, emoji) => {
+    try {
+      // TODO: Implement reaction API
+      toast.success('Reaction added (demo)');
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      toast.error('Failed to add reaction');
+    }
+    setActiveMenu(null);
+    setShowReactionPicker(null);
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
@@ -188,19 +222,18 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       setEditingMessage(null);
       await fetchMessages();
       toast.success('Message sent');
-     } catch (error) {
-       console.error('Error sending message:', error);
-       let errorMsg = 'Failed to send message';
-       if (error.response) {
-         const serverMsg = error.response.data?.message;
-         errorMsg = serverMsg || error.response.statusText || errorMsg;
-       } else if (error.request) {
-         errorMsg = 'No response from server';
-       } else {
-         errorMsg = error.message;
-       }
-       toast.error(errorMsg);
-     } finally {
+    } catch (error) {
+      console.error('Error sending message:', error);
+      let errorMsg = 'Failed to send message';
+      if (error.response) {
+        errorMsg = error.response.data?.message || error.response.statusText || errorMsg;
+      } else if (error.request) {
+        errorMsg = 'No response from server';
+      } else {
+        errorMsg = error.message;
+      }
+      toast.error(errorMsg);
+    } finally {
       setSending(false);
     }
   };
@@ -211,15 +244,6 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       await fetchMessages();
     } catch (error) {
       console.error('Error deleting message:', error);
-    }
-  };
-
-   const handleReaction = async (messageId, emoji) => {
-    try {
-      // TODO: Implement reaction API
-      console.log('Add reaction:', messageId, emoji);
-    } catch (error) {
-      console.error('Error adding reaction:', error);
     }
   };
 
@@ -404,14 +428,19 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                           )}
                           {!isOwn && !showAvatar && <div className='w-10 flex-shrink-0' />}
 
-                            <div
-                              className={`relative px-4 py-2 shadow group-hover:shadow-md transition-all duration-200 cursor-pointer
-                                ${isOwn
-                                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl rounded-br-sm'
-                                  : 'bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-xl rounded-bl-sm'
-                                }
-                               `}
-                            >
+                           <div
+                             className={`group relative px-4 py-2 shadow group-hover:shadow-md transition-all duration-200 cursor-pointer
+                               ${isOwn
+                                 ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl rounded-br-sm'
+                                 : 'bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-xl rounded-bl-sm'
+                               }
+                              `}
+                             onContextMenu={(e) => {
+                               e.preventDefault();
+                               toggleActionMenu(msg._id);
+                             }}
+                             onDoubleClick={() => toggleActionMenu(msg._id)}
+                           >
                             {/* Reply Reference */}
                             {msg.replyTo && (
                               <div className='px-2 py-1 bg-slate-800/50 border-l-2 border-slate-400 rounded text-xs text-slate-400'>
@@ -434,10 +463,64 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                                </div>
                              )}
 
-                             <p className='text-sm leading-relaxed break-whitespace-pre-wrap'>{msg.content}</p>
+                              <p className='text-sm leading-relaxed break-words whitespace-pre-wrap'>{msg.content}</p>
 
-                            {/* Reactions */}
-                            {msg.reactions && msg.reactions.length > 0 && (
+                              {/* Action Buttons - WhatsApp style (appear on long press / right-click) */}
+                              {activeMenu === msg._id && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.9 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 0.9 }}
+                                  className='absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-slate-900/95 backdrop-blur-md border border-slate-700/50 rounded-full px-2 py-1 shadow-xl z-20'
+                                >
+                                  {/* Reply */}
+                                  <button
+                                    onClick={() => handleReply(msg)}
+                                    className='p-1.5 hover:bg-slate-700/50 rounded-full transition-colors'
+                                    title='Reply'
+                                  >
+                                    <MessageSquare className='w-3.5 h-3.5 text-slate-300' />
+                                  </button>
+                                  {/* Reaction Picker Trigger */}
+                                  <button
+                                    onClick={() => setShowReactionPicker(showReactionPicker === msg._id ? null : msg._id)}
+                                    className='p-1.5 hover:bg-slate-700/50 rounded-full transition-colors'
+                                    title='React'
+                                  >
+                                    <Smile className='w-3.5 h-3.5 text-slate-300' />
+                                  </button>
+                                  {/* Delete (only own messages) */}
+                                  {isOwn && (
+                                    <button
+                                      onClick={() => handleDelete(msg._id)}
+                                      className='p-1.5 hover:bg-red-500/20 rounded-full transition-colors'
+                                      title='Delete'
+                                    >
+                                      <Trash2 className='w-3.5 h-3.5 text-red-400' />
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => setActiveMenu(null)}
+                                    className='p-1 hover:bg-slate-700/30 rounded-full'
+                                    title='Close'
+                                  >
+                                    <X className='w-3 h-3 text-slate-500' />
+                                  </button>
+
+                                  {/* Reaction Picker Popup */}
+                                  {showReactionPicker === msg._id && (
+                                    <div className='absolute bottom-full mb-2 left-1/2 -translate-x-1/2'>
+                                      <ReactionPicker
+                                        onSelect={(emoji) => handleReaction(msg._id, emoji)}
+                                        onClose={() => setShowReactionPicker(null)}
+                                      />
+                                    </div>
+                                  )}
+                                </motion.div>
+                              )}
+
+                             {/* Reactions */}
+                             {msg.reactions && msg.reactions.length > 0 && (
                               <div className='flex items-center gap-1 mt-2'>
                                 {Object.entries(
                                   msg.reactions.reduce((acc, r) => {
