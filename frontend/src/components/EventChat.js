@@ -39,17 +39,11 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     if (!eventId) return;
     try {
       console.log('Fetching messages for event:', eventId);
-      const response = await getCommunityMessages(eventId, 1, 100);
-      console.log('Messages response:', response);
-      // Guard against missing data
-      if (!response || !response.data) {
-        console.warn('No response data received');
-        setMessages([]);
-        return;
-      }
-      setMessages(response.data.messages || []);
-      if (response.data.pinnedMessage) {
-        setPinnedMessage(response.data.pinnedMessage);
+      const data = await getCommunityMessages(eventId, 1, 100);
+      console.log('Messages response:', data);
+      setMessages(data.messages || []);
+      if (data.pinnedMessage) {
+        setPinnedMessage(data.pinnedMessage);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -70,14 +64,8 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
 
   const fetchAttendees = useCallback(async () => {
     try {
-      const response = await getEventAttendees(eventId);
-      // Defensive: ensure response and data exist
-      if (!response) {
-        console.warn('getEventAttendees returned undefined');
-        setAttendees([]);
-        return;
-      }
-      const data = response.data || {};
+      const data = await getEventAttendees(eventId);
+      console.log('Attendees response:', data);
       const attendeeList = data.attendees || data.users || [];
       setAttendees(attendeeList);
       // Simulate online status (in real app, this would come from WebSocket)
