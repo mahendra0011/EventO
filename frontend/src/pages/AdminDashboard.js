@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import api, { broadcastToEventBookers, getCommunityMessages, getNotifications, markAllNotificationsAsRead, postCommunityMessage } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import UserCommunityDashboard from '../components/CommunityChat';
 import {
    Calendar,
    Ticket,
@@ -34,7 +33,7 @@ import {
    Search,
    Send,
    Megaphone
-} from 'lucide-react';
+ } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
