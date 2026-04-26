@@ -306,9 +306,11 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                             <span className='text-[#58a6ff] font-medium text-sm'>{sender.name?.charAt(0)?.toUpperCase()}</span>
                           </div>
                         )}
-                        <div className={`relative px-4 py-2.5 shadow-sm group group-hover:shadow-md transition-all ${isOwn ? 'bg-[#1f4068] text-[#cde3ff] rounded-xl rounded-br-sm' : 'bg-[#21262d] text-[#c9d1d9] border border-[#30363d] rounded-xl rounded-bl-sm'}`}
+                        <div 
+                          className={`relative px-4 py-2.5 shadow-sm group group-hover:shadow-md transition-all ${isOwn ? 'bg-[#1f4068] text-[#cde3ff] rounded-xl rounded-br-sm' : 'bg-[#21262d] text-[#c9d1d9] border border-[#30363d] rounded-xl rounded-bl-sm'}`}
                           onContextMenu={(e) => { e.preventDefault(); toggleActionMenu(msg._id); }}
                           onDoubleClick={() => toggleActionMenu(msg._id)}
+                          style={{ overflow: 'visible' }}
                         >
                           {msg.replyTo && (
                             <div className='mb-2 px-2 py-1 bg-[#0d1117] border-l-2 border-[#30363d] rounded text-xs text-[#8b949e]'>
@@ -367,7 +369,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                           {/* Actions Menu */}
                           {activeMenu === msg._id && (
                              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                               className='absolute top-full mt-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#161b22] border border-[#30363d] rounded-full px-2 py-1.5 shadow-xl z-20'
+                               className='absolute top-full mt-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#161b22] border border-[#30363d] rounded-full px-2 py-1.5 shadow-xl z-50'
                              >
                               <button onClick={() => handleReply(msg)} className='p-1.5 hover:bg-[#21262d] rounded-full' title='Reply'>
                                 <MessageSquare className='w-4 h-4 text-[#8b949e]' />
@@ -436,7 +438,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                               e.stopPropagation();
                               toggleActionMenu(msg._id);
                             }}
-                             className='absolute -top-2 -right-2 w-8 h-8 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10'
+                             className='absolute -top-2 -right-2 w-8 h-8 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30'
                             title='Message actions'
                           >
                             <svg className='w-4 h-4 text-[#8b949e]' fill='currentColor' viewBox='0 0 20 20'>

@@ -650,6 +650,7 @@ const CommunityChat = () => {
                                  className={msg.senderRole === activeRole && !msg._alignLeft ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm ml-8 px-4 py-2.5 shadow-lg shadow-amber-500/20 group group-hover:shadow-xl transition-all duration-300 relative" : (msg.type === "community" ? "bg-gradient-to-br from-slate-800/80 to-slate-900/80 text-slate-200 border border-amber-500/20 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group group-hover:shadow-xl transition-all duration-300 relative backdrop-blur-sm" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group group-hover:shadow-xl transition-all duration-300 relative")}
                                  onContextMenu={(e) => { e.preventDefault(); setActiveMenu(msg.id); }}
                                  onDoubleClick={() => setActiveMenu(msg.id)}
+                                 style={{ overflow: 'visible' }}
                                >
                                        {msg.senderRole !== activeRole && mockAllUsers.find(u => u.id === msg.senderId)?.isPremium && (
                                          <Star className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
@@ -740,7 +741,7 @@ const CommunityChat = () => {
                                          e.stopPropagation();
                                          setActiveMenu(activeMenu === msg.id ? null : msg.id);
                                        }}
-                                        className='absolute -top-2 -right-2 w-8 h-8 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'
+                                        className='absolute -top-2 -right-2 w-8 h-8 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30'
                                        title='More actions'
                                      >
                                         <svg className='w-4 h-4 text-slate-300' fill='currentColor' viewBox='0 0 20 20'>
@@ -751,7 +752,7 @@ const CommunityChat = () => {
                                      {/* Actions Menu */}
                                      {activeMenu === msg.id && (
                                         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                                          className='absolute top-full mt-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 shadow-xl z-20'
+                                          className='absolute top-full mt-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 shadow-xl z-50'
                                         >
                                          <button onClick={() => handleReply(msg)} className='p-1.5 hover:bg-slate-700 rounded' title='Reply'>
                                            <Reply className='w-4 h-4 text-slate-300' />
