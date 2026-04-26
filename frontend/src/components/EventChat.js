@@ -36,26 +36,29 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const autoScrollRef = useRef(true);
   const prevMessagesLengthRef = useRef(0);
 
-   const fetchMessages = useCallback(async () => {
-     if (!eventId) return;
-     try {
-       const data = await getCommunityMessages(eventId, 1, 100);
-       setMessages(data.messages || []);
-       setLoading(false);
-     } catch (error) {
-       console.error('Error fetching messages:', error);
-       setLoading(false);
-       let errorMsg = 'Failed to load messages';
-       if (error.response) {
-         errorMsg = error.response.data?.message || error.response.statusText || errorMsg;
-       } else if (error.request) {
-         errorMsg = 'No response from server';
-       } else {
-         errorMsg = error.message;
-       }
-       toast.error(errorMsg);
-     }
-   }, [eventId]);
+  const fetchMessages = useCallback(async (silent = false) => {
+    if (!eventId) return;
+    try {
+      const data = await getCommunityMessages(eventId, 1, 100);
+      setMessages(data.messages || []);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      setLoading(false);
+      // Only show toast error if not a silent refresh
+      if (!silent) {
+        let errorMsg = 'Failed to load messages';
+        if (error.response) {
+          errorMsg = error.response.data?.message || error.response.statusText || errorMsg;
+        } else if (error.request) {
+          errorMsg = 'No response from server';
+        } else {
+          errorMsg = error.message;
+        }
+        toast.error(errorMsg);
+      }
+    }
+  }, [eventId]);
 
   const fetchAttendees = useCallback(async () => {
     try {
@@ -78,7 +81,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
 
   useEffect(() => {
     if (!eventId) return;
-    const interval = setInterval(() => { fetchMessages(); fetchAttendees(); }, 3000);
+    const interval = setInterval(() => { fetchMessages(true); fetchAttendees(); }, 3000);
     return () => clearInterval(interval);
   }, [eventId, fetchMessages, fetchAttendees]);
 
@@ -197,11 +200,9 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       await postCommunityMessage(eventId, newMessage.trim(), replyTo?._id || null);
       setNewMessage('');
       setReplyTo(null);
-      // Try to refresh messages but don't block success notification
-      fetchMessages().catch(err => {
+      // Try to refresh messages silently (no error toast)
+      fetchMessages(true).catch(err => {
         console.error('Failed to refresh messages after send:', err);
-        // Optionally show a subtle warning but not an error
-        // toast('Message sent but refresh failed', { icon: '⚠️' });
       });
       toast.success('Message sent successfully');
     } catch (error) {
