@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Send, Smile, Users, Crown, MessageSquare, Trash2, UserX, Volume2,
-  Edit3, SmilePlus, Paperclip, Image, X, ChevronDown, Check
+  Send, Smile, Users, Crown, MessageSquare, Trash2, X, Check, Paperclip, Image
 } from 'lucide-react';
 import {
   getCommunityMessages,
@@ -23,27 +22,18 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const [sending, setSending] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [replyingTo, setReplyingTo] = useState(null);
-  const [editingMessage, setEditingMessage] = useState(null);
-   const [showReactionPicker, setShowReactionPicker] = useState(null);
+  const [showReactionPicker, setShowReactionPicker] = useState(null);
+  const [activeMenu, setActiveMenu] = useState(null);
 
   const chatEndRef = useRef(null);
-  const pollingRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const autoScrollRef = useRef(true);
   const prevMessagesLengthRef = useRef(0);
-  const [showScrollBtn, setShowScrollBtn] = useState(false);
-  const [activeMenu, setActiveMenu] = useState(null);
 
-  // Fetch community messages
   const fetchMessages = useCallback(async () => {
     if (!eventId) return;
     try {
-      console.log('Fetching messages for event:', eventId);
       const data = await getCommunityMessages(eventId, 1, 100);
-      console.log('Messages response:', data);
       setMessages(data.messages || []);
       setLoading(false);
     } catch (error) {
@@ -64,162 +54,64 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const fetchAttendees = useCallback(async () => {
     try {
       const data = await getEventAttendees(eventId);
-      console.log('Attendees response:', data);
       const attendeeList = data.attendees || data.users || [];
       setAttendees(attendeeList);
-      // Simulate online status (in real app, this would come from WebSocket)
       const online = {};
-      attendeeList.forEach(att => {
-        online[att._id] = Math.random() > 0.5; // Random for demo
-      });
+      attendeeList.forEach(att => { online[att._id] = Math.random() > 0.5; });
       setOnlineUsers(online);
     } catch (error) {
       console.error('Error fetching attendees:', error);
-      let errorMsg = 'Failed to load attendees';
-      if (error.response) {
-        console.error('API error:', error.response.data);
-        errorMsg = error.response.data?.message || error.response.statusText || 'Server error';
-      } else if (error.request) {
-        errorMsg = 'No response from server';
-      } else {
-        errorMsg = error.message;
-      }
-      toast.error(errorMsg);
       setAttendees([]);
     }
   }, [eventId]);
 
-  // Initial fetch
-  useEffect(() => {
-    fetchMessages();
-    fetchAttendees();
-  }, [fetchMessages, fetchAttendees]);
+  useEffect(() => { fetchMessages(); fetchAttendees(); }, [fetchMessages, fetchAttendees]);
 
-  // Simulate typing indicators (poll or WebSocket)
   useEffect(() => {
     if (!eventId) return;
-
-    // Randomly simulate other users typing for demo
-    const interval = setInterval(() => {
-      if (Math.random() > 0.8) {
-        const otherUser = attendees.find(a => a._id !== currentUser?.id);
-        if (otherUser) {
-          setTypingUsers([otherUser]);
-          setTimeout(() => setTypingUsers([]), 2000);
-        }
-      }
-    }, 5000);
-
+    const interval = setInterval(() => { fetchMessages(); fetchAttendees(); }, 3000);
     return () => clearInterval(interval);
-  }, [eventId, attendees, currentUser?.id]);
-
-  // Setup polling for real-time updates
-  useEffect(() => {
-    if (!eventId) return;
-
-    pollingRef.current = setInterval(() => {
-      fetchMessages();
-      fetchAttendees();
-    }, 3000);
-
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-    };
   }, [eventId, fetchMessages, fetchAttendees]);
 
-  // Reset auto-scroll when event changes
-  useEffect(() => {
-    autoScrollRef.current = true;
-  }, [eventId]);
+  useEffect(() => { autoScrollRef.current = true; }, [eventId]);
 
-  // Handle manual scroll detection
   const handleScroll = useCallback(() => {
     if (!messagesContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    const threshold = 150;
-    const nearBottom = distanceFromBottom <= threshold;
-    
-    if (nearBottom) {
-      autoScrollRef.current = true;
-      setShowScrollBtn(false);
-    } else {
-      autoScrollRef.current = false;
-    }
+    const nearBottom = distanceFromBottom <= 150;
+    if (nearBottom) { autoScrollRef.current = true; setActiveMenu(null); }
+    else { autoScrollRef.current = false; }
   }, []);
 
-  // Scroll to bottom when new messages arrive (if auto-scroll enabled)
   useEffect(() => {
     const prevLength = prevMessagesLengthRef.current;
     prevMessagesLengthRef.current = messages.length;
-    
     if (autoScrollRef.current) {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    } else if (messages.length > prevLength) {
-      // New message arrived while scrolled up - show scroll button
-      setShowScrollBtn(true);
     }
   }, [messages]);
-
-  // Scroll to bottom manually
-  const scrollToBottom = () => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTo({
-        top: messagesContainerRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
-      autoScrollRef.current = true;
-      setShowScrollBtn(false);
-    }
-  };
 
   const toggleActionMenu = useCallback((messageId) => {
     setActiveMenu(activeMenu === messageId ? null : messageId);
   }, [activeMenu]);
 
-  const handleReply = (message) => {
-    setReplyingTo(message);
-    setActiveMenu(null);
-  };
+  const handleReply = (message) => { /* TODO */ setActiveMenu(null); };
+  const handleReaction = async (messageId, emoji) => { setActiveMenu(null); setShowReactionPicker(null); };
 
   const handleDelete = async (messageId) => {
-    try {
-      await deleteMessage(messageId);
-      await fetchMessages();
-      toast.success('Message deleted');
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      toast.error('Failed to delete message');
-    }
+    try { await deleteMessage(messageId); await fetchMessages(); toast.success('Message deleted'); }
+    catch (error) { toast.error('Failed to delete message'); }
     setActiveMenu(null);
-  };
-
-  const handleReaction = async (messageId, emoji) => {
-    try {
-      // TODO: Implement reaction API
-      toast.success('Reaction added (demo)');
-    } catch (error) {
-      console.error('Error adding reaction:', error);
-      toast.error('Failed to add reaction');
-    }
-    setActiveMenu(null);
-    setShowReactionPicker(null);
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
-
-    setSending(true);
-    autoScrollRef.current = true;
+    setSending(true); autoScrollRef.current = true;
     try {
-      const response = await postCommunityMessage(eventId, newMessage.trim());
-      console.log('Message sent successfully:', response);
+      await postCommunityMessage(eventId, newMessage.trim());
       setNewMessage('');
-      setReplyingTo(null);
-      setEditingMessage(null);
       await fetchMessages();
       toast.success('Message sent');
     } catch (error) {
@@ -233,570 +125,212 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
         errorMsg = error.message;
       }
       toast.error(errorMsg);
-    } finally {
-      setSending(false);
-    }
+    } finally { setSending(false); }
   };
 
-  const handleDeleteMessage = async (messageId) => {
-    try {
-      await deleteMessage(messageId);
-      await fetchMessages();
-    } catch (error) {
-      console.error('Error deleting message:', error);
-    }
-  };
-
-  const handleTyping = () => {
-    if (!isTyping) {
-      setIsTyping(true);
-      // TODO: Emit typing event to server
-    }
-
-    clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false);
-      // TODO: Emit stop typing event
-    }, 1000);
-  };
+  const handleTyping = () => { /* TODO */ };
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) {
-      return 'Today';
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-  };
-
-  const isCurrentUserMessage = (msg) => {
-    return msg.sender && msg.sender._id === currentUser?.id;
-  };
-
-  const isHost = () => {
-    return userRole === 'host';
-  };
+  const isCurrentUserMessage = (msg) => msg.sender && msg.sender._id === currentUser?.id;
 
   if (!eventId) {
     return (
       <div className='flex flex-col items-center justify-center h-full text-center p-8'>
-        <div className='w-24 h-24 rounded-3xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-800/50 mx-auto mb-6 flex items-center justify-center'>
-          <MessageSquare className='w-12 h-12 text-slate-700' />
-        </div>
-        <h3 className='text-2xl font-serif text-white mb-3'>Event Community Chat</h3>
-        <p className='text-slate-400 mb-6 leading-relaxed'>
-          Select an event from your bookings to join its community chat.
-        </p>
+        <MessageSquare className='w-12 h-12 text-[#484f58] mb-3' />
+        <h3 className='text-lg font-serif text-white mb-2'>Event Community Chat</h3>
+        <p className='text-sm text-[#8b949e]'>Select an event from your bookings to join its community chat.</p>
       </div>
     );
   }
 
   return (
-    <div className='event-chat-container flex h-full'>
-      {/* Main Chat Area */}
-       <div className={`flex-1 flex flex-col min-h-0 ${showParticipants ? 'hidden md:flex' : ''} md:flex`}>
-        {/* Chat Header */}
-        <div className='p-1.5 border-b border-slate-800/50 bg-slate-900/30 flex items-center justify-between flex-shrink-0'>
-          <div className='flex items-center gap-1.5'>
-            <div>
-              <h2 className='font-serif text-base text-white'>{eventTitle}</h2>
-              <p className='text-[10px] text-slate-400'>
-                {attendees.length} participants • {messages.length} messages
-              </p>
-            </div>
-            {isHost() && (
-              <div className='px-1.5 py-0.5 bg-amber-500/10 text-amber-400 rounded-md flex items-center gap-1'>
-                <Crown className='w-3 h-3' />
-                <span className='text-[9px] font-medium'>Host</span>
-              </div>
-            )}
+    <div className='flex flex-col h-full'>
+      {/* Chat Header */}
+      <div className='p-3 border-b border-[#30363d] bg-[#161b22] flex items-center justify-between flex-shrink-0'>
+        <div className='flex items-center gap-3'>
+          <div className='w-9 h-9 rounded-lg bg-[#21262d] border border-[#30363d] flex items-center justify-center'>
+            <span className='text-[#58a6ff] font-semibold text-sm'>{eventTitle?.charAt(0)?.toUpperCase()}</span>
           </div>
-          <div className='flex items-center gap-1.5'>
-            {/* Typing Indicator */}
-            <AnimatePresence>
-              {typingUsers.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className='flex items-center gap-1 px-1.5 py-0.5 bg-slate-800/50 rounded-full text-[9px] text-slate-400'
-                >
-                  <div className='flex gap-1'>
-                    <span className='w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce' style={{ animationDelay: '0ms' }}></span>
-                    <span className='w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce' style={{ animationDelay: '150ms' }}></span>
-                    <span className='w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce' style={{ animationDelay: '300ms' }}></span>
-                  </div>
-                  <span className='text-xs'>
-                    {typingUsers.map(u => u.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Participants Toggle (Mobile) */}
-            <button
-               onClick={() => setShowParticipants(!showParticipants)}
-               className='p-1 text-slate-400 hover:text-amber-500 rounded hover:bg-slate-800/50 md:hidden'
-             >
-               <Users className='w-3.5 h-3.5' />
-            </button>
-
-            {/* Participants Toggle (Desktop) */}
-            <button
-              onClick={() => setShowParticipants(!showParticipants)}
-               className={`hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors ${
-                 showParticipants
-                   ? 'bg-amber-500/20 text-amber-400'
-                   : 'text-slate-400 hover:text-amber-500 hover:bg-slate-800/50'
-               }`}
-             >
-               <Users className='w-3 h-3' />
-               <span className='text-[9px]'>{attendees.length}</span>
-            </button>
+          <div>
+            <h2 className='font-semibold text-[#e6edf3] text-sm'>Community Chat</h2>
+            <p className='text-xs text-[#8b949e]'>{attendees.length} participants • {messages.length} messages</p>
           </div>
-         </div>
-
-        {/* Messages Area */}
-        <div 
-          ref={messagesContainerRef}
-          onScroll={handleScroll}
-          className='flex-1 min-h-0 overflow-y-auto p-2 space-y-1.5 chat-scroll-container relative'
-        >
-          {loading ? (
-            <div className='flex items-center justify-center h-full'>
-              <div className='text-slate-400'>Loading messages...</div>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className='flex flex-col items-center justify-center h-full text-center py-12'>
-              <div className='w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-800/50 flex items-center justify-center mb-4 shadow-lg'>
-                <MessageSquare className='w-10 h-10 text-slate-600' />
-              </div>
-              <p className='text-slate-400 font-medium text-lg mb-2'>
-                No messages yet
-              </p>
-              <p className='text-slate-600 text-sm'>
-                Be the first to start the conversation!
-              </p>
-            </div>
-          ) : (
-            <AnimatePresence initial={false}>
-              {messages.map((msg, index) => {
-                const sender = msg.sender;
-                const isOwn = isCurrentUserMessage(msg);
-                const showAvatar = index === 0 || messages[index-1]?.sender?._id !== sender?._id;
-                const showDate = index === 0 ||
-                  new Date(messages[index-1]?.createdAt).toDateString() !==
-                  new Date(msg.createdAt).toDateString();
-
-                return (
-                  <motion.div
-                    key={msg._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className='group'
-                  >
-                    {/* Date Separator */}
-                    {showDate && (
-                      <div className='flex items-center justify-center my-4'>
-                        <span className='px-3 py-1 bg-slate-800/50 text-slate-400 text-xs rounded-full'>
-                          {formatDate(msg.createdAt)}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`group relative max-w-lg xl:max-w-md ${isOwn ? '' : 'flex-row-reverse'}`}>
-                        <div className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}>
-                          {!isOwn && showAvatar && sender && (
-                        <div className='w-7 h-7 rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600/50 flex items-center justify-center flex-shrink-0'>
-                          <span className='text-[10px] font-bold text-slate-300'>
-                            {sender.name?.charAt(0)?.toUpperCase() || '?'}
-                          </span>
-                        </div>
-                          )}
-                          {!isOwn && !showAvatar && <div className='w-10 flex-shrink-0' />}
-
-                            <div
-                              className={`group relative px-3 py-1.5 shadow-sm group-hover:shadow transition-all duration-200 cursor-pointer
-                                ${isOwn
-                                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-lg rounded-br-sm'
-                                  : 'bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-lg rounded-bl-sm'
-                                }
-                               `}
-                               onContextMenu={(e) => {
-                                 e.preventDefault();
-                                 toggleActionMenu(msg._id);
-                               }}
-                               onDoubleClick={() => toggleActionMenu(msg._id)}
-                            >
-                              {/* Reply Reference */}
-                              {msg.replyTo && (
-                                <div className='mb-1 px-1 py-0.5 bg-slate-800/50 border-l border-slate-400 rounded text-[9px] text-slate-400'>
-                                  Replying to {msg.replyTo.sender?.name}
-                                </div>
-                              )}
-
-                             {!isOwn && sender && (
-                               <div className='flex items-center gap-2 mb-1.5'>
-                                 {sender.role === 'host' ? (
-                                    <span className='px-1.5 py-0.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 rounded-full text-[8px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1'>
-                                      <Crown className='w-2 h-2 fill-current' />
-                                      Host
-                                    </span>
-                                  ) : (
-                                    <p className='text-[9px] font-semibold text-amber-400'>
-                                      {sender.name}
-                                    </p>
-                                  )}
-                                </div>
-                              )}
-
-                               <p className='text-xs leading-relaxed break-words whitespace-pre-wrap'>{msg.content}</p>
-
-                              {/* Action Buttons - WhatsApp style (appear on long press / right-click) */}
-                              {activeMenu === msg._id && (
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.9 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  exit={{ opacity: 0, scale: 0.9 }}
-                                  className='absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-slate-900/95 backdrop-blur-md border border-slate-700/50 rounded-full px-2 py-1 shadow-xl z-20'
-                                >
-                                  {/* Reply */}
-                                  <button
-                                    onClick={() => handleReply(msg)}
-                                    className='p-1 hover:bg-slate-700/50 rounded-full transition-colors'
-                                    title='Reply'
-                                  >
-                                    <MessageSquare className='w-3 h-3 text-slate-300' />
-                                  </button>
-                                  {/* Reaction Picker Trigger */}
-                                  <button
-                                    onClick={() => setShowReactionPicker(showReactionPicker === msg._id ? null : msg._id)}
-                                    className='p-1 hover:bg-slate-700/50 rounded-full transition-colors'
-                                    title='React'
-                                  >
-                                    <Smile className='w-3 h-3 text-slate-300' />
-                                  </button>
-                                  {/* Delete (only own messages) */}
-                                  {isOwn && (
-                                    <button
-                                      onClick={() => handleDelete(msg._id)}
-                                      className='p-1 hover:bg-red-500/20 rounded-full transition-colors'
-                                      title='Delete'
-                                    >
-                                      <Trash2 className='w-3 h-3 text-red-400' />
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => setActiveMenu(null)}
-                                    className='p-0.5 hover:bg-slate-700/30 rounded-full'
-                                    title='Close'
-                                  >
-                                    <X className='w-2.5 h-2.5 text-slate-500' />
-                                  </button>
-
-                                  {/* Reaction Picker Popup */}
-                                  {showReactionPicker === msg._id && (
-                                    <div className='absolute bottom-full mb-2 left-1/2 -translate-x-1/2'>
-                                      <ReactionPicker
-                                        onSelect={(emoji) => handleReaction(msg._id, emoji)}
-                                        onClose={() => setShowReactionPicker(null)}
-                                      />
-                                    </div>
-                                  )}
-                                </motion.div>
-                              )}
-
-                             {/* Reactions */}
-                             {msg.reactions && msg.reactions.length > 0 && (
-                                <div className='flex items-center gap-0.5 mt-1'>
-                                  {Object.entries(
-                                    msg.reactions.reduce((acc, r) => {
-                                      acc[r.emoji] = (acc[r.emoji] || 0) + 1;
-                                      return acc;
-                                    }, {})
-                                  ).map(([emoji, count]) => (
-                                    <span
-                                      key={emoji}
-                                      className='px-1 py-0 bg-slate-700/50 rounded-full text-[9px] flex items-center gap-0.5'
-                                    >
-                                      {emoji} {count}
-                                    </span>
-                                  ))}
-                                </div>
-                            )}
-
-                                 <div className={`flex items-center justify-end gap-1 mt-0.5 ${isOwn ? 'text-slate-900/50' : 'text-slate-400'}`}>
-                                   <span className='text-[8px] font-mono'>
-                                     {formatTime(msg.createdAt)}
-                                   </span>
-                                   {isOwn && (
-                                     <>
-                                       <Check className='w-3 h-3 text-amber-500' />
-                                       {msg.isEdited && (
-                                         <span className='text-[8px]'>(edited)</span>
-                                       )}
-                                     </>
-                                   )}
-                                 </div>
-                          </div>
-
-                          {/* Message Actions */}
-                          <div className='absolute -bottom-6 left-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1'>
-                            {isOwn && (
-                              <>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setReplyingTo(msg); }}
-                                  className='p-1 text-slate-400 hover:text-amber-500'
-                                  title='Reply'
-                                >
-                                  <MessageSquare className='w-3 h-3' />
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setEditingMessage(msg); }}
-                                  className='p-1 text-slate-400 hover:text-blue-500'
-                                  title='Edit'
-                                >
-                                  <Edit3 className='w-3 h-3' />
-                                </button>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg._id); }}
-                                  className='p-1 text-slate-400 hover:text-red-500'
-                                  title='Delete'
-                                >
-                                  <Trash2 className='w-3 h-3' />
-                                </button>
-                              </>
-                            )}
-                            {isHost() && !isOwn && (
-                              <>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); /* mute user */ }}
-                                  className='p-1.5 text-slate-400 hover:text-amber-500 hover:bg-slate-700/50 rounded'
-                                  title='Mute'
-                                >
-                                  <UserX className='w-4 h-4' />
-                                </button>
-                              </>
-                            )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowReactionPicker(showReactionPicker === msg._id ? null : msg._id);
-                              }}
-                              className='p-1 text-slate-400 hover:text-green-500'
-                              title='React'
-                            >
-                              <SmilePlus className='w-3 h-3' />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Reaction Picker */}
-                    <AnimatePresence>
-                      {showReactionPicker === msg._id && (
-                        <ReactionPicker
-                          onSelect={(emoji) => {
-                            handleReaction(msg._id, emoji);
-                            setShowReactionPicker(null);
-                          }}
-                          onClose={() => setShowReactionPicker(null)}
-                        />
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+          {userRole === 'host' && (
+            <span className='px-1.5 py-0.5 bg-[#2d2206] text-[#EF9F27] border border-[#854F0B] rounded text-[10px] font-bold uppercase flex items-center gap-1'>
+              <Crown className='w-3 h-3 fill-current' />
+              Host
+            </span>
           )}
-           <div ref={chatEndRef} />
-           
-            {/* Scroll to bottom button */}
-            {showScrollBtn && (
-              <button
-                onClick={scrollToBottom}
-                className='absolute bottom-3 right-3 p-1.5 bg-amber-500 text-slate-900 rounded-full shadow-md hover:bg-amber-400 transition-colors z-10 flex items-center justify-center'
-                aria-label='Scroll to bottom'
-              >
-                <ChevronDown className='w-4 h-4' />
-             </button>
-           )}
-         </div>
-
-        {/* Reply/Edit Preview */}
-        {(replyingTo || editingMessage) && (
-          <div className='px-4 py-2 bg-slate-800/50 border-t border-slate-700/50 flex items-center justify-between'>
-            <div className='flex items-center gap-2'>
-              {replyingTo ? (
-                <>
-                  <MessageSquare className='w-4 h-4 text-slate-400' />
-                  <span className='text-sm text-slate-400'>
-                    Replying to {replyingTo.sender?.name}: {replyingTo.content.substring(0, 30)}...
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Edit3 className='w-4 h-4 text-slate-400' />
-                  <span className='text-sm text-slate-400'>
-                    Editing: {editingMessage.content.substring(0, 30)}...
-                  </span>
-                </>
-              )}
-            </div>
-            <button
-              onClick={() => { setReplyingTo(null); setEditingMessage(null); }}
-              className='text-slate-400 hover:text-white'
+        </div>
+        <div className='flex items-center gap-2'>
+          <button
+            onClick={() => setShowParticipants(!showParticipants)}
+            className='p-1.5 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-lg'
+          >
+            <Users className='w-4 h-4' />
+          </button>
+          {typingUsers.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className='flex items-center gap-1.5 px-2 py-1 bg-[#21262d] rounded-lg text-xs text-[#8b949e]'
             >
-              <X className='w-4 h-4' />
+              <span className='w-2 h-2 bg-amber-400 rounded-full animate-pulse' />
+              {typingUsers.map(u => u.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+            </motion.div>
+          )}
+        </div>
+      </div>
+
+      {/* Messages Area */}
+      <div ref={messagesContainerRef} onScroll={handleScroll} className='flex-1 min-h-0 overflow-y-auto p-4 space-y-3'>
+        {loading ? (
+          <div className='flex items-center justify-center h-full text-[#8b949e]'>
+            <span className='w-4 h-4 border-2 border-[#30363d] border-t-amber-500 rounded-full animate-spin mr-2' />
+            Loading...
+          </div>
+        ) : messages.length === 0 ? (
+          <div className='flex flex-col items-center justify-center h-full text-[#8b949e]'>
+            <MessageSquare className='w-12 h-12 mb-2' />
+            <p className='text-sm'>No messages yet</p>
+            <p className='text-xs text-[#484f58]'>Start the conversation!</p>
+          </div>
+        ) : (
+          <AnimatePresence>
+            {messages.map((msg, index) => {
+              const sender = msg.sender;
+              const isOwn = isCurrentUserMessage(msg);
+              const showAvatar = index === 0 || messages[index-1]?.sender?._id !== sender?._id;
+              const showDate = index === 0 || new Date(messages[index-1]?.createdAt).toDateString() !== new Date(msg.createdAt).toDateString();
+              return (
+                <React.Fragment key={msg._id}>
+                  {showDate && (
+                    <div className='flex justify-center my-2'>
+                      <span className='px-2 py-1 bg-[#21262d] text-[#8b949e] text-xs rounded-full'>
+                        {new Date(msg.createdAt).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                  )}
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`flex gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : ''}`}>
+                        {!isOwn && showAvatar && sender && (
+                          <div className='w-8 h-8 rounded-full bg-[#21262d] border border-[#30363d] flex items-center justify-center flex-shrink-0'>
+                            <span className='text-[#58a6ff] font-medium text-sm'>{sender.name?.charAt(0)?.toUpperCase()}</span>
+                          </div>
+                        )}
+                        <div className={`relative px-4 py-2.5 shadow-sm group-hover:shadow-md transition-all ${isOwn ? 'bg-[#1f4068] text-[#cde3ff] rounded-xl rounded-br-sm' : 'bg-[#21262d] text-[#c9d1d9] border border-[#30363d] rounded-xl rounded-bl-sm'}`}
+                          onContextMenu={(e) => { e.preventDefault(); toggleActionMenu(msg._id); }}
+                          onDoubleClick={() => toggleActionMenu(msg._id)}
+                        >
+                          {msg.replyTo && (
+                            <div className='mb-2 px-2 py-1 bg-[#0d1117] border-l-2 border-[#30363d] rounded text-xs text-[#8b949e]'>
+                              Replying to {msg.replyTo.sender?.name}
+                            </div>
+                          )}
+                          {!isOwn && sender && (
+                            <div className='flex items-center gap-2 mb-1.5'>
+                              <span className='text-xs font-semibold text-[#c9d1d9]'>{sender.name}</span>
+                              {sender.role === 'host' && (
+                                <span className='px-1.5 py-0.5 bg-[#2d2206] text-[#EF9F27] border border-[#854F0B] rounded text-[10px] font-bold uppercase flex items-center gap-1'>
+                                  <Crown className='w-3 h-3 fill-current' />
+                                  Host
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          <p className='text-sm leading-relaxed break-words whitespace-pre-wrap'>{msg.content}</p>
+
+                          {/* Actions Menu */}
+                          {activeMenu === msg._id && (
+                            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                              className='absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#161b22] border border-[#30363d] rounded-full px-2 py-1.5 shadow-xl z-20'
+                            >
+                              <button onClick={() => handleReply(msg)} className='p-1.5 hover:bg-[#21262d] rounded-full' title='Reply'>
+                                <MessageSquare className='w-4 h-4 text-[#8b949e]' />
+                              </button>
+                              <button onClick={() => setShowReactionPicker(showReactionPicker === msg._id ? null : msg._id)} className='p-1.5 hover:bg-[#21262d] rounded-full' title='React'>
+                                <Smile className='w-4 h-4 text-[#8b949e]' />
+                              </button>
+                              {isOwn && (
+                                <button onClick={() => handleDelete(msg._id)} className='p-1.5 hover:bg-red-500/20 rounded-full' title='Delete'>
+                                  <Trash2 className='w-4 h-4 text-red-400' />
+                                </button>
+                              )}
+                              <button onClick={() => setActiveMenu(null)} className='p-1 hover:bg-[#21262d] rounded-full' title='Close'>
+                                <X className='w-3 h-3 text-[#484f58]' />
+                              </button>
+                              {showReactionPicker === msg._id && (
+                                <div className='absolute bottom-full mb-2 left-1/2 -translate-x-1/2'>
+                                  <ReactionPicker onSelect={(emoji) => handleReaction(msg._id, emoji)} onClose={() => setShowReactionPicker(null)} />
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+
+                          {/* Reactions */}
+                          {msg.reactions && msg.reactions.length > 0 && (
+                            <div className='flex items-center gap-1 mt-2'>
+                              {Object.entries(msg.reactions.reduce((acc, r) => { acc[r.emoji] = (acc[r.emoji] || 0) + 1; return acc; }, {}))
+                                .map(([emoji, count]) => (
+                                  <span key={emoji} className='px-2 py-0.5 bg-[#0d1117] border border-[#30363d] rounded-full text-xs flex items-center gap-1'>
+                                    {emoji} {count}
+                                  </span>
+                                ))
+                              }
+                            </div>
+                          )}
+
+                          {/* Timestamp & Check */}
+                          <div className={`flex items-center justify-end gap-1.5 mt-1.5 ${isOwn ? 'text-[#cde3ff]/60' : 'text-[#484f58]'}`}>
+                            <span className='text-xs font-medium'>{formatTime(msg.createdAt)}</span>
+                            {isOwn && <><Check className='w-4 h-4 text-[#3fb950]' />{msg.isEdited && <span className='text-xs'>(edited)</span>}</>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </React.Fragment>
+              );
+            })}
+          </AnimatePresence>
+        )}
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Message Input */}
+      <div className='p-4 border-t border-[#30363d] bg-[#161b22]'>
+        <form onSubmit={handleSendMessage} className='flex items-end gap-3'>
+          <div className='flex gap-1'>
+            <button type='button' className='p-2 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-lg' title='Attach file'>
+              <Paperclip className='w-5 h-5' />
+            </button>
+            <button type='button' className='p-2 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-lg' title='Add image'>
+              <Image className='w-5 h-5' />
             </button>
           </div>
-        )}
-
-        {/* Message Input */}
-        <div className='p-1.5 border-t border-slate-800/50 bg-slate-900/30'>
-          <form onSubmit={handleSendMessage} className='flex items-end gap-1.5'>
-            {/* Attachment Buttons */}
-            <div className='flex gap-0.5'>
-              <button
-                type='button'
-                className='p-1 text-slate-500 hover:text-amber-500 rounded hover:bg-slate-800/50 transition-all'
-                title='Attach file'
-              >
-                <Paperclip className='w-3.5 h-3.5' />
-              </button>
-              <button
-                type='button'
-                className='p-1 text-slate-500 hover:text-amber-500 rounded hover:bg-slate-800/50 transition-all'
-                title='Add image'
-              >
-                <Image className='w-3.5 h-3.5' />
-              </button>
-            </div>
-
-            <div className='flex-1 relative'>
-              <textarea
-                value={newMessage}
-                onChange={(e) => {
-                  setNewMessage(e.target.value);
-                  handleTyping();
-                }}
-                placeholder='Type...'
-                rows={1}
-                className='w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-2 py-1.5 text-slate-200 placeholder-slate-500 outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all resize-none text-[11px]'
-                style={{ minHeight: '28px', maxHeight: '80px' }}
-              />
-            </div>
-
-            <button
-              type='submit'
-              disabled={!newMessage.trim() || sending}
-              className='px-2 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-lg font-medium text-[10px] hover:shadow-md hover:shadow-amber-500/20 disabled:opacity-50 transition-all flex items-center gap-1'
-             >
-               <Send className='w-3 h-3' />
-               {sending ? '...' : 'Send'}
-              </button>
-            </form>
+          <div className='flex-1 relative'>
+            <textarea
+              value={newMessage}
+              onChange={(e) => { setNewMessage(e.target.value); handleTyping(); }}
+              placeholder='Type your message...'
+              rows={1}
+              className='w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-[#e6edf3] placeholder-[#484f58] outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent transition-all resize-none'
+              style={{ minHeight: '44px', maxHeight: '120px' }}
+            />
           </div>
-        </div>
-
-      {/* Participants Side Panel */}
-      <AnimatePresence>
-        {showParticipants && (
-          <motion.div
-            initial={{ x: 300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 300, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className='w-80 border-l border-slate-800/50 bg-slate-900/30 hidden md:block flex flex-col'
+          <button
+            type='submit'
+            disabled={!newMessage.trim() || sending}
+            className='px-5 py-2.5 bg-[#1f6feb] text-white rounded-xl font-medium text-sm hover:bg-[#388bfd] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2'
           >
-            <div className='p-1.5 border-b border-slate-800/50 flex items-center justify-between flex-shrink-0'>
-              <h3 className='font-semibold text-white flex items-center gap-1 text-[10px]'>
-                <Users className='w-3 h-3 text-amber-500' />
-                Participants
-              </h3>
-              <button
-                onClick={() => setShowParticipants(false)}
-                className='text-slate-400 hover:text-white'
-              >
-                <X className='w-3 h-3' />
-              </button>
-            </div>
-
-            <div className='flex-1 overflow-y-auto participants-scroll p-1 space-y-1'>
-              {attendees.length > 0 ? (
-                attendees.map((attendee) => (
-                    <div
-                      key={attendee._id}
-                      className={`flex items-center gap-1.5 p-1 rounded transition-colors cursor-pointer
-                        ${attendee._id === currentUser?.id ? 'bg-amber-500/10 border border-amber-500/20' : 'hover:bg-slate-800/50'}
-                      `}
-                    >
-                      <div className='relative'>
-                        <div className='w-6 h-6 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600/50 flex items-center justify-center'>
-                          <span className='text-[9px] font-bold text-slate-300'>
-                            {attendee.name?.charAt(0)?.toUpperCase() || '?'}
-                          </span>
-                        </div>
-                        {onlineUsers[attendee._id] && (
-                          <div className='absolute bottom-0 right-0 w-1.5 h-1.5 bg-green-500 rounded-full border border-slate-900'></div>
-                        )}
-                      </div>
-                      <div className='flex-1 min-w-0'>
-                        <p className='font-medium text-[10px] text-slate-200 truncate'>
-                          {attendee.name}
-                          {attendee._id === currentUser?.id && (
-                          <span className='text-[9px] text-slate-400 ml-0.5'>(You)</span>
-                        )}
-                      </p>
-                      <p className='text-[9px] text-slate-400'>
-                        {onlineUsers[attendee._id] ? 'Online' : 'Offline'}
-                        {attendee.role === 'host' && ' • Host'}
-                      </p>
-                    </div>
-                    {isHost() && attendee._id !== currentUser?.id && (
-                      <div className='flex gap-1'>
-                        <button
-                          onClick={() => {/* mute user */}}
-                          className='p-1.5 text-slate-400 hover:text-amber-500 hover:bg-slate-700/50 rounded'
-                          title='Mute'
-                        >
-                          <Volume2 className='w-4 h-4' />
-                        </button>
-                        <button
-                          onClick={() => {/* remove user */}}
-                          className='p-1.5 text-slate-400 hover:text-red-500 hover:bg-slate-700/50 rounded'
-                          title='Remove'
-                        >
-                          <UserX className='w-4 h-4' />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className='text-center py-8 text-slate-400'>
-                  <Users className='w-12 h-12 mx-auto mb-2 text-slate-600' />
-                  <p className='text-sm'>No participants yet</p>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <Send className='w-4 h-4' />
+            Send
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
