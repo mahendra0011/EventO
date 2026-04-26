@@ -146,7 +146,6 @@ EventO/
 - Axios - HTTP client
 - Lucide React - Icon library
 - React Hot Toast - Toast notifications
-- Framer Motion - Animations
 
 ## API Endpoints
 

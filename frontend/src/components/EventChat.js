@@ -13,7 +13,6 @@ import {
   getMessageReactions
 } from '../utils/api';
 import ReactionPicker from './ReactionPicker';
-import toast from 'react-hot-toast';
 import './EventChat.css';
 
 const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
@@ -114,22 +113,19 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     document.querySelector('textarea')?.focus();
   };
 
-  const handleReaction = async (messageId, emoji) => {
+   const handleReaction = async (messageId, emoji) => {
     try {
       await addReaction(messageId, emoji);
-      // Update local messages with new reaction
       setMessages(prev => prev.map(msg => {
         if (msg._id === messageId) {
           const userString = String(currentUser?.id);
           const existingReaction = msg.reactions?.find(r => String(r.user) === userString && r.emoji === emoji);
           if (existingReaction) {
-            // Remove reaction
             return {
               ...msg,
               reactions: msg.reactions.filter(r => !(String(r.user) === userString && r.emoji === emoji))
             };
           } else {
-            // Add reaction
             return {
               ...msg,
               reactions: [...(msg.reactions || []), {
@@ -142,47 +138,40 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
         }
         return msg;
       }));
-      toast.success('Reaction updated');
     } catch (error) {
       console.error('Error adding reaction:', error);
-      toast.error('Failed to add reaction');
     } finally {
       setShowReactionPicker(null);
     }
-  };
+   };
 
-  const handleEdit = async (messageId) => {
+   const handleEdit = async (messageId) => {
     if (!editContent.trim()) {
-      toast.error('Message cannot be empty');
       return;
     }
     try {
-      const res = await editMessage(messageId, editContent.trim());
+      await editMessage(messageId, editContent.trim());
       setMessages(prev => prev.map(msg =>
         msg._id === messageId ? { ...msg, content: editContent.trim(), isEdited: true, editedAt: new Date() } : msg
       ));
-      toast.success('Message edited');
       setEditingId(null);
       setEditContent('');
     } catch (error) {
       console.error('Error editing message:', error);
-      toast.error('Failed to edit message');
     }
-  };
+   };
 
-  const handleDelete = async (messageId) => {
+   const handleDelete = async (messageId) => {
     try {
       await deleteMessage(messageId);
       setMessages(prev => prev.filter(msg => msg._id !== messageId));
-      toast.success('Message deleted');
     } catch (error) {
       console.error('Error deleting message:', error);
-      toast.error('Failed to delete message');
     }
     setActiveMenu(null);
-  };
+   };
 
-  const handleSendMessage = async (e) => {
+   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
     setSending(true);
@@ -190,24 +179,11 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       await postCommunityMessage(eventId, newMessage.trim(), replyTo?._id || null);
       setNewMessage('');
       setReplyTo(null);
-      // Try to refresh messages silently - suppress all errors
-      fetchMessages(true).catch(err => {
-        console.debug('Silent refresh failed (non-critical):', err.message);
-      });
-      toast.success('Message sent successfully');
+      fetchMessages(true).catch(() => {});
     } catch (error) {
       console.error('Error sending message:', error);
-      let errorMsg = 'Failed to send message';
-      if (error.response) {
-        errorMsg = error.response.data?.message || error.response.statusText || errorMsg;
-      } else if (error.request) {
-        errorMsg = 'No response from server';
-      } else {
-        errorMsg = error.message;
-      }
-      toast.error(errorMsg);
     } finally { setSending(false); }
-  };
+   };
 
   const handleTyping = () => { /* TODO */ };
 
