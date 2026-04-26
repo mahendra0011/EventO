@@ -41,13 +41,10 @@ const ProtectedRoute = ({ children, adminOnly = false, allowHosts = false }) => 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If route requires host/admin but user is not host, redirect to user dashboard
   if (adminOnly && user.role !== 'host') {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // If user is host and trying to access a non-host admin route, redirect to host panel
-  // Unless the route explicitly allows hosts (allowHosts prop)
   if (user.role === 'host' && !adminOnly && !allowHosts) {
     return <Navigate to="/host" replace />;
   }
@@ -157,48 +154,54 @@ function AnimatedRoutes() {
   );
 }
 
-function App() {
+// Main App Content component (inside Router)
+function AppContent() {
   const location = useLocation();
   // Hide footer only on chat pages
   const hideFooter = location.pathname.includes('/chat');
 
   return (
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <Navbar />
+      <main className="flex-grow">
+        <AnimatedRoutes />
+      </main>
+      {!hideFooter && <Footer />}
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+            borderRadius: '10px',
+            padding: '16px',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+    </div>
+  );
+}
+
+function App() {
+  return (
     <AuthProvider>
       <Router>
-        <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-          <Navbar />
-          <main className="flex-grow">
-            <AnimatedRoutes />
-          </main>
-          {/* Footer is hidden only on chat routes */}
-          {!hideFooter && <Footer />}
-          <Toaster 
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-                borderRadius: '10px',
-                padding: '16px',
-              },
-              success: {
-                duration: 3000,
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#fff',
-                },
-              },
-              error: {
-                duration: 4000,
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#fff',
-                },
-              },
-            }}
-          />
-        </div>
+        <AppContent />
       </Router>
     </AuthProvider>
   );
