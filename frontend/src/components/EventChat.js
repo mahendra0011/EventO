@@ -378,7 +378,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                           {/* Actions Menu */}
                           {activeMenu === msg._id && (
                              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                               className='absolute top-full mt-2 right-0 flex items-center gap-1 bg-[#161b22] border border-[#30363d] rounded-full px-2 py-1.5 shadow-xl z-50'
+                                className='absolute top-full mt-2 right-0 flex items-center justify-end gap-1 bg-[#161b22] border border-[#30363d] rounded-full px-2 py-1.5 shadow-xl z-50'
                              >
                               <button onClick={() => handleReply(msg)} className='p-1.5 hover:bg-[#21262d] rounded-full' title='Reply'>
                                 <MessageSquare className='w-4 h-4 text-[#8b949e]' />

@@ -759,7 +759,7 @@ const CommunityChat = () => {
                                      {/* Actions Menu */}
                                      {activeMenu === msg.id && (
                                         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                                          className='absolute top-full mt-2 right-0 flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 shadow-xl z-50'
+                                           className='absolute top-full mt-2 right-0 flex items-center justify-end gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 shadow-xl z-50'
                                         >
                                          <button onClick={() => handleReply(msg)} className='p-1.5 hover:bg-slate-700 rounded' title='Reply'>
                                            <Reply className='w-4 h-4 text-slate-300' />
