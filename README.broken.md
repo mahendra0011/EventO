@@ -1,75 +1,44 @@
-﻿# EVENTRA - World-Class Event Management Platform
+# 🎫 EVENTRA - World-Class Event Management Platform
 
-![React](https://img.shields.io/badge/React-18.2.0-blue.svg)
-![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)
-![Express](https://img.shields.io/badge/Express-4.18.2-lightgrey.svg)
-![MongoDB](https://img.shields.io/badge/MongoDB-7.6.3-green.svg)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.6-38bdf8.svg)
-![Framer Motion](https://img.shields.io/badge/Framer_Motion-12.38-blue.svg)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+[![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-4.18.2-lightgrey.svg)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7.6.3-green.svg)](https://www.mongodb.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.6-38bdf8.svg)](https://tailwindcss.com/)
+[![Framer Motion](https://img.shields.io/badge/Framer_Motion-12.38-blue.svg)](https://framer.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A world-class event management and ticket booking platform. Discover extraordinary events, book tickets securely with OTP verification, and host unforgettable experiences with our premium platform.
 
-## Features
+![Evento Banner](https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200)
 
-### User Features
-- Browse and search events by category, title, or venue
-- Book tickets with secure OTP email verification
-- Personal dashboard to track booking status
-- Profile management
-- Real-time booking status updates
-- Real-time community chat for event attendees
-- Direct messaging with event hosts
-- Reply to messages with threaded conversations
-- Edit and delete your own messages
-- React to messages with emojis
-- Seen/read receipts and typing indicators
+## ✨ Features
 
-### Host Features
-- Analytics dashboard with revenue and booking statistics
-- Confirm or reject booking requests
-- Create, update, and delete events
-- Broadcast messages to all users who booked an event
-- Individual messaging with users
-- Community chat for event attendees
-- Event-specific analytics
-- View event attendees
+### 👤 User Features
+- 🔍 Browse and search events by category, title, or venue
+- 🎟️ Book tickets with secure OTP email verification
+- 📊 Personal dashboard to track booking status
+- 👤 Profile management
+- 🔔 Real-time booking status updates
+- 💬 Direct messaging with event hosts\n- ?? Real-time community chat for event attendees\n- ?? Reply to messages with threaded conversations\n- ?? Edit and delete your own messages\n- ?? React to messages with emojis\n- ?? Seen/read receipts and typing indicators
 
-### Security Features
-- JWT-based authentication
-- Email OTP verification for bookings
-- Role-based access control (User/Host)
-- Password hashing with bcrypt
-- Protected routes and API endpoints
+### 👨‍💼 Host Features
+- 📈 Analytics dashboard with revenue and booking statistics
+- ✅ Confirm or reject booking requests
+- 🎨 Create, update, and delete events
+- 💌 Broadcast messages to all users who booked an event\n- ?? Individual messaging with users\n- ?? Community chat for event attendees
+- 💬 Individual messaging with users
+- 📊 Event-specific analytics
+- 👥 View event attendees
 
-## Chat Features
+### 🔒 Security Features
+- 🔐 JWT-based authentication
+- 📧 Email OTP verification for bookings
+- 👥 Role-based access control (User/Host)
+- 🔑 Password hashing with bcrypt
+- 🛡️ Protected routes and API endpoints
 
-### Community Chat
-- Real-time community chat for event attendees
-- Hosts can post announcements to all attendees
-- Auto-scroll with manual override
-- Reply to specific messages
-- Edit/Delete own messages
-- Add emoji reactions
-- Host badges for identification
-
-### Direct Messaging
-- One-on-one private messaging
-- Real-time delivery status
-- Seen/read receipts
-- Edit and delete messages
-- Emoji reactions
-- Threaded replies
-
-### Message Actions
-Three-dot menu on each message:
-- Reply - Quote and respond to specific messages
-- Edit - Modify your sent messages (shows "(edited)" tag)
-- Delete - Remove your messages permanently
-- React - Quick emoji reactions (click to toggle)
-- Close - Dismiss menu
-
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js (v14 or higher)
@@ -78,6 +47,7 @@ Three-dot menu on each message:
 
 ### Installation
 
+```bash
 # Clone the repository
 git clone https://github.com/mahendra0011/EventO.git
 cd EventO
@@ -103,10 +73,12 @@ npm install
 
 # Start frontend server
 npm start
+```
 
-## Project Structure
+## 📁 Project Structure
 
-EventO/
+```
+Evento/
 ├── backend/
 │   ├── controllers/        # Route controllers
 │   ├── models/             # MongoDB models
@@ -126,29 +98,30 @@ EventO/
 │   └── package.json
 │
 └── README.md
+```
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 ### Backend
-- Node.js - JavaScript runtime
-- Express.js - Web framework
-- MongoDB - NoSQL database
-- Mongoose - MongoDB ODM
-- JWT - Authentication
-- bcryptjs - Password hashing
-- Nodemailer - Email service
-- express-validator - Input validation
+- **Node.js** - JavaScript runtime
+- **Express.js** - Web framework
+- **MongoDB** - NoSQL database
+- **Mongoose** - MongoDB ODM
+- **JWT** - Authentication
+- **bcryptjs** - Password hashing
+- **Nodemailer** - Email service
+- **express-validator** - Input validation
 
 ### Frontend
-- React.js - UI library
-- React Router - Client-side routing
-- Tailwind CSS - Utility-first CSS
-- Axios - HTTP client
-- Lucide React - Icon library
-- React Hot Toast - Toast notifications
-- Framer Motion - Animations
+- **React.js** - UI library
+- **React Router** - Client-side routing
+- **Tailwind CSS** - Utility-first CSS
+- **Axios** - HTTP client
+- **Lucide React** - Icon library
+- **React Hot Toast** - Toast notifications
+- **Framer Motion** - Animations
 
-## API Endpoints
+## 📊 API Endpoints
 
 ### Authentication
 | Method | Endpoint | Description | Access |
@@ -191,12 +164,6 @@ EventO/
 | GET | /api/messages/conversation/:userId | Get conversation | Private |
 | POST | /api/messages/broadcast | Broadcast to event bookers | Host |
 | GET | /api/host/events/:id/bookers | Get event bookers | Host |
-| PUT | /api/messages/:id | Edit message | Private |
-| DELETE | /api/messages/:id | Delete message | Private |
-| POST | /api/messages/:id/react | Add/remove reaction | Private |
-| GET | /api/messages/:id/reactions | Get reactions count | Private |
-| POST | /api/messages/community | Post community message | Attendee/Host |
-| GET | /api/messages/community/:eventId | Get community messages | Attendee/Host |
 
 ### Host Dashboard
 | Method | Endpoint | Description | Access |
@@ -204,46 +171,51 @@ EventO/
 | GET | /api/host/dashboard | Get dashboard stats | Host |
 | GET | /api/host/events/:id/analytics | Get event analytics | Host |
 
-## Booking Workflow
+## 🔄 Booking Workflow
 
+```
 User Browses Events → Select Event → Request Booking → System Sends OTP → User Verifies OTP → Admin Reviews Booking → Decision
                                                                               ↓
                                                      Confirmed ← Booking Confirmed
                                                      ↓
                                            User Receives Confirmation Email
+```
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please follow these steps:
 
 1. Fork the repository
-2. Create your feature branch (git checkout -b feature/AmazingFeature)
-3. Commit your changes (git commit -m 'Add some AmazingFeature')
-4. Push to the branch (git push origin feature/AmazingFeature)
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## License
+## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Author
+## 👨‍💻 Author
 
-EventO Team
-- GitHub: @mahendra0011
+**EventO Team**
+- GitHub: [@mahendra0011](https://github.com/mahendra0011)
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-- React - Frontend framework
-- Express - Backend framework
-- MongoDB - Database
-- Tailwind CSS - CSS framework
-- Lucide - Icons
-- Framer - Animations
+- [React](https://reactjs.org/) - Frontend framework
+- [Express](https://expressjs.com/) - Backend framework
+- [MongoDB](https://www.mongodb.com/) - Database
+- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
+- [Lucide](https://lucide.dev/) - Icons
+- [Framer](https://framer.com/) - Animations
 
-## Support
+## 📞 Support
 
 If you have any questions or need help, please open an issue on GitHub.
 
 ---
 
-Made with by EventO Team
+<div align="center">
+  <p>Made with ❤️ by EventO Team</p>
+  <p>⭐ Star this repository if you found it helpful!</p>
+</div>
