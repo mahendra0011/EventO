@@ -218,12 +218,12 @@ exports.getCommunityMessages = async (req, res) => {
       event: eventId,
       isPublic: true
     })
-    .populate('sender', 'name email')
+    .populate('sender', 'name email role')  // include role for host badge
     .populate({
       path: 'replyTo',
       populate: {
         path: 'sender',
-        select: 'name'
+        select: 'name email role'
       }
     })
     .sort({ createdAt: -1 })

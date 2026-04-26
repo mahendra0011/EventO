@@ -197,8 +197,13 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       await postCommunityMessage(eventId, newMessage.trim(), replyTo?._id || null);
       setNewMessage('');
       setReplyTo(null);
-      await fetchMessages();
-      toast.success('Message sent');
+      // Try to refresh messages but don't block success notification
+      fetchMessages().catch(err => {
+        console.error('Failed to refresh messages after send:', err);
+        // Optionally show a subtle warning but not an error
+        // toast('Message sent but refresh failed', { icon: '⚠️' });
+      });
+      toast.success('Message sent successfully');
     } catch (error) {
       console.error('Error sending message:', error);
       let errorMsg = 'Failed to send message';
@@ -220,7 +225,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
-  const isCurrentUserMessage = (msg) => msg.sender && msg.sender._id === currentUser?.id;
+  const isCurrentUserMessage = (msg) => msg.sender && String(msg.sender._id) === String(currentUser?.id);
 
   if (!eventId) {
     return (
@@ -287,7 +292,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
             {messages.map((msg, index) => {
               const sender = msg.sender;
               const isOwn = isCurrentUserMessage(msg);
-              const showAvatar = index === 0 || messages[index-1]?.sender?._id !== sender?._id;
+               const showAvatar = index === 0 || String(messages[index-1]?.sender?._id) !== String(sender?._id);
               const showDate = index === 0 || new Date(messages[index-1]?.createdAt).toDateString() !== new Date(msg.createdAt).toDateString();
               return (
                 <React.Fragment key={msg._id}>
@@ -317,17 +322,20 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                               Replying to {msg.replyTo.sender?.name}
                             </div>
                           )}
-                           {!isOwn && sender && (
-                            <div className='flex items-center gap-2 mb-1.5'>
-                              <span className='text-xs font-semibold text-[#c9d1d9]'>{sender.name}</span>
-                              {sender.role === 'host' && (
-                                <span className='px-1.5 py-0.5 bg-[#2d2206] text-[#EF9F27] border border-[#854F0B] rounded text-[10px] font-bold uppercase flex items-center gap-1'>
-                                  <Crown className='w-3 h-3 fill-current' />
-                                  Host
-                                </span>
-                              )}
-                            </div>
-                          )}
+                            {!isOwn && sender && (
+                              <div className='flex items-center gap-2 mb-1.5'>
+                                {/* Show sender name only if NOT a host (hosts show only badge) */}
+                                {sender.role !== 'host' && (
+                                  <span className='text-xs font-semibold text-[#c9d1d9]'>{sender.name}</span>
+                                )}
+                                {sender.role === 'host' && (
+                                  <span className='px-1.5 py-0.5 bg-[#2d2206] text-[#EF9F27] border border-[#854F0B] rounded text-[10px] font-bold uppercase flex items-center gap-1'>
+                                    <Crown className='w-3 h-3 fill-current' />
+                                    Host
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           
                           {/* Edit mode / Display mode */}
                           {editingId === msg._id ? (

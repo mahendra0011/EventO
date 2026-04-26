@@ -716,13 +716,20 @@ const CommunityChat = () => {
                                          </div>
                                        )}
 
-                                       <div className='flex items-center justify-between mt-1.5'>
-                                         {msg.senderName && msg.senderRole !== activeRole && (
-                                           <span className='text-[10px] font-medium text-amber-400/80 uppercase tracking-wide'>
-                                             {msg.senderName}
-                                           </span>
-                                         )}
-                                         {msg.senderRole === activeRole && (
+                                        <div className='flex items-center justify-between mt-1.5'>
+                                          {/* Show sender name only if NOT a host (hosts show only "Host" badge) */}
+                                          {msg.senderName && msg.senderRole !== activeRole && msg.senderRole !== 'host' && (
+                                            <span className='text-[10px] font-medium text-amber-400/80 uppercase tracking-wide'>
+                                              {msg.senderName}
+                                            </span>
+                                          )}
+                                          {msg.senderRole === 'host' && msg.senderRole !== activeRole && (
+                                            <span className='px-1.5 py-0.5 bg-[#2d2206] text-[#EF9F27] border border-[#854F0B] rounded text-[10px] font-bold uppercase flex items-center gap-1'>
+                                              <Crown className='w-3 h-3 fill-current' />
+                                              Host
+                                            </span>
+                                          )}
+                                          {msg.senderRole === activeRole && (
                                            <span className='text-[10px] opacity-40 font-mono flex items-center gap-1'>
                                              {msg.timestamp}
                                              {msg.isEdited && <span className='italic'>(edited)</span>}
