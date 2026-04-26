@@ -158,6 +158,9 @@ function AnimatedRoutes() {
 }
 
 function App() {
+  const location = useLocation();
+  const hideFooter = location.pathname.includes('/chat');
+
   return (
     <AuthProvider>
       <Router>
@@ -166,7 +169,7 @@ function App() {
           <main className="flex-grow">
             <AnimatedRoutes />
           </main>
-          <Footer />
+          {!hideFooter && <Footer />}
           <Toaster 
             position="top-right"
             toastOptions={{
