@@ -57,13 +57,8 @@ const CommunityChat = () => {
     ? mockAllHosts[0] 
     : mockAllUsers[0];
   
-  // Scroll to bottom
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-  
-  // Load messages when selection changes
-  useEffect(() => {
+   // Load messages when selection changes
+   useEffect(() => {
     if (activeTab === "direct" && selectedEvent) {
       if (activeRole === "host") {
         if (selectedUser) {
