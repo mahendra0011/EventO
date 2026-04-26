@@ -159,6 +159,7 @@ function AnimatedRoutes() {
 
 function App() {
   const location = useLocation();
+  // Hide footer only on chat pages
   const hideFooter = location.pathname.includes('/chat');
 
   return (
@@ -169,6 +170,7 @@ function App() {
           <main className="flex-grow">
             <AnimatedRoutes />
           </main>
+          {/* Footer is hidden only on chat routes */}
           {!hideFooter && <Footer />}
           <Toaster 
             position="top-right"
