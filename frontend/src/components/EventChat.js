@@ -45,18 +45,8 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     } catch (error) {
       console.error('Error fetching messages:', error);
       setLoading(false);
-      // Only show toast error if not a silent refresh
-      if (!silent) {
-        let errorMsg = 'Failed to load messages';
-        if (error.response) {
-          errorMsg = error.response.data?.message || error.response.statusText || errorMsg;
-        } else if (error.request) {
-          errorMsg = 'No response from server';
-        } else {
-          errorMsg = error.message;
-        }
-        toast.error(errorMsg);
-      }
+      // Never show toast for message fetch errors - just log
+      // Initial load errors will be reflected in UI (empty state)
     }
   }, [eventId]);
 
@@ -200,9 +190,9 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       await postCommunityMessage(eventId, newMessage.trim(), replyTo?._id || null);
       setNewMessage('');
       setReplyTo(null);
-      // Try to refresh messages silently (no error toast)
+      // Try to refresh messages silently - suppress all errors
       fetchMessages(true).catch(err => {
-        console.error('Failed to refresh messages after send:', err);
+        console.debug('Silent refresh failed (non-critical):', err.message);
       });
       toast.success('Message sent successfully');
     } catch (error) {
