@@ -58,50 +58,7 @@ const EventChatPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col">
-      {/* Navbar */}
-      <nav className="h-14 bg-[#161b22] border-b border-[#30363d] px-6 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
-            <svg className="w-4 h-4 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2"/>
-              <line x1="16" y1="2" x2="16" y2="6" strokeWidth="2"/>
-              <line x1="8" y1="2" x2="8" y2="6" strokeWidth="2"/>
-              <line x1="3" y1="10" x2="21" y2="10" strokeWidth="2"/>
-              <line x1="3" y1="14" x2="21" y2="14" strokeWidth="2"/>
-              <line x1="3" y1="18" x2="21" y2="18" strokeWidth="2"/>
-            </svg>
-          </div>
-          <span className="text-[#58a6ff] font-medium text-lg">Evento</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <a href="/" className="text-[#8b949e] hover:text-[#e6edf3] text-sm">Home</a>
-          <a href="/events" className="text-[#8b949e] hover:text-[#e6edf3] text-sm">Events</a>
-          <a href="/host" className="flex items-center gap-1.5 text-[#8b949e] hover:text-[#e6edf3] text-sm">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="9" strokeWidth="2"/>
-              <path d="M12 6v6l4 2" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            Host Panel
-          </a>
-          <button className="relative p-2 text-[#8b949e] hover:bg-[#21262d] rounded-lg">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M13.73 21a2 2 0 01-3.46 0" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            <span className="absolute top-1 right-1 w-4 h-4 bg-[#f85149] text-white text-xs rounded-full flex items-center justify-center">5</span>
-          </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-[#8b949e] hover:bg-[#21262d] rounded-lg text-sm">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" strokeWidth="2" strokeLinecap="round"/>
-              <polyline points="16,17 21,12 16,7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <line x1="21" y1="12" x2="9" y2="12" strokeWidth="2"/>
-            </svg>
-            Logout
-          </button>
-        </div>
-      </nav>
-
+    <div className="min-h-screen bg-[#0d1117] overflow-hidden flex flex-col">
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <div className="max-w-4xl mx-auto px-6 py-6 h-full flex flex-col">
