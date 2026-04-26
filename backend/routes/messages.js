@@ -12,7 +12,10 @@ const {
   deleteMessage,
   broadcastMessage,
   postCommunityMessage,
-  getCommunityMessages
+  getCommunityMessages,
+  editMessage,
+  addReaction,
+  getMessageReactions
 } = require('../controllers/messageController');
 const { auth } = require('../middleware/auth');
 
@@ -72,8 +75,23 @@ router.get('/attendees', auth, getEventAttendees);
 router.put('/read/:userId', auth, markConversationAsRead);
 
 // @route   DELETE /api/messages/:id
-// @desc    Delete a message (only sender or host can delete)
+// @desc    Delete a message (only sender can delete)
 // @access  Private
 router.delete('/:id', auth, deleteMessage);
+
+// @route   PUT /api/messages/:id
+// @desc    Edit a message (only sender can edit)
+// @access  Private
+router.put('/:id', auth, editMessage);
+
+// @route   POST /api/messages/:id/react
+// @desc    Add/remove reaction to a message
+// @access  Private
+router.post('/:id/react', auth, addReaction);
+
+// @route   GET /api/messages/:id/reactions
+// @desc    Get message reactions count
+// @access  Private
+router.get('/:id/reactions', auth, getMessageReactions);
 
 module.exports = router;

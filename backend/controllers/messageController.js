@@ -98,7 +98,7 @@ exports.sendMessage = async (req, res) => {
 // Post public message for community chat (event attendees)
 exports.postCommunityMessage = async (req, res) => {
   try {
-    const { eventId, content } = req.body;
+    const { eventId, content, replyTo } = req.body;
 
     console.log(`[postCommunityMessage] User ${req.user.id} (${req.user.role}) posting to event ${eventId}: "${content.substring(0, 50)}"`);
 
@@ -137,6 +137,15 @@ exports.postCommunityMessage = async (req, res) => {
       console.log(`[postCommunityMessage] User has confirmed booking: ${booking._id}`);
     }
 
+    // Validate replyTo if provided
+    let replyToMessage = null;
+    if (replyTo) {
+      replyToMessage = await Message.findById(replyTo);
+      if (!replyToMessage || replyToMessage.event.toString() !== eventId) {
+        return res.status(400).json({ message: 'Invalid reply reference' });
+      }
+    }
+
     const message = new Message({
       sender: req.user.id,
       receiver: event.organizer, // Store organizer as receiver for reference
@@ -144,6 +153,7 @@ exports.postCommunityMessage = async (req, res) => {
       booking: booking ? booking._id : null, // Hosts have no booking
       subject: 'Community Chat',
       content,
+      replyTo: replyToMessage ? replyToMessage._id : null,
       isPublic: true
     });
 
@@ -154,7 +164,8 @@ exports.postCommunityMessage = async (req, res) => {
       id: message._id,
       sender: message.sender.name,
       event: message.event.title,
-      isPublic: message.isPublic
+      isPublic: message.isPublic,
+      replyTo: message.replyTo
     });
 
     res.status(201).json({ message: 'Message posted to community chat', data: message });
@@ -208,6 +219,13 @@ exports.getCommunityMessages = async (req, res) => {
       isPublic: true
     })
     .populate('sender', 'name email')
+    .populate({
+      path: 'replyTo',
+      populate: {
+        path: 'sender',
+        select: 'name'
+      }
+    })
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
@@ -647,6 +665,123 @@ exports.deleteMessage = async (req, res) => {
     res.json({ message: 'Message deleted successfully' });
   } catch (error) {
     console.error('Delete message error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Edit message (only sender can edit)
+exports.editMessage = async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ message: 'Message content is required' });
+    }
+
+    const message = await Message.findOne({
+      _id: req.params.id,
+      sender: req.user.id
+    });
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Only sender can edit
+    if (message.sender.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    message.content = content.trim();
+    message.isEdited = true;
+    message.editedAt = new Date();
+
+    await message.save();
+    await message.populate('sender').populate('receiver').populate('event');
+
+    res.json({ message: 'Message updated successfully', data: message });
+  } catch (error) {
+    console.error('Edit message error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Add reaction to message
+exports.addReaction = async (req, res) => {
+  try {
+    const { emoji } = req.body;
+
+    if (!emoji || !emoji.trim()) {
+      return res.status(400).json({ message: 'Emoji is required' });
+    }
+
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Check if user already reacted with this emoji
+    const existingReactionIndex = message.reactions.findIndex(
+      r => r.user.toString() === req.user.id && r.emoji === emoji
+    );
+
+    if (existingReactionIndex > -1) {
+      // Remove reaction if already exists
+      message.reactions.splice(existingReactionIndex, 1);
+    } else {
+      // Add new reaction
+      message.reactions.push({
+        emoji: emoji.trim(),
+        user: req.user.id,
+        createdAt: new Date()
+      });
+    }
+
+    await message.save();
+
+    res.json({
+      message: existingReactionIndex > -1 ? 'Reaction removed' : 'Reaction added',
+      data: message
+    });
+  } catch (error) {
+    console.error('Add reaction error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get message reactions count
+exports.getMessageReactions = async (req, res) => {
+  try {
+    const message = await Message.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Group reactions by emoji with user counts
+    const reactionCounts = {};
+    const reactionUsers = {};
+
+    message.reactions.forEach(reaction => {
+      const emoji = reaction.emoji;
+      if (!reactionCounts[emoji]) {
+        reactionCounts[emoji] = 0;
+        reactionUsers[emoji] = [];
+      }
+      reactionCounts[emoji]++;
+      reactionUsers[emoji].push({
+        user: reaction.user,
+        createdAt: reaction.createdAt
+      });
+    });
+
+    res.json({
+      reactions: reactionCounts,
+      users: reactionUsers
+    });
+  } catch (error) {
+    console.error('Get message reactions error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

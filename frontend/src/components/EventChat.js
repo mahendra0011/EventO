@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Send, Smile, Users, Crown, MessageSquare, Trash2, X, Check, Paperclip, Image
+  Send, Smile, Users, Crown, MessageSquare, Trash2, X, Check, Paperclip, Image, Reply
 } from 'lucide-react';
 import {
   getCommunityMessages,
   postCommunityMessage,
   getEventAttendees,
-  deleteMessage
+  deleteMessage,
+  editMessage,
+  addReaction,
+  getMessageReactions
 } from '../utils/api';
 import ReactionPicker from './ReactionPicker';
 import toast from 'react-hot-toast';
@@ -16,6 +19,9 @@ import './EventChat.css';
 const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editContent, setEditContent] = useState('');
   const [attendees, setAttendees] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -30,26 +36,26 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const autoScrollRef = useRef(true);
   const prevMessagesLengthRef = useRef(0);
 
-  const fetchMessages = useCallback(async () => {
-    if (!eventId) return;
-    try {
-      const data = await getCommunityMessages(eventId, 1, 100);
-      setMessages(data.messages || []);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      setLoading(false);
-      let errorMsg = 'Failed to load messages';
-      if (error.response) {
-        errorMsg = error.response.data?.message || error.response.statusText || errorMsg;
-      } else if (error.request) {
-        errorMsg = 'No response from server';
-      } else {
-        errorMsg = error.message;
-      }
-      toast.error(errorMsg);
-    }
-  }, [eventId]);
+   const fetchMessages = useCallback(async () => {
+     if (!eventId) return;
+     try {
+       const data = await getCommunityMessages(eventId, 1, 100);
+       setMessages(data.messages || []);
+       setLoading(false);
+     } catch (error) {
+       console.error('Error fetching messages:', error);
+       setLoading(false);
+       let errorMsg = 'Failed to load messages';
+       if (error.response) {
+         errorMsg = error.response.data?.message || error.response.statusText || errorMsg;
+       } else if (error.request) {
+         errorMsg = 'No response from server';
+       } else {
+         errorMsg = error.message;
+       }
+       toast.error(errorMsg);
+     }
+   }, [eventId]);
 
   const fetchAttendees = useCallback(async () => {
     try {
@@ -65,7 +71,10 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     }
   }, [eventId]);
 
-  useEffect(() => { fetchMessages(); fetchAttendees(); }, [fetchMessages, fetchAttendees]);
+  useEffect(() => { 
+    fetchMessages(); 
+    fetchAttendees(); 
+  }, [fetchMessages, fetchAttendees]);
 
   useEffect(() => {
     if (!eventId) return;
@@ -73,7 +82,16 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     return () => clearInterval(interval);
   }, [eventId, fetchMessages, fetchAttendees]);
 
-  useEffect(() => { autoScrollRef.current = true; }, [eventId]);
+  useEffect(() => {
+    autoScrollRef.current = true;
+  }, [eventId]);
+
+  // Clear reply when event changes
+  useEffect(() => {
+    setReplyTo(null);
+    setEditingId(null);
+    setEditContent('');
+  }, [eventId]);
 
   const handleScroll = useCallback(() => {
     if (!messagesContainerRef.current) return;
@@ -96,22 +114,89 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     setActiveMenu(activeMenu === messageId ? null : messageId);
   }, [activeMenu]);
 
-  const handleReply = (message) => { /* TODO */ setActiveMenu(null); };
-  const handleReaction = async (messageId, emoji) => { setActiveMenu(null); setShowReactionPicker(null); };
+  const handleReply = (message) => {
+    setReplyTo(message);
+    setActiveMenu(null);
+    // Focus on input
+    document.querySelector('textarea')?.focus();
+  };
+
+  const handleReaction = async (messageId, emoji) => {
+    try {
+      await addReaction(messageId, emoji);
+      // Update local messages with new reaction
+      setMessages(prev => prev.map(msg => {
+        if (msg._id === messageId) {
+          const userString = String(currentUser?.id);
+          const existingReaction = msg.reactions?.find(r => String(r.user) === userString && r.emoji === emoji);
+          if (existingReaction) {
+            // Remove reaction
+            return {
+              ...msg,
+              reactions: msg.reactions.filter(r => !(String(r.user) === userString && r.emoji === emoji))
+            };
+          } else {
+            // Add reaction
+            return {
+              ...msg,
+              reactions: [...(msg.reactions || []), {
+                emoji,
+                user: userString,
+                createdAt: new Date()
+              }]
+            };
+          }
+        }
+        return msg;
+      }));
+      toast.success('Reaction updated');
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      toast.error('Failed to add reaction');
+    } finally {
+      setShowReactionPicker(null);
+    }
+  };
+
+  const handleEdit = async (messageId) => {
+    if (!editContent.trim()) {
+      toast.error('Message cannot be empty');
+      return;
+    }
+    try {
+      const res = await editMessage(messageId, editContent.trim());
+      setMessages(prev => prev.map(msg =>
+        msg._id === messageId ? { ...msg, content: editContent.trim(), isEdited: true, editedAt: new Date() } : msg
+      ));
+      toast.success('Message edited');
+      setEditingId(null);
+      setEditContent('');
+    } catch (error) {
+      console.error('Error editing message:', error);
+      toast.error('Failed to edit message');
+    }
+  };
 
   const handleDelete = async (messageId) => {
-    try { await deleteMessage(messageId); await fetchMessages(); toast.success('Message deleted'); }
-    catch (error) { toast.error('Failed to delete message'); }
+    try {
+      await deleteMessage(messageId);
+      setMessages(prev => prev.filter(msg => msg._id !== messageId));
+      toast.success('Message deleted');
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast.error('Failed to delete message');
+    }
     setActiveMenu(null);
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() || sending) return;
-    setSending(true); autoScrollRef.current = true;
+    setSending(true);
     try {
-      await postCommunityMessage(eventId, newMessage.trim());
+      await postCommunityMessage(eventId, newMessage.trim(), replyTo?._id || null);
       setNewMessage('');
+      setReplyTo(null);
       await fetchMessages();
       toast.success('Message sent');
     } catch (error) {
@@ -230,7 +315,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                               Replying to {msg.replyTo.sender?.name}
                             </div>
                           )}
-                          {!isOwn && sender && (
+                           {!isOwn && sender && (
                             <div className='flex items-center gap-2 mb-1.5'>
                               <span className='text-xs font-semibold text-[#c9d1d9]'>{sender.name}</span>
                               {sender.role === 'host' && (
@@ -241,7 +326,43 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                               )}
                             </div>
                           )}
-                          <p className='text-sm leading-relaxed break-words whitespace-pre-wrap'>{msg.content}</p>
+                          
+                          {/* Edit mode / Display mode */}
+                          {editingId === msg._id ? (
+                            <div className='flex items-end gap-2'>
+                              <input
+                                type='text'
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(msg._id); if (e.key === 'Escape') setEditingId(null); }}
+                                autoFocus
+                                className='flex-1 bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3] outline-none focus:ring-2 focus:ring-[#58a6ff]'
+                              />
+                              <button onClick={() => handleEdit(msg._id)} className='p-2 bg-[#238636] text-white rounded-lg hover:bg-[#2ea043]'>
+                                <Check className='w-4 h-4' />
+                              </button>
+                              <button onClick={() => setEditingId(null)} className='p-2 bg-[#30363d] text-[#c9d1d9] rounded-lg hover:bg-[#484f58]'>
+                                <X className='w-4 h-4' />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <p className='text-sm leading-relaxed break-words whitespace-pre-wrap'>{msg.content}</p>
+                              
+                              {/* Reply preview */}
+                              {msg.replyTo && (
+                                <div className='mt-2 pt-2 border-t border-[#30363d]/50'>
+                                  <div className='text-xs text-[#8b949e] flex items-center gap-1'>
+                                    <MessageSquare className='w-3 h-3' />
+                                    Replying to {msg.replyTo.sender?.name || 'user'}
+                                  </div>
+                                  <div className='text-xs text-[#8b949e] truncate mt-0.5'>
+                                    {msg.replyTo.content || 'Original message'}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
 
                           {/* Actions Menu */}
                           {activeMenu === msg._id && (
@@ -255,9 +376,14 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                                 <Smile className='w-4 h-4 text-[#8b949e]' />
                               </button>
                               {isOwn && (
-                                <button onClick={() => handleDelete(msg._id)} className='p-1.5 hover:bg-red-500/20 rounded-full' title='Delete'>
-                                  <Trash2 className='w-4 h-4 text-red-400' />
-                                </button>
+                                <>
+                                  <button onClick={() => { setEditingId(msg._id); setEditContent(msg.content); setActiveMenu(null); }} className='p-1.5 hover:bg-[#21262d] rounded-full' title='Edit'>
+                                    <svg className='w-4 h-4 text-[#8b949e]' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' /></svg>
+                                  </button>
+                                  <button onClick={() => handleDelete(msg._id)} className='p-1.5 hover:bg-red-500/20 rounded-full' title='Delete'>
+                                    <Trash2 className='w-4 h-4 text-red-400' />
+                                  </button>
+                                </>
                               )}
                               <button onClick={() => setActiveMenu(null)} className='p-1 hover:bg-[#21262d] rounded-full' title='Close'>
                                 <X className='w-3 h-3 text-[#484f58]' />
@@ -266,20 +392,35 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                                 <div className='absolute bottom-full mb-2 left-1/2 -translate-x-1/2'>
                                   <ReactionPicker onSelect={(emoji) => handleReaction(msg._id, emoji)} onClose={() => setShowReactionPicker(null)} />
                                 </div>
-                              )}
-                            </motion.div>
-                          )}
+                               )}
+                             </motion.div>
+                           )}
 
-                          {/* Reactions */}
+                           {/* Reactions */}
                           {msg.reactions && msg.reactions.length > 0 && (
-                            <div className='flex items-center gap-1 mt-2'>
-                              {Object.entries(msg.reactions.reduce((acc, r) => { acc[r.emoji] = (acc[r.emoji] || 0) + 1; return acc; }, {}))
-                                .map(([emoji, count]) => (
-                                  <span key={emoji} className='px-2 py-0.5 bg-[#0d1117] border border-[#30363d] rounded-full text-xs flex items-center gap-1'>
-                                    {emoji} {count}
-                                  </span>
-                                ))
-                              }
+                            <div className='flex items-center gap-1 mt-2 flex-wrap'>
+                              {(() => {
+                                // Group reactions by emoji
+                                const counts = {};
+                                msg.reactions.forEach(r => {
+                                  counts[r.emoji] = (counts[r.emoji] || 0) + 1;
+                                });
+                                return Object.entries(counts).map(([emoji, count]) => {
+                                  const hasReacted = msg.reactions.some(
+                                    r => r.emoji === emoji && r.user === currentUser?.id
+                                  );
+                                  return (
+                                    <button
+                                      key={emoji}
+                                      onClick={() => handleReaction(msg._id, emoji)}
+                                      className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-all ${hasReacted ? 'bg-[#1f4068] border border-[#58a6ff]' : 'bg-[#0d1117] border border-[#30363d] hover:border-[#58a6ff]'}`}
+                                      title={hasReacted ? 'Remove reaction' : 'Add reaction'}
+                                    >
+                                      {emoji} {count}
+                                    </button>
+                                  );
+                                });
+                              })()}
                             </div>
                           )}
 
@@ -302,8 +443,9 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
 
       {/* Message Input */}
       <div className='p-4 border-t border-[#30363d] bg-[#161b22]'>
-        <form onSubmit={handleSendMessage} className='flex items-end gap-3'>
-          <div className='flex gap-1'>
+        <form onSubmit={handleSendMessage} className='flex items-start gap-3'>
+          {/* Attachments */}
+          <div className='flex gap-1 pt-2'>
             <button type='button' className='p-2 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-lg' title='Attach file'>
               <Paperclip className='w-5 h-5' />
             </button>
@@ -311,28 +453,51 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
               <Image className='w-5 h-5' />
             </button>
           </div>
+
+          {/* Input area */}
           <div className='flex-1 relative'>
+            {/* Reply preview */}
+            {replyTo && (
+              <div className='mb-2 px-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg flex items-center justify-between'>
+                <div className='flex items-center gap-2'>
+                  <MessageSquare className='w-4 h-4 text-[#58a6ff]' />
+                  <span className='text-xs text-[#8b949e]'>
+                    Replying to <span className='font-medium text-[#c9d1d9]'>{replyTo.sender?.name}</span>
+                  </span>
+                </div>
+                <button
+                  type='button'
+                  onClick={() => setReplyTo(null)}
+                  className='p-0.5 hover:bg-[#21262d] rounded'
+                >
+                  <X className='w-4 h-4 text-[#484f58]' />
+                </button>
+              </div>
+            )}
+
             <textarea
               value={newMessage}
               onChange={(e) => { setNewMessage(e.target.value); handleTyping(); }}
-              placeholder='Type your message...'
+              placeholder={replyTo ? 'Write a reply...' : 'Type your message...'}
               rows={1}
               className='w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-[#e6edf3] placeholder-[#484f58] outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent transition-all resize-none'
               style={{ minHeight: '44px', maxHeight: '120px' }}
             />
           </div>
+
+          {/* Send button */}
           <button
             type='submit'
             disabled={!newMessage.trim() || sending}
-            className='px-5 py-2.5 bg-[#1f6feb] text-white rounded-xl font-medium text-sm hover:bg-[#388bfd] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2'
+            className='px-5 py-2.5 bg-[#1f6feb] text-white rounded-xl font-medium text-sm hover:bg-[#388bfd] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 mt-8 sm:mt-0'
           >
             <Send className='w-4 h-4' />
-            Send
+            <span className='hidden sm:inline'>Send</span>
           </button>
         </form>
-      </div>
-    </div>
-  );
-};
+       </div>
+     </div>
+   );
+ };
 
 export default EventChat;

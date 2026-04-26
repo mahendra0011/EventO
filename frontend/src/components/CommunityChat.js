@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, User, Check, CheckCheck, Send, Smile, Star, Crown, MessageSquare, Megaphone, Sparkles, ChevronDown } from "lucide-react";
+import { Users, User, Check, CheckCheck, Send, Smile, Star, Crown, MessageSquare, Megaphone, Sparkles, ChevronDown, X, Edit3, Reply } from "lucide-react";
 import "./CommunityChat.css";
 
 const mockEvents = [
@@ -24,18 +24,101 @@ const mockAllHosts = [
 
 const mockAllMessages = {
   "event1_user1": [
-    { id: "m1", senderId: "user1", senderRole: "user", content: "Excited for Web Dev Summit!", timestamp: "09:15", seen: true },
-    { id: "m2", senderId: "host1", senderRole: "host", content: "Welcome! Starts at 10 AM.", timestamp: "09:20", seen: true },
-    { id: "m3", senderId: "host1", senderRole: "host", content: "Bring laptop for sessions", timestamp: "09:25", seen: false },
+    { 
+      id: "m1", 
+      senderId: "user1", 
+      senderRole: "user", 
+      content: "Excited for Web Dev Summit!", 
+      timestamp: "09:15", 
+      seen: true,
+      reactions: [],
+      replyTo: null,
+      isEdited: false
+    },
+    { 
+      id: "m2", 
+      senderId: "host1", 
+      senderRole: "host", 
+      content: "Welcome! Starts at 10 AM.", 
+      timestamp: "09:20", 
+      seen: true,
+      reactions: [],
+      replyTo: null,
+      isEdited: false
+    },
+    { 
+      id: "m3", 
+      senderId: "host1", 
+      senderRole: "host", 
+      content: "Bring laptop for sessions", 
+      timestamp: "09:25", 
+      seen: false,
+      reactions: [{ emoji: "👍", user: "user1", userName: "Alex" }],
+      replyTo: null,
+      isEdited: false
+    },
   ],
   "event2_user2": [
-    { id: "m4", senderId: "user2", senderRole: "user", content: "Is this beginner-friendly?", timestamp: "14:30", seen: true },
-    { id: "m5", senderId: "user3", senderRole: "user", content: "Yes, very beginner friendly!", timestamp: "14:35", seen: true },
+    { 
+      id: "m4", 
+      senderId: "user2", 
+      senderRole: "user", 
+      content: "Is this beginner-friendly?", 
+      timestamp: "14:30", 
+      seen: true,
+      reactions: [],
+      replyTo: null,
+      isEdited: false
+    },
+    { 
+      id: "m5", 
+      senderId: "user3", 
+      senderRole: "user", 
+      content: "Yes, very beginner friendly!", 
+      timestamp: "14:35", 
+      seen: true,
+      reactions: [{ emoji: "❤️", user: "user2", userName: "Sarah" }],
+      replyTo: null,
+      isEdited: false
+    },
   ],
   "event1_community": [
-    { id: "c1", senderId: "user1", senderRole: "user", content: "Who else is attending? Let's connect!", timestamp: "08:00", seen: true, type: "community" },
-    { id: "c2", senderId: "user2", senderRole: "user", content: "I'm in! First tech event for me 😊", timestamp: "08:15", seen: true, type: "community" },
-    { id: "c3", senderId: "host1", senderRole: "host", content: "Welcome everyone! See you tomorrow!", timestamp: "19:00", seen: true, type: "community" },
+    { 
+      id: "c1", 
+      senderId: "user1", 
+      senderRole: "user", 
+      content: "Who else is attending? Let's connect!", 
+      timestamp: "08:00", 
+      seen: true, 
+      type: "community",
+      reactions: [],
+      replyTo: null,
+      isEdited: false
+    },
+    { 
+      id: "c2", 
+      senderId: "user2", 
+      senderRole: "user", 
+      content: "I'm in! First tech event for me 😊", 
+      timestamp: "08:15", 
+      seen: true, 
+      type: "community",
+      reactions: [{ emoji: "🎉", user: "user3" }, { emoji: "🔥", user: "host1" }],
+      replyTo: null,
+      isEdited: false
+    },
+    { 
+      id: "c3", 
+      senderId: "host1", 
+      senderRole: "host", 
+      content: "Welcome everyone! See you tomorrow!", 
+      timestamp: "19:00", 
+      seen: true, 
+      type: "community",
+      reactions: [],
+      replyTo: null,
+      isEdited: false
+    },
   ],
 };
 
@@ -48,9 +131,13 @@ const CommunityChat = () => {
   const [newMessage, setNewMessage] = useState("");
   const [activeTab, setActiveTab] = useState("direct"); // direct or community
   const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [replyTo, setReplyTo] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editContent, setEditContent] = useState("");
   const chatEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const autoScrollRef = useRef(true);
+  const prevMessagesLengthRef = useRef(0);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   const currentUser = activeRole === "host" 
@@ -84,33 +171,131 @@ const CommunityChat = () => {
     }
   }, [selectedEvent, selectedUser, activeRole, activeTab, currentUser.id]);
 
-  // Reset auto-scroll when event/tab changes
-  useEffect(() => {
-    autoScrollRef.current = true;
-  }, [selectedEvent, activeTab]);
+   // Reset auto-scroll when event/tab changes
+   useEffect(() => {
+     autoScrollRef.current = true;
+   }, [selectedEvent, activeTab]);
 
-  // Handle manual scroll detection
-  const handleScroll = useCallback(() => {
-    if (!messagesContainerRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    const threshold = 150;
-    const nearBottom = distanceFromBottom <= threshold;
+   // Reset reply when switching chats
+   useEffect(() => {
+     setReplyTo(null);
+     setEditingId(null);
+     setEditContent("");
+   }, [selectedEvent, selectedUser, activeTab]);
+
+   // Handle manual scroll detection
+   const handleScroll = useCallback(() => {
+     if (!messagesContainerRef.current) return;
+     const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+     const threshold = 150;
+     const nearBottom = distanceFromBottom <= threshold;
+     
+     if (nearBottom) {
+       autoScrollRef.current = true;
+       setShowScrollBtn(false);
+     } else {
+       autoScrollRef.current = false;
+     }
+   }, []);
+
+   // Scroll to bottom when new messages arrive (if auto-scroll enabled)
+   useEffect(() => {
+     if (autoScrollRef.current) {
+       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+     }
+   }, [messages]);
+
+   // Handler functions
+   const handleReply = (msg) => {
+     setReplyTo(msg);
+     setActiveMenu(null);
+   };
+
+   const handleEdit = (msg) => {
+     setEditingId(msg.id);
+     setEditContent(msg.content);
+     setActiveMenu(null);
+   };
+
+  const handleSaveEdit = (msgId) => {
+    if (!editContent.trim()) return;
     
-    if (nearBottom) {
-      autoScrollRef.current = true;
-      setShowScrollBtn(false);
-    } else {
-      autoScrollRef.current = false;
-    }
-  }, []);
+    // Update local messages
+    setMessages(prev => prev.map(msg => 
+      msg.id === msgId 
+        ? { ...msg, content: editContent.trim(), isEdited: true }
+        : msg
+    ));
+    
+    // Also update in mock persistent storage
+    Object.keys(mockAllMessages).forEach(key => {
+      mockAllMessages[key] = mockAllMessages[key].map(msg =>
+        msg.id === msgId 
+          ? { ...msg, content: editContent.trim(), isEdited: true }
+          : msg
+      );
+    });
+    
+    setEditingId(null);
+    setEditContent("");
+  };
 
-  // Scroll to bottom when new messages arrive (if auto-scroll enabled)
-  useEffect(() => {
-    if (autoScrollRef.current) {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
+   const handleCancelEdit = () => {
+     setEditingId(null);
+     setEditContent("");
+   };
+
+   const handleDelete = (msgId) => {
+     setMessages(prev => prev.filter(msg => msg.id !== msgId));
+     setActiveMenu(null);
+   };
+
+   const handleReaction = (msgId, emoji) => {
+     setMessages(prev => prev.map(msg => {
+       if (msg.id === msgId) {
+         const reactions = msg.reactions || [];
+         const existingIdx = reactions.findIndex(r => r.emoji === emoji && (r.user === currentUser.id || r.userId === currentUser.id));
+         
+         if (existingIdx > -1) {
+           // Remove reaction
+           return { ...msg, reactions: reactions.filter((_, idx) => idx !== existingIdx) };
+         } else {
+           // Add reaction
+           return { 
+             ...msg, 
+             reactions: [...reactions, { emoji, user: currentUser.id, userName: currentUser.name }] 
+           };
+         }
+       }
+       return msg;
+     }));
+
+     // Also update in mock persistent storage
+     Object.keys(mockAllMessages).forEach(key => {
+       mockAllMessages[key] = mockAllMessages[key].map(msg => {
+         if (msg.id === msgId) {
+           const reactions = msg.reactions || [];
+           const existingIdx = reactions.findIndex(r => r.emoji === emoji && (r.user === currentUser.id || r.userId === currentUser.id));
+           if (existingIdx > -1) {
+             return { ...msg, reactions: reactions.filter((_, idx) => idx !== existingIdx) };
+           } else {
+             return { 
+               ...msg, 
+               reactions: [...reactions, { emoji, user: currentUser.id, userName: currentUser.name }] 
+             };
+           }
+         }
+         return msg;
+       });
+     });
+     
+     setShowReactionPicker(null);
+   };
+
+   const handleCancelReply = () => {
+     setReplyTo(null);
+   };
 
   // Scroll to bottom manually
   const scrollToBottom = () => {
@@ -124,10 +309,11 @@ const CommunityChat = () => {
     }
   };
 
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-    const msg = {
+   const handleSendMessage = (e) => {
+     e.preventDefault();
+     if (!newMessage.trim()) return;
+     
+     const msgData = {
       id: Date.now().toString(),
       senderId: currentUser.id,
       senderRole: activeRole,
@@ -135,20 +321,32 @@ const CommunityChat = () => {
       content: newMessage,
       timestamp: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }),
       seen: false,
+      reactions: [],
+      isEdited: false,
+      replyTo: replyTo ? { 
+        id: replyTo.id, 
+        senderId: replyTo.senderId, 
+        senderName: replyTo.senderName, 
+        content: replyTo.content 
+      } : null
     };
+    
     if (activeTab === "community") {
-      msg.type = "community";
-      // Add to persistent mock data so it persists across tab switches
+      msgData.type = "community";
+      msgData._alignLeft = true;
+    }
+    
+    setMessages(prev => [...prev, msgData]);
+    setNewMessage("");
+    setReplyTo(null);
+    
+    if (activeTab === "community") {
       const communityKey = `${selectedEvent}_community`;
       if (!mockAllMessages[communityKey]) {
         mockAllMessages[communityKey] = [];
       }
-      mockAllMessages[communityKey].push(msg);
-      // Community messages always align to the left (like a feed) regardless of sender
-      msg._alignLeft = true;
+      mockAllMessages[communityKey].push(msgData);
     }
-    setMessages(prev => [...prev, msg]);
-    setNewMessage("");
   };
   
   const handleBroadcast = (e) => {
@@ -435,42 +633,240 @@ const CommunityChat = () => {
                                   <span className='text-xs text-amber-400/60 font-medium'>Community</span>
                                 </motion.div>
                               )}
-                              <div className={`flex items-end gap-2 ${msg.senderRole === activeRole && !msg._alignLeft ? 'flex-row-reverse' : ''}`}>
-                                {(msg.senderRole !== activeRole || activeTab === "community") && (
-                                   <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
-                                     className={`w-8 h-8 rounded-xl bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-lg border ${
-                                       msg.senderRole === "host" 
-                                         ? "from-amber-500/20 to-amber-600/20 border-amber-500/30" 
-                                         : "from-slate-700 to-slate-800 border-slate-600/50"
-                                     }`}>
-                                    <span className={'text-xs font-bold ' + (msg.senderRole === "host" ? "text-amber-400" : "text-slate-300")}>
-                                      {(msg.senderName || msg.senderId?.charAt(0) || "?").toUpperCase()}
-                                    </span>
-                                  </motion.div>
+                               <div className={`flex items-end gap-2 ${msg.senderRole === activeRole && !msg._alignLeft ? 'flex-row-reverse' : ''}`}>
+                                 {(msg.senderRole !== activeRole || activeTab === "community") && (
+                                    <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
+                                      className={`w-8 h-8 rounded-xl bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-lg border ${
+                                        msg.senderRole === "host" 
+                                          ? "from-amber-500/20 to-amber-600/20 border-amber-500/30" 
+                                          : "from-slate-700 to-slate-800 border-slate-600/50"
+                                      }`}>
+                                     <span className={'text-xs font-bold ' + (msg.senderRole === "host" ? "text-amber-400" : "text-slate-300")}>
+                                       {(msg.senderName || msg.senderId?.charAt(0) || "?").toUpperCase()}
+                                     </span>
+                                   </motion.div>
+                                 )}
+                              <div 
+                                className={msg.senderRole === activeRole && !msg._alignLeft ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm ml-8 px-4 py-2.5 shadow-lg shadow-amber-500/20 group-hover:shadow-xl transition-all duration-300 relative" : (msg.type === "community" ? "bg-gradient-to-br from-slate-800/80 to-slate-900/80 text-slate-200 border border-amber-500/20 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative backdrop-blur-sm" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative")}
+                                onContextMenu={(e) => { e.preventDefault(); setActiveMenu(msg.id); }}
+                                onDoubleClick={() => setActiveMenu(msg.id)}
+                              >
+                                       {msg.senderRole !== activeRole && mockAllUsers.find(u => u.id === msg.senderId)?.isPremium && (
+                                         <Star className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
+                                       )}
+                                       {msg.senderRole === "host" && activeTab === "community" && msg.senderRole !== activeRole && (
+                                         <Crown className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
+                                       )}
+                                       
+                                       {/* Edit mode / Display mode */}
+                                       {editingId === msg.id ? (
+                                         <div className='flex items-end gap-2'>
+                                           <input
+                                             type='text'
+                                             value={editContent}
+                                             onChange={(e) => setEditContent(e.target.value)}
+                                             onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(msg.id); if (e.key === 'Escape') handleCancelEdit(); }}
+                                             autoFocus
+                                             className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/50'
+                                           />
+                                           <button onClick={() => handleSaveEdit(msg.id)} className='p-2 bg-emerald-500 text-slate-900 rounded-lg hover:bg-emerald-400'>
+                                             <Check className='w-4 h-4' />
+                                           </button>
+                                           <button onClick={handleCancelEdit} className='p-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600'>
+                                             <X className='w-4 h-4' />
+                                           </button>
+                                         </div>
+                                       ) : (
+                                         <>
+                                           <p className='text-sm leading-relaxed break-words'>{msg.content}</p>
+                                           
+                                           {/* Reply preview */}
+                                           {msg.replyTo && (
+                                             <div className='mt-2 pt-2 border-t border-slate-700/30'>
+                                               <div className='text-xs text-slate-400 flex items-center gap-1'>
+                                                 <Reply className='w-3 h-3' />
+                                                 Replying to {msg.replyTo.senderName || 'user'}
+                                               </div>
+                                               <div className='text-xs text-slate-500 truncate mt-0.5'>
+                                                 {msg.replyTo.content || 'Original message'}
+                                               </div>
+                                             </div>
+                                           )}
+                                         </>
+                                       )}
+
+                                       {/* Reactions */}
+                                       {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                                         <div className='flex items-center gap-1 mt-2 flex-wrap'>
+                                           {Object.entries(msg.reactions).map(([emoji, users]) => {
+                                             const userList = Array.isArray(users) ? users : [users];
+                                             const count = userList.length;
+                                             const hasReacted = userList.some(u => u.user === currentUser.id || u.userId === currentUser.id || u.user === currentUser.id);
+                                             return (
+                                               <button
+                                                 key={emoji}
+                                                 onClick={() => handleReaction(msg.id, emoji)}
+                                                 className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-all ${hasReacted ? 'bg-amber-500/20 border border-amber-500/50' : 'bg-slate-800/50 border border-slate-700/50 hover:border-amber-500/50'}`}
+                                               >
+                                                 {emoji} {count}
+                                               </button>
+                                             );
+                                           })}
+                                         </div>
+                                       )}
+
+                                       <div className='flex items-center justify-between mt-1.5'>
+                                         {msg.senderName && msg.senderRole !== activeRole && (
+                                           <span className='text-[10px] font-medium text-amber-400/80 uppercase tracking-wide'>
+                                             {msg.senderName}
+                                           </span>
+                                         )}
+                                         {msg.senderRole === activeRole && (
+                                           <span className='text-[10px] opacity-40 font-mono flex items-center gap-1'>
+                                             {msg.timestamp}
+                                             {msg.isEdited && <span className='italic'>(edited)</span>}
+                                           </span>
+                                         )}
+                                         {msg.senderRole === activeRole && (
+                                           <span className='flex items-center gap-0.5'>
+                                             {msg.seen ? <CheckCheck className='w-3 h-3 text-slate-400' /> : <Check className='w-3 h-3 text-slate-400' />}
+                                           </span>
+                                         )}
+                                       </div>
+                                     
+                                     {/* Action Menu Button - appears on hover */}
+                                     <button
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         setActiveMenu(activeMenu === msg.id ? null : msg.id);
+                                       }}
+                                       className='absolute -top-2 -right-2 w-6 h-6 bg-slate-700 hover:bg-slate-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'
+                                       title='More actions'
+                                     >
+                                       <svg className='w-3 h-3 text-slate-300' fill='currentColor' viewBox='0 0 20 20'>
+                                         <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
+                                       </svg>
+                                     </button>
+
+                                     {/* Actions Menu */}
+                                     {activeMenu === msg.id && (
+                                       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                                         className='absolute -top-14 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 shadow-xl z-20'
+                                       >
+                                         <button onClick={() => handleReply(msg)} className='p-1.5 hover:bg-slate-700 rounded' title='Reply'>
+                                           <Reply className='w-4 h-4 text-slate-300' />
+                                         </button>
+                                         <button onClick={() => setShowReactionPicker(showReactionPicker === msg.id ? null : msg.id)} className='p-1.5 hover:bg-slate-700 rounded' title='React'>
+                                           <Smile className='w-4 h-4 text-slate-300' />
+                                         </button>
+                                         {msg.senderId === currentUser.id && (
+                                           <>
+                                             <button onClick={() => handleEdit(msg)} className='p-1.5 hover:bg-slate-700 rounded' title='Edit'>
+                                               <Edit3 className='w-4 h-4 text-slate-300' />
+                                             </button>
+                                             <button onClick={() => handleDelete(msg.id)} className='p-1.5 hover:bg-red-500/20 rounded' title='Delete'>
+                                               <Trash2 className='w-4 h-4 text-red-400' />
+                                             </button>
+                                           </>
+                                         )}
+                                         <button onClick={() => setActiveMenu(null)} className='p-1 hover:bg-slate-700 rounded' title='Close'>
+                                           <X className='w-3 h-3 text-slate-500' />
+                                         </button>
+                                         {showReactionPicker === msg.id && (
+                                           <div className='absolute bottom-full mb-2 left-1/2 -translate-x-1/2'>
+                                             <ReactionPicker onSelect={(emoji) => handleReaction(msg.id, emoji)} onClose={() => setShowReactionPicker(null)} />
+                                           </div>
+                                         )}
+                                       </motion.div>
+                                     )}
+                                   </div>
+                               </div>
+                             </div>
+                           </motion.div>
                                 )}
                             <div className={msg.senderRole === activeRole && !msg._alignLeft ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm ml-8 px-4 py-2.5 shadow-lg shadow-amber-500/20 group-hover:shadow-xl transition-all duration-300 relative" : (msg.type === "community" ? "bg-gradient-to-br from-slate-800/80 to-slate-900/80 text-slate-200 border border-amber-500/20 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative backdrop-blur-sm" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative")}>
-                                      {msg.senderRole !== activeRole && mockAllUsers.find(u => u.id === msg.senderId)?.isPremium && (
-                                        <Star className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
-                                      )}
-                                      {msg.senderRole === "host" && activeTab === "community" && msg.senderRole !== activeRole && (
-                                        <Crown className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
-                                      )}
-                                      <p className='text-sm leading-relaxed break-words'>{msg.content}</p>
-                                  <div className='flex items-center justify-between mt-1.5'>
-                                    {msg.senderName && msg.senderRole !== activeRole && (
-                                      <span className='text-[10px] font-medium text-amber-400/80 uppercase tracking-wide'>
-                                        {msg.senderName}
-                                      </span>
-                                    )}
-                                    {msg.senderRole === activeRole && (
-                                      <span className='text-[10px] opacity-40 font-mono'>{msg.timestamp}</span>
-                                    )}
-                                    {msg.senderRole === activeRole && (
-                                      <span className='flex items-center gap-0.5'>
-                                        {msg.seen ? <CheckCheck className='w-3 h-3 text-slate-400' /> : <Check className='w-3 h-3 text-slate-400' />}
-                                      </span>
-                                    )}
-                                  </div>
+                                       {msg.senderRole !== activeRole && mockAllUsers.find(u => u.id === msg.senderId)?.isPremium && (
+                                         <Star className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
+                                       )}
+                                       {msg.senderRole === "host" && activeTab === "community" && msg.senderRole !== activeRole && (
+                                         <Crown className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
+                                       )}
+                                       
+                                       {/* Edit mode / Display mode */}
+                                       {editingId === msg.id ? (
+                                         <div className='flex items-end gap-2'>
+                                           <input
+                                             type='text'
+                                             value={editContent}
+                                             onChange={(e) => setEditContent(e.target.value)}
+                                             onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(msg.id); if (e.key === 'Escape') handleCancelEdit(); }}
+                                             autoFocus
+                                             className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/50'
+                                           />
+                                           <button onClick={() => handleSaveEdit(msg.id)} className='p-2 bg-emerald-500 text-slate-900 rounded-lg hover:bg-emerald-400'>
+                                             <Check className='w-4 h-4' />
+                                           </button>
+                                           <button onClick={handleCancelEdit} className='p-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600'>
+                                             <X className='w-4 h-4' />
+                                           </button>
+                                         </div>
+                                       ) : (
+                                         <>
+                                           <p className='text-sm leading-relaxed break-words'>{msg.content}</p>
+                                           
+                                           {/* Reply preview */}
+                                           {msg.replyTo && (
+                                             <div className='mt-2 pt-2 border-t border-slate-700/30'>
+                                               <div className='text-xs text-slate-400 flex items-center gap-1'>
+                                                 <Reply className='w-3 h-3' />
+                                                 Replying to {msg.replyTo.senderName || 'user'}
+                                               </div>
+                                               <div className='text-xs text-slate-500 truncate mt-0.5'>
+                                                 {msg.replyTo.content || 'Original message'}
+                                               </div>
+                                             </div>
+                                           )}
+                                         </>
+                                       )}
+
+                                       {/* Reactions */}
+                                       {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                                         <div className='flex items-center gap-1 mt-2 flex-wrap'>
+                                           {Object.entries(msg.reactions).map(([emoji, users]) => {
+                                             const userList = Array.isArray(users) ? users : [users];
+                                             const count = userList.length;
+                                             const hasReacted = userList.some(u => u.user === currentUser.id || u.userId === currentUser.id || u.user === currentUser.id);
+                                             return (
+                                               <button
+                                                 key={emoji}
+                                                 onClick={() => handleReaction(msg.id, emoji)}
+                                                 className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-all ${hasReacted ? 'bg-amber-500/20 border border-amber-500/50' : 'bg-slate-800/50 border border-slate-700/50 hover:border-amber-500/50'}`}
+                                               >
+                                                 {emoji} {count}
+                                               </button>
+                                             );
+                                           })}
+                                         </div>
+                                       )}
+
+                                       <div className='flex items-center justify-between mt-1.5'>
+                                         {msg.senderName && msg.senderRole !== activeRole && (
+                                           <span className='text-[10px] font-medium text-amber-400/80 uppercase tracking-wide'>
+                                             {msg.senderName}
+                                           </span>
+                                         )}
+                                         {msg.senderRole === activeRole && (
+                                           <span className='text-[10px] opacity-40 font-mono flex items-center gap-1'>
+                                             {msg.timestamp}
+                                             {msg.isEdited && <span className='italic'>(edited)</span>}
+                                           </span>
+                                         )}
+                                         {msg.senderRole === activeRole && (
+                                           <span className='flex items-center gap-0.5'>
+                                             {msg.seen ? <CheckCheck className='w-3 h-3 text-slate-400' /> : <Check className='w-3 h-3 text-slate-400' />}
+                                           </span>
+                                         )}
+                                       </div>
                                 </div>
                               </div>
                             </div>
@@ -493,51 +889,79 @@ const CommunityChat = () => {
                    )}
                  </div>
 
-                 {/* Message Input */}
-                 {activeTab === "direct" && (activeRole === "user" || selectedUser) && (
-                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className='p-4 border-t border-slate-800/50 bg-slate-900/30'>
-                     <form onSubmit={handleSendMessage} className='flex items-end gap-3'>
-                       <button type='button' className='p-2.5 text-slate-500 hover:text-amber-500 rounded-xl hover:bg-slate-800/50 transition-all' title='Add emoji'>
-                         <Smile className='w-5 h-5' />
-                       </button>
-                       <input type='text' value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                         placeholder={activeRole === "host" ? `Message ${selectedUser?.name || "attendee"}...` : `Message host...`}
-                         className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all' />
-                       <button type='submit' disabled={!newMessage.trim()} className='px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 transition-all flex items-center gap-2'>
-                         <Send className='w-4 h-4' />
-                         Send
-                       </button>
-                     </form>
-                   </motion.div>
-                 )}
+                  {/* Message Input */}
+                  {activeTab === "direct" && (activeRole === "user" || selectedUser) && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className='p-4 border-t border-slate-800/50 bg-slate-900/30'>
+                      {/* Reply preview */}
+                      {replyTo && (
+                        <div className='mb-3 px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg flex items-center justify-between'>
+                          <div className='flex items-center gap-2'>
+                            <Reply className='w-4 h-4 text-amber-500' />
+                            <span className='text-xs text-slate-300'>
+                              Replying to <span className='font-medium'>{replyTo.senderName}</span>
+                            </span>
+                          </div>
+                          <button type="button" onClick={handleCancelReply} className='p-1 hover:bg-slate-700 rounded'>
+                            <X className='w-4 h-4 text-slate-400' />
+                          </button>
+                        </div>
+                      )}
+                      <form onSubmit={handleSendMessage} className='flex items-end gap-3'>
+                        <button type='button' className='p-2.5 text-slate-500 hover:text-amber-500 rounded-xl hover:bg-slate-800/50 transition-all' title='Add emoji'>
+                          <Smile className='w-5 h-5' />
+                        </button>
+                        <input type='text' value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
+                          placeholder={replyTo ? "Write a reply..." : (activeRole === "host" ? `Message ${selectedUser?.name || "attendee"}...` : `Message host...`)}
+                          className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none' />
+                        <button type='submit' disabled={!newMessage.trim()} className='px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-medium text-sm disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-amber-500/20 flex items-center gap-2'>
+                          <Send className='w-4 h-4' />
+                          {replyTo ? 'Reply' : 'Send'}
+                        </button>
+                      </form>
+                    </motion.div>
+                  )}
 
-                 {/* Community Message Input */}
-                 {activeTab === "community" && selectedEvent && (
-                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className='p-4 border-t border-slate-800/50 bg-slate-900/30'>
-                     <div className='flex items-center gap-2 mb-3'>
-                       <div className='w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-amber-600/30 border border-amber-500/30 flex items-center justify-center'>
-                         <MessageSquare className='w-4 h-4 text-amber-400' />
-                       </div>
-                       <span className='text-sm text-slate-400'>Post to community feed</span>
-                       {activeRole === "host" && (
-                         <span className='ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium'>
-                           <Crown className='w-3 h-3' />
-                           Host
-                         </span>
-                       )}
-                     </div>
-                     <form onSubmit={handleSendMessage} className='flex gap-2'>
-                       <input type='text' value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
-                         placeholder={activeRole === "host" ? "Share an announcement with all attendees..." : "Share your thoughts with the community..."}
-                         className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all' />
-                       <button type='submit' disabled={!newMessage.trim()} className='px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-amber-500/30 disabled:opacity-50 transition-all flex items-center gap-2'>
-                         <Send className='w-4 h-4' />
-                         Post
-                       </button>
-                     </form>
-                   </motion.div>
-                 )}
-              </>
+                  {/* Community Message Input */}
+                  {activeTab === "community" && selectedEvent && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className='p-4 border-t border-slate-800/50 bg-slate-900/30'>
+                      {/* Reply preview */}
+                      {replyTo && (
+                        <div className='mb-3 px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg flex items-center justify-between'>
+                          <div className='flex items-center gap-2'>
+                            <Reply className='w-4 h-4 text-amber-500' />
+                            <span className='text-xs text-slate-300'>
+                              Replying to <span className='font-medium'>{replyTo.senderName}</span>
+                            </span>
+                          </div>
+                          <button type="button" onClick={handleCancelReply} className='p-1 hover:bg-slate-700 rounded'>
+                            <X className='w-4 h-4 text-slate-400' />
+                          </button>
+                        </div>
+                      )}
+                      <div className='flex items-center gap-2 mb-3'>
+                        <div className='w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-amber-600/30 border border-amber-500/30 flex items-center justify-center'>
+                          <MessageSquare className='w-4 h-4 text-amber-400' />
+                        </div>
+                        <span className='text-sm text-slate-400'>Post to community feed</span>
+                        {activeRole === "host" && (
+                          <span className='ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium'>
+                            <Crown className='w-3 h-3' />
+                            Host
+                          </span>
+                        )}
+                      </div>
+                      <form onSubmit={handleSendMessage} className='flex gap-2'>
+                        <input type='text' value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
+                          placeholder={replyTo ? "Write a reply..." : (activeRole === "host" ? "Share an announcement with all attendees..." : "Share your thoughts with the community...")}
+                          className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none' />
+                        <button type='submit' disabled={!newMessage.trim()} className='px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-medium text-sm disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-amber-500/20 flex items-center gap-2'>
+                          <Send className='w-4 h-4' />
+                          {replyTo ? 'Reply' : 'Post'}
+                        </button>
+                      </form>
+                    </motion.div>
+                   )}
+               </>
             ) : (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='flex-1 flex items-center justify-center text-center p-8'>
                 <div className='max-w-md'>
