@@ -129,7 +129,7 @@ const EventChatPage = () => {
           </div>
 
           {/* Chat Card */}
-          <div className="flex-1 min-h-0 bg-[#161b22] border border-[#30363d] rounded-xl flex flex-col overflow-hidden">
+          <div className="flex flex-col bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
             <EventChat
               eventId={eventId}
               eventTitle={event.title}
