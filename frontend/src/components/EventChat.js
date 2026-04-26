@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Send, Smile, Users, Crown, MessageSquare, Trash2, UserX, Volume2,
-  Edit3, SmilePlus, Paperclip, Image, X, ChevronDown
+  Edit3, SmilePlus, Paperclip, Image, X, ChevronDown, Check
 } from 'lucide-react';
 import {
   getCommunityMessages,
@@ -538,16 +538,19 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                                 </div>
                             )}
 
-                                <div className={`flex items-center justify-end gap-1 mt-0.5 ${isOwn ? 'text-slate-900/50' : 'text-slate-400'}`}>
-                                  <span className='text-[8px] font-mono'>
-                                    {formatTime(msg.createdAt)}
-                                  </span>
-                                  {isOwn && (
-                                    <span className='text-[8px]'>
-                                      {msg.isEdited && '(edited)'}
-                                    </span>
-                                  )}
-                                </div>
+                                 <div className={`flex items-center justify-end gap-1 mt-0.5 ${isOwn ? 'text-slate-900/50' : 'text-slate-400'}`}>
+                                   <span className='text-[8px] font-mono'>
+                                     {formatTime(msg.createdAt)}
+                                   </span>
+                                   {isOwn && (
+                                     <>
+                                       <Check className='w-3 h-3 text-amber-500' />
+                                       {msg.isEdited && (
+                                         <span className='text-[8px]'>(edited)</span>
+                                       )}
+                                     </>
+                                   )}
+                                 </div>
                           </div>
 
                           {/* Message Actions */}
