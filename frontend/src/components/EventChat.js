@@ -270,7 +270,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       </div>
 
       {/* Messages Area */}
-      <div ref={messagesContainerRef} onScroll={handleScroll} className='flex-1 min-h-0 overflow-y-auto p-4 space-y-3'>
+       <div ref={messagesContainerRef} onScroll={handleScroll} className='flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 space-y-3'>
         {loading ? (
           <div className='flex items-center justify-center h-full text-[#8b949e]'>
             <span className='w-4 h-4 border-2 border-[#30363d] border-t-amber-500 rounded-full animate-spin mr-2' />
@@ -300,18 +300,18 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                   )}
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`flex gap-2 max-w-[70%] ${isOwn ? 'flex-row-reverse' : ''}`}>
-                        {!isOwn && showAvatar && sender && (
-                          <div className='w-8 h-8 rounded-full bg-[#21262d] border border-[#30363d] flex items-center justify-center flex-shrink-0'>
-                            <span className='text-[#58a6ff] font-medium text-sm'>{sender.name?.charAt(0)?.toUpperCase()}</span>
-                          </div>
-                        )}
-                        <div 
-                          className={`relative px-4 py-2.5 shadow-sm group group-hover:shadow-md transition-all ${isOwn ? 'bg-[#1f4068] text-[#cde3ff] rounded-xl rounded-br-sm' : 'bg-[#21262d] text-[#c9d1d9] border border-[#30363d] rounded-xl rounded-bl-sm'}`}
-                          onContextMenu={(e) => { e.preventDefault(); toggleActionMenu(msg._id); }}
-                          onDoubleClick={() => toggleActionMenu(msg._id)}
-                          style={{ overflow: 'visible' }}
-                        >
+                       <div className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}>
+                         {!isOwn && showAvatar && sender && (
+                           <div className='w-8 h-8 rounded-full bg-[#21262d] border border-[#30363d] flex items-center justify-center flex-shrink-0'>
+                             <span className='text-[#58a6ff] font-medium text-sm'>{sender.name?.charAt(0)?.toUpperCase()}</span>
+                           </div>
+                         )}
+                         <div className={`flex-1 min-w-0 max-w-[70%]`}>
+                           <div className={`relative px-4 py-2.5 shadow-sm group group-hover:shadow-md transition-all break-words ${isOwn ? 'bg-[#1f4068] text-[#cde3ff] rounded-xl rounded-br-sm' : 'bg-[#21262d] text-[#c9d1d9] border border-[#30363d] rounded-xl rounded-bl-sm'}`}
+                             onContextMenu={(e) => { e.preventDefault(); toggleActionMenu(msg._id); }}
+                             onDoubleClick={() => toggleActionMenu(msg._id)}
+                             style={{ overflow: 'visible' }}
+                           >
                           {msg.replyTo && (
                             <div className='mb-2 px-2 py-1 bg-[#0d1117] border-l-2 border-[#30363d] rounded text-xs text-[#8b949e]'>
                               Replying to {msg.replyTo.sender?.name}
@@ -369,7 +369,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                           {/* Actions Menu */}
                           {activeMenu === msg._id && (
                              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                               className='absolute top-full mt-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#161b22] border border-[#30363d] rounded-full px-2 py-1.5 shadow-xl z-50'
+                               className='absolute top-full mt-2 right-0 flex items-center gap-1 bg-[#161b22] border border-[#30363d] rounded-full px-2 py-1.5 shadow-xl z-50'
                              >
                               <button onClick={() => handleReply(msg)} className='p-1.5 hover:bg-[#21262d] rounded-full' title='Reply'>
                                 <MessageSquare className='w-4 h-4 text-[#8b949e]' />
@@ -444,9 +444,10 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                             <svg className='w-4 h-4 text-[#8b949e]' fill='currentColor' viewBox='0 0 20 20'>
                               <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
                             </svg>
-                          </button>
+                           </button>
 
-                        </div>
+                         </div> {/* Close bubble div */}
+                       </div> {/* Close flex-1 wrapper */}
                       </div>
                     </div>
                   </motion.div>

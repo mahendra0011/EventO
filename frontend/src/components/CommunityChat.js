@@ -597,7 +597,7 @@ const CommunityChat = () => {
                   <div 
                     ref={messagesContainerRef}
                     onScroll={handleScroll}
-                    className='flex-1 overflow-y-auto p-3 space-y-3 chat-scroll-container relative'
+                     className='flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-3 chat-scroll-container relative'
                   >
                   {messages.length === 0 ? (
                      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -625,7 +625,7 @@ const CommunityChat = () => {
                         {messages.map((msg) => (
                           <motion.div key={msg.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
                             className={'flex ' + (msg.senderRole === activeRole && !msg._alignLeft ? "justify-end" : "justify-start")}>
-                             <div className={'group relative max-w-lg xl:max-w-md ' + (msg.senderRole === activeRole && !msg._alignLeft ? "" : "flex-row-reverse")}>
+                              <div className={'group relative max-w-lg xl:max-w-md min-w-0 ' + (msg.senderRole === activeRole && !msg._alignLeft ? "" : "flex-row-reverse")}>
                                {msg.type === "community" && (
                                 <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
                                   className='absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-gradient-to-r from-amber-500/10 to-transparent rounded-full px-2 py-0.5'>
@@ -647,7 +647,7 @@ const CommunityChat = () => {
                                    </motion.div>
                                  )}
                                <div 
-                                 className={msg.senderRole === activeRole && !msg._alignLeft ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm ml-8 px-4 py-2.5 shadow-lg shadow-amber-500/20 group group-hover:shadow-xl transition-all duration-300 relative" : (msg.type === "community" ? "bg-gradient-to-br from-slate-800/80 to-slate-900/80 text-slate-200 border border-amber-500/20 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group group-hover:shadow-xl transition-all duration-300 relative backdrop-blur-sm" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group group-hover:shadow-xl transition-all duration-300 relative")}
+                                  className={msg.senderRole === activeRole && !msg._alignLeft ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm ml-8 px-4 py-2.5 shadow-lg shadow-amber-500/20 group group-hover:shadow-xl transition-all duration-300 relative break-words" : (msg.type === "community" ? "bg-gradient-to-br from-slate-800/80 to-slate-900/80 text-slate-200 border border-amber-500/20 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group group-hover:shadow-xl transition-all duration-300 relative backdrop-blur-sm break-words" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group group-hover:shadow-xl transition-all duration-300 relative break-words")}
                                  onContextMenu={(e) => { e.preventDefault(); setActiveMenu(msg.id); }}
                                  onDoubleClick={() => setActiveMenu(msg.id)}
                                  style={{ overflow: 'visible' }}
@@ -752,7 +752,7 @@ const CommunityChat = () => {
                                      {/* Actions Menu */}
                                      {activeMenu === msg.id && (
                                         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                                          className='absolute top-full mt-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 shadow-xl z-50'
+                                          className='absolute top-full mt-2 right-0 flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 shadow-xl z-50'
                                         >
                                          <button onClick={() => handleReply(msg)} className='p-1.5 hover:bg-slate-700 rounded' title='Reply'>
                                            <Reply className='w-4 h-4 text-slate-300' />
@@ -784,99 +784,9 @@ const CommunityChat = () => {
                                </div>
                              </div>
                            </motion.div>
-                                )}
-                            <div className={msg.senderRole === activeRole && !msg._alignLeft ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm ml-8 px-4 py-2.5 shadow-lg shadow-amber-500/20 group-hover:shadow-xl transition-all duration-300 relative" : (msg.type === "community" ? "bg-gradient-to-br from-slate-800/80 to-slate-900/80 text-slate-200 border border-amber-500/20 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative backdrop-blur-sm" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group-hover:shadow-xl transition-all duration-300 relative")}>
-                                       {msg.senderRole !== activeRole && mockAllUsers.find(u => u.id === msg.senderId)?.isPremium && (
-                                         <Star className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
-                                       )}
-                                       {msg.senderRole === "host" && activeTab === "community" && msg.senderRole !== activeRole && (
-                                         <Crown className='w-3 h-3 text-amber-400 absolute -top-1 -right-1' />
-                                       )}
-                                       
-                                       {/* Edit mode / Display mode */}
-                                       {editingId === msg.id ? (
-                                         <div className='flex items-end gap-2'>
-                                           <input
-                                             type='text'
-                                             value={editContent}
-                                             onChange={(e) => setEditContent(e.target.value)}
-                                             onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(msg.id); if (e.key === 'Escape') handleCancelEdit(); }}
-                                             autoFocus
-                                             className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/50'
-                                           />
-                                           <button onClick={() => handleSaveEdit(msg.id)} className='p-2 bg-emerald-500 text-slate-900 rounded-lg hover:bg-emerald-400'>
-                                             <Check className='w-4 h-4' />
-                                           </button>
-                                           <button onClick={handleCancelEdit} className='p-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600'>
-                                             <X className='w-4 h-4' />
-                                           </button>
-                                         </div>
-                                       ) : (
-                                         <>
-                                           <p className='text-sm leading-relaxed break-words'>{msg.content}</p>
-                                           
-                                           {/* Reply preview */}
-                                           {msg.replyTo && (
-                                             <div className='mt-2 pt-2 border-t border-slate-700/30'>
-                                               <div className='text-xs text-slate-400 flex items-center gap-1'>
-                                                 <Reply className='w-3 h-3' />
-                                                 Replying to {msg.replyTo.senderName || 'user'}
-                                               </div>
-                                               <div className='text-xs text-slate-500 truncate mt-0.5'>
-                                                 {msg.replyTo.content || 'Original message'}
-                                               </div>
-                                             </div>
-                                           )}
-                                         </>
-                                       )}
-
-                                       {/* Reactions */}
-                                       {msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                                         <div className='flex items-center gap-1 mt-2 flex-wrap'>
-                                           {Object.entries(msg.reactions).map(([emoji, users]) => {
-                                             const userList = Array.isArray(users) ? users : [users];
-                                             const count = userList.length;
-                                             const hasReacted = userList.some(u => u.user === currentUser.id || u.userId === currentUser.id || u.user === currentUser.id);
-                                             return (
-                                               <button
-                                                 key={emoji}
-                                                 onClick={() => handleReaction(msg.id, emoji)}
-                                                 className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-all ${hasReacted ? 'bg-amber-500/20 border border-amber-500/50' : 'bg-slate-800/50 border border-slate-700/50 hover:border-amber-500/50'}`}
-                                               >
-                                                 {emoji} {count}
-                                               </button>
-                                             );
-                                           })}
-                                         </div>
-                                       )}
-
-                                       <div className='flex items-center justify-between mt-1.5'>
-                                         {msg.senderName && msg.senderRole !== activeRole && (
-                                           <span className='text-[10px] font-medium text-amber-400/80 uppercase tracking-wide'>
-                                             {msg.senderName}
-                                           </span>
-                                         )}
-                                         {msg.senderRole === activeRole && (
-                                           <span className='text-[10px] opacity-40 font-mono flex items-center gap-1'>
-                                             {msg.timestamp}
-                                             {msg.isEdited && <span className='italic'>(edited)</span>}
-                                           </span>
-                                         )}
-                                         {msg.senderRole === activeRole && (
-                                           <span className='flex items-center gap-0.5'>
-                                             {msg.seen ? <CheckCheck className='w-3 h-3 text-slate-400' /> : <Check className='w-3 h-3 text-slate-400' />}
-                                           </span>
-                                         )}
-                                       </div>
-                                </div>
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
-                        </AnimatePresence>
-                      )}
-                   </AnimatePresence>
-                   <div ref={chatEndRef} />
+                                 )}
+                             </AnimatePresence>
+                             <div ref={chatEndRef} />
                    
                    {/* Scroll to bottom button */}
                    {showScrollBtn && (
