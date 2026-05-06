@@ -1,8 +1,19 @@
 const sgMail = require('@sendgrid/mail');
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+let apiKey = process.env.SENDGRID_API_KEY;
 
-console.log('Email Config - SENDGRID_API_KEY exists:', !!process.env.SENDGRID_API_KEY);
+// Validate API key format
+if (!apiKey) {
+  console.error('CRITICAL: SENDGRID_API_KEY is not set in environment variables');
+} else if (!apiKey.startsWith('SG.')) {
+  console.error('CRITICAL: SENDGRID_API_KEY does not appear to be a valid SendGrid key');
+} else {
+  console.log('Email Config - SENDGRID_API_KEY exists and appears valid');
+}
+
+sgMail.setApiKey(apiKey || '');
+
+console.log('Email Config - EMAIL_FROM:', process.env.EMAIL_FROM);
 
 const sendOTPEmail = async (email, otp, name) => {
   const msg = {

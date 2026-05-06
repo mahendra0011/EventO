@@ -124,6 +124,24 @@ exports.verifyOTP = async (req, res) => {
     event.availableTickets -= booking.numberOfTickets;
     await event.save();
 
+    // Send confirmation email after OTP verification
+    sendBookingConfirmationEmail(
+      req.user.email,
+      req.user.name,
+      event.title,
+      {
+        numberOfTickets: booking.numberOfTickets,
+        totalPrice: booking.totalPrice,
+        bookingId: booking._id
+      }
+    ).then(success => {
+      if (!success) {
+        console.log('Booking confirmation email may have failed after OTP verification');
+      }
+    }).catch(err => {
+      console.error('OTP verification confirmation email error:', err.message);
+    });
+
     // Create notification for user
     await Notification.create({
       user: booking.user,
