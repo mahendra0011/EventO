@@ -1,24 +1,33 @@
-const sgMail = require('@sendgrid/mail');
+const nodemailer = require('nodemailer');
 
-let apiKey = process.env.SENDGRID_API_KEY;
+console.log('Email Config - EMAIL_USER:', process.env.EMAIL_USER);
+console.log('Email Config - EMAIL_PASS exists:', !!process.env.EMAIL_PASS);
 
-// Validate API key format
-if (!apiKey) {
-  console.error('CRITICAL: SENDGRID_API_KEY is not set in environment variables');
-} else if (!apiKey.startsWith('SG.')) {
-  console.error('CRITICAL: SENDGRID_API_KEY does not appear to be a valid SendGrid key');
-} else {
-  console.log('Email Config - SENDGRID_API_KEY exists and appears valid');
-}
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
 
-sgMail.setApiKey(apiKey || '');
-
-console.log('Email Config - EMAIL_FROM:', process.env.EMAIL_FROM);
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('Email transporter verification error:', error);
+  } else {
+    console.log('Email transporter is ready');
+  }
+});
 
 const sendOTPEmail = async (email, otp, name) => {
-  const msg = {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
     to: email,
-    from: process.env.EMAIL_FROM || 'noreply@evento.com',
     subject: 'Evento - Your OTP for Booking Verification',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -43,22 +52,19 @@ const sendOTPEmail = async (email, otp, name) => {
   };
 
   try {
-    const response = await sgMail.send(msg);
-    console.log('Email sent successfully');
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent:', info.messageId);
     return true;
   } catch (error) {
     console.error('Email error:', error.message);
-    if (error.response) {
-      console.error('Error response:', error.response.body);
-    }
     return false;
   }
 };
 
 const sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDetails) => {
-  const msg = {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
     to: email,
-    from: process.env.EMAIL_FROM || 'noreply@evento.com',
     subject: `Evento - Booking Confirmed for ${eventTitle}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -87,22 +93,18 @@ const sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDeta
   };
 
   try {
-    await sgMail.send(msg);
-    console.log('Booking confirmation email sent successfully');
+    await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
-    console.error('Email sending error:', error.message);
-    if (error.response) {
-      console.error('Error response:', error.response.body);
-    }
+    console.error('Email sending error:', error);
     return false;
   }
 };
 
 const sendHostMessageEmail = async (recipientEmail, recipientName, subject, content, eventTitle, senderName) => {
-  const msg = {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
     to: recipientEmail,
-    from: process.env.EMAIL_FROM || 'noreply@evento.com',
     subject: `Evento - Message from ${senderName} regarding ${eventTitle}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -136,14 +138,11 @@ const sendHostMessageEmail = async (recipientEmail, recipientName, subject, cont
   };
 
   try {
-    await sgMail.send(msg);
-    console.log('Host message email sent successfully');
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Host message email sent to:', recipientEmail, info.messageId);
     return true;
   } catch (error) {
     console.error('Host message email error:', error.message);
-    if (error.response) {
-      console.error('Error response:', error.response.body);
-    }
     return false;
   }
 };

@@ -56,9 +56,6 @@ exports.createBooking = async (req, res) => {
       }
     }).catch(err => {
       console.error('OTP Email error (non-blocking):', err.message);
-      if (err.response && err.response.body) {
-        console.error('SendGrid error response:', err.response.body);
-      }
     });
 
     // Create notification for host
@@ -191,9 +188,6 @@ exports.resendOTP = async (req, res) => {
       }
     }).catch(err => {
       console.error('OTP Email error (non-blocking):', err.message);
-      if (err.response && err.response.body) {
-        console.error('SendGrid error response:', err.response.body);
-      }
     });
 
     res.json({ message: 'OTP resent successfully' });
