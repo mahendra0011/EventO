@@ -176,3 +176,21 @@ export const getAllEventAttendees = async () => {
   return res.data;
 };
 
+// Add reaction to a message
+export const addReaction = async (messageId, emoji) => {
+  const res = await api.post(`/messages/${messageId}/react`, { emoji });
+  return res.data;
+};
+
+// Edit a message
+export const editMessage = async (messageId, content) => {
+  const res = await api.put(`/messages/${messageId}`, { content });
+  return res.data;
+};
+
+// Get reactions for a message
+export const getMessageReactions = async (messageId) => {
+  const res = await api.get(`/messages/${messageId}/reactions`);
+  return res.data;
+};
+
