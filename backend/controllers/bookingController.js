@@ -49,14 +49,14 @@ exports.createBooking = async (req, res) => {
 
     await booking.save();
 
-    // Send OTP email asynchronously (don't wait)
-    sendOTPEmail(req.user.email, otp, req.user.name).then(success => {
-      if (!success) {
-        console.log('OTP email may have failed to send to:', req.user.email);
-      }
-    }).catch(err => {
-      console.error('OTP Email error (non-blocking):', err.message);
-    });
+    // Send OTP email and fail fast if delivery is not possible
+    const otpEmailSent = await sendOTPEmail(req.user.email, otp, req.user.name);
+    if (!otpEmailSent) {
+      return res.status(500).json({
+        message: 'Booking created but OTP email could not be sent. Please use resend OTP.',
+        bookingId: booking._id
+      });
+    }
 
     // Create notification for host
     const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
@@ -181,14 +181,11 @@ exports.resendOTP = async (req, res) => {
     booking.otpExpires = otpExpires;
     await booking.save();
 
-    // Send OTP email asynchronously
-    sendOTPEmail(req.user.email, otp, req.user.name).then(success => {
-      if (!success) {
-        console.log('OTP email may have failed to send to:', req.user.email);
-      }
-    }).catch(err => {
-      console.error('OTP Email error (non-blocking):', err.message);
-    });
+    // Send OTP email and report failure clearly
+    const otpEmailSent = await sendOTPEmail(req.user.email, otp, req.user.name);
+    if (!otpEmailSent) {
+      return res.status(500).json({ message: 'Failed to resend OTP email. Please check email configuration.' });
+    }
 
     res.json({ message: 'OTP resent successfully' });
   } catch (error) {

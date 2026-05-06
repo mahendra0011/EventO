@@ -19,7 +19,15 @@ function initializeTransporter() {
       return;
     }
 
-    if (EMAIL_PROVIDER === 'ethereal') {
+    const isEtherealUser = typeof EMAIL_USER === 'string' && EMAIL_USER.endsWith('@ethereal.email');
+    const useEthereal = EMAIL_PROVIDER === 'ethereal' && isEtherealUser;
+
+    if (EMAIL_PROVIDER === 'ethereal' && !isEtherealUser) {
+      console.warn('EMAIL_PROVIDER is set to ethereal but EMAIL_USER is not an Ethereal inbox.');
+      console.warn('Falling back to Gmail SMTP so emails can be delivered to real inboxes.');
+    }
+
+    if (useEthereal) {
       // Ethereal (free testing SMTP service)
       transporter = nodemailer.createTransport({
         host: 'smtp.ethereal.email',
@@ -94,7 +102,7 @@ const sendEmail = async (mailOptions) => {
 // Login notification email
 exports.sendLoginNotificationEmail = async (email, name, ipAddress = 'Unknown') => {
   const mailOptions = {
-    from: `Evento <${EMAIL_USER}>`,
+    from: `Evento <${EMAIL_USER || 'no-reply@evento.local'}>`,
     to: email,
     subject: 'Evento - Successfully Logged In',
     html: `
@@ -137,7 +145,7 @@ exports.sendLoginNotificationEmail = async (email, name, ipAddress = 'Unknown') 
 // OTP Email
 exports.sendOTPEmail = async (email, otp, name) => {
   const mailOptions = {
-    from: `Evento <${EMAIL_USER}>`,
+    from: `Evento <${EMAIL_USER || 'no-reply@evento.local'}>`,
     to: email,
     subject: 'Evento - Your OTP for Booking Verification',
     html: `
@@ -168,7 +176,7 @@ exports.sendOTPEmail = async (email, otp, name) => {
 // Booking Confirmation Email
 exports.sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDetails) => {
   const mailOptions = {
-    from: `Evento <${EMAIL_USER}>`,
+    from: `Evento <${EMAIL_USER || 'no-reply@evento.local'}>`,
     to: email,
     subject: `Evento - Booking Confirmed for ${eventTitle}`,
     html: `
@@ -203,7 +211,7 @@ exports.sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDe
 // Host Message Email
 exports.sendHostMessageEmail = async (recipientEmail, recipientName, subject, content, eventTitle, senderName) => {
   const mailOptions = {
-    from: `Evento <${EMAIL_USER}>`,
+    from: `Evento <${EMAIL_USER || 'no-reply@evento.local'}>`,
     to: recipientEmail,
     subject: `Evento - Message from ${senderName} regarding ${eventTitle}`,
     html: `
