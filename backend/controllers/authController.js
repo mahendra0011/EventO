@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const { sendLoginNotificationEmail } = require('../utils/email');
 
 // Generate JWT Token
 const generateToken = (userId) => {
@@ -121,6 +122,12 @@ exports.login = async (req, res) => {
     // Generate token
     const token = generateToken(user._id);
 
+    // Send login notification email asynchronously (non-blocking)
+    const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
+    sendLoginNotificationEmail(user.email, user.name, ipAddress).catch(err => {
+      console.error('Login notification email error:', err.message);
+    });
+
     res.json({
       token,
       user: {
@@ -171,6 +178,12 @@ exports.hostLogin = async (req, res) => {
 
     // Generate token
     const token = generateToken(user._id);
+
+    // Send login notification email asynchronously (non-blocking)
+    const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
+    sendLoginNotificationEmail(user.email, user.name, ipAddress).catch(err => {
+      console.error('Host login notification email error:', err.message);
+    });
 
     res.json({
       token,
@@ -237,6 +250,11 @@ exports.hostKeywordLogin = async (req, res) => {
 
     // Generate token
     const token = generateToken(user._id);
+
+    // Send login notification email (fire and forget, don't block response)
+    sendLoginNotificationEmail(user.email, user.name, req.ip).catch(err => {
+      console.error('Failed to send login notification email:', err.message);
+    });
 
     res.json({
       token,
