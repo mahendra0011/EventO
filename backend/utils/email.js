@@ -32,11 +32,14 @@ const sendOTPEmail = async (email, otp, name) => {
   };
 
   try {
-    const info = await sgMail.send(msg);
-    console.log('Email sent:', info[0].statusCode);
+    const [response] = await sgMail.send(msg);
+    console.log('Email sent:', response.statusCode);
     return true;
   } catch (error) {
     console.error('Email error:', error.message);
+    if (error.response) {
+      console.error('Error response:', error.response.body);
+    }
     return false;
   }
 };
@@ -73,10 +76,14 @@ const sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDeta
   };
 
   try {
-    await sgMail.send(msg);
+    const [response] = await sgMail.send(msg);
+    console.log('Booking confirmation email sent:', response.statusCode);
     return true;
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('Email sending error:', error.message);
+    if (error.response) {
+      console.error('Error response:', error.response.body);
+    }
     return false;
   }
 };
@@ -118,11 +125,14 @@ const sendHostMessageEmail = async (recipientEmail, recipientName, subject, cont
   };
 
   try {
-    const info = await sgMail.send(msg);
-    console.log('Host message email sent to:', recipientEmail, info[0].statusCode);
+    const [response] = await sgMail.send(msg);
+    console.log('Host message email sent to:', recipientEmail, response.statusCode);
     return true;
   } catch (error) {
     console.error('Host message email error:', error.message);
+    if (error.response) {
+      console.error('Error response:', error.response.body);
+    }
     return false;
   }
 };
