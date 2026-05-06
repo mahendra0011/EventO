@@ -131,18 +131,6 @@ export const deleteMessage = (messageId) => {
   return api.delete(`/messages/${messageId}`);
 };
 
-export const editMessage = (messageId, content) => {
-  return api.put(`/messages/${messageId}`, { content });
-};
-
-export const addReaction = (messageId, emoji) => {
-  return api.post(`/messages/${messageId}/react`, { emoji });
-};
-
-export const getMessageReactions = (messageId) => {
-  return api.get(`/messages/${messageId}/reactions`);
-};
-
 // Host Dashboard Stats
 export const getHostDashboardStats = async () => {
   const res = await api.get('/host/dashboard');
@@ -162,13 +150,19 @@ export const getEventBookers = async (eventId) => {
 };
 
 // Community Chat
-export const postCommunityMessage = async (eventId, content, replyTo = null) => {
-  const res = await api.post('/messages/community', { eventId, content, replyTo });
+export const postCommunityMessage = async (eventId, content) => {
+  const res = await api.post('/messages/community', { eventId, content });
   return res.data;
 };
 
 export const getCommunityMessages = async (eventId, page = 1, limit = 50) => {
   const res = await api.get(`/messages/community/${eventId}?page=${page}&limit=${limit}`);
+  return res.data;
+};
+
+// Pin/Unpin a community message (host only)
+export const pinMessage = async (messageId, pinned) => {
+  const res = await api.put(`/messages/${messageId}/pin`, { pinned });
   return res.data;
 };
 

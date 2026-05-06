@@ -42,32 +42,6 @@ A world-class event management and ticket booking platform. Discover extraordina
 - Password hashing with bcrypt
 - Protected routes and API endpoints
 
-## Chat Features
-
-### Community Chat
-- Real-time community chat for event attendees
-- Hosts can post announcements to all attendees
-- Auto-scroll with manual override
-- Reply to specific messages
-- Edit/Delete own messages
-- Add emoji reactions
-- Host badges for identification
-
-### Direct Messaging
-- One-on-one private messaging
-- Real-time delivery status
-- Seen/read receipts
-- Edit and delete messages
-- Emoji reactions
-- Threaded replies
-
-### Message Actions
-Three-dot menu on each message:
-- Reply - Quote and respond to specific messages
-- Edit - Modify your sent messages (shows "(edited)" tag)
-- Delete - Remove your messages permanently
-- React - Quick emoji reactions (click to toggle)
-- Close - Dismiss menu
 
 ## Quick Start
 
