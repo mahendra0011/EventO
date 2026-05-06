@@ -50,9 +50,16 @@ exports.createBooking = async (req, res) => {
     await booking.save();
 
     // Send OTP email asynchronously (don't wait)
-    sendOTPEmail(req.user.email, otp, req.user.name).catch(err => 
-      console.log('Email error (non-blocking):', err.message)
-    );
+    sendOTPEmail(req.user.email, otp, req.user.name).then(success => {
+      if (!success) {
+        console.log('OTP email may have failed to send to:', req.user.email);
+      }
+    }).catch(err => {
+      console.error('OTP Email error (non-blocking):', err.message);
+      if (err.response && err.response.body) {
+        console.error('SendGrid error response:', err.response.body);
+      }
+    });
 
     // Create notification for host
     const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
@@ -160,9 +167,16 @@ exports.resendOTP = async (req, res) => {
     await booking.save();
 
     // Send OTP email asynchronously
-    sendOTPEmail(req.user.email, otp, req.user.name).catch(err => 
-      console.log('Email error (non-blocking):', err.message)
-    );
+    sendOTPEmail(req.user.email, otp, req.user.name).then(success => {
+      if (!success) {
+        console.log('OTP email may have failed to send to:', req.user.email);
+      }
+    }).catch(err => {
+      console.error('OTP Email error (non-blocking):', err.message);
+      if (err.response && err.response.body) {
+        console.error('SendGrid error response:', err.response.body);
+      }
+    });
 
     res.json({ message: 'OTP resent successfully' });
   } catch (error) {
@@ -325,7 +339,7 @@ exports.confirmBooking = async (req, res) => {
     await event.save();
 
     // Send confirmation email
-    await sendBookingConfirmationEmail(
+    const emailSent = await sendBookingConfirmationEmail(
       booking.user.email,
       booking.user.name,
       booking.event.title,
@@ -335,6 +349,9 @@ exports.confirmBooking = async (req, res) => {
         bookingId: booking._id
       }
     );
+    if (!emailSent) {
+      console.log('Booking confirmation email may have failed to send to:', booking.user.email);
+    }
 
     res.json({ message: 'Booking confirmed successfully', booking });
   } catch (error) {

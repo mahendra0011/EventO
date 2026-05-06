@@ -32,8 +32,8 @@ const sendOTPEmail = async (email, otp, name) => {
   };
 
   try {
-    const [response] = await sgMail.send(msg);
-    console.log('Email sent:', response.statusCode);
+    const response = await sgMail.send(msg);
+    console.log('Email sent successfully');
     return true;
   } catch (error) {
     console.error('Email error:', error.message);
@@ -76,8 +76,8 @@ const sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDeta
   };
 
   try {
-    const [response] = await sgMail.send(msg);
-    console.log('Booking confirmation email sent:', response.statusCode);
+    await sgMail.send(msg);
+    console.log('Booking confirmation email sent successfully');
     return true;
   } catch (error) {
     console.error('Email sending error:', error.message);
@@ -125,8 +125,8 @@ const sendHostMessageEmail = async (recipientEmail, recipientName, subject, cont
   };
 
   try {
-    const [response] = await sgMail.send(msg);
-    console.log('Host message email sent to:', recipientEmail, response.statusCode);
+    await sgMail.send(msg);
+    console.log('Host message email sent successfully');
     return true;
   } catch (error) {
     console.error('Host message email error:', error.message);
