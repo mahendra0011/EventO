@@ -17,12 +17,14 @@ const messageRoutes = require('./routes/messages');
 
 const app = express();
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000'
+  origin: FRONTEND_URL,
+  credentials: true
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
@@ -32,7 +34,6 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
-// app.use('/api/reviews', require('./routes/reviews'));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Evento API is running' });
@@ -42,12 +43,14 @@ const PORT = process.env.PORT || 5000;
 
 async function startServer() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/evento';
+    await mongoose.connect(mongoUri);
     console.log('MongoDB connected successfully');
     
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+    const server = app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
     });
+    return server;
   } catch (err) {
     console.error('MongoDB connection error:', err);
     process.exit(1);
@@ -55,3 +58,5 @@ async function startServer() {
 }
 
 startServer();
+
+module.exports = app;
