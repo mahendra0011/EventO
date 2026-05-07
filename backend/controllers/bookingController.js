@@ -29,6 +29,19 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json({ message: 'Not enough tickets available' });
     }
 
+    // Check OTP rate limit: minimum 1 minute between OTP requests for same user and event
+    const recentOtpRequest = await Booking.findOne({
+      user: req.user.id,
+      event: eventId,
+      lastOtpSent: { $gt: new Date(Date.now() - 60000) } // within last minute
+    });
+
+    if (recentOtpRequest) {
+      return res.status(429).json({ 
+        message: 'Please wait 1 minute before requesting another OTP for this event' 
+      });
+    }
+
     // Calculate total price
     const totalPrice = event.price * numberOfTickets;
 
@@ -44,49 +57,50 @@ exports.createBooking = async (req, res) => {
       totalPrice,
       attendeeDetails,
       otp,
-      otpExpires
+      otpExpires,
+      lastOtpSent: new Date()
     });
 
      await booking.save();
 
-     // Log user info for debugging
-     console.log('[BookingController] User info:', { id: req.user.id, email: req.user.email, name: req.user.name });
+      // Log user info for debugging
+      console.log('[BookingController] User info:', { id: req.user.id, email: req.user.email, name: req.user.name });
 
-     // Send OTP by email in the background so the API responds immediately
-     console.log('[BookingController] Attempting to send OTP email to:', req.user.email);
-     sendOTPEmail(req.user.email, otp, req.user.name)
-       .then((ok) => {
-         if (!ok) {
-           console.warn('OTP email did not send for booking', booking._id, '→', req.user.email);
-         } else {
-           console.log('OTP email sent successfully for booking', booking._id);
-         }
-       })
-       .catch((err) => console.error('OTP email error:', err.message));
+      // Send OTP by email in the background so the API responds immediately
+      console.log('[BookingController] Attempting to send OTP email to:', req.user.email);
+      sendOTPEmail(req.user.email, otp, req.user.name)
+        .then((ok) => {
+          if (!ok) {
+            console.warn('OTP email did not send for booking', booking._id, '→', req.user.email);
+          } else {
+            console.log('OTP email sent successfully for booking', booking._id);
+          }
+        })
+        .catch((err) => console.error('OTP email error:', err.message));
 
-    // Create notification for host
-    const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
-    if (eventWithOrganizer && eventWithOrganizer.organizer) {
-      await Notification.create({
-        user: eventWithOrganizer.organizer._id,
-        title: 'New Booking Received',
-        message: `${req.user.name} booked ${numberOfTickets} ticket(s) for "${event.title}"`,
-        type: 'booking',
-        link: `/host/bookings`
-      });
-    }
+     // Create notification for host
+     const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
+     if (eventWithOrganizer && eventWithOrganizer.organizer) {
+       await Notification.create({
+         user: eventWithOrganizer.organizer._id,
+         title: 'New Booking Received',
+         message: `${req.user.name} booked ${numberOfTickets} ticket(s) for "${event.title}"`,
+         type: 'booking',
+         link: `/host/bookings`
+       });
+     }
 
-    res.status(201).json({
-      message: 'Booking created. Please verify OTP sent to your email.',
-      bookingId: booking._id,
-      totalPrice,
-      emailQueued: true
-    });
-  } catch (error) {
-    console.error('Create booking error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
+     res.status(201).json({
+       message: 'Booking created. Please verify OTP sent to your email.',
+       bookingId: booking._id,
+       totalPrice,
+       emailQueued: true
+     });
+   } catch (error) {
+     console.error('Create booking error:', error);
+     res.status(500).json({ message: 'Server error' });
+   }
+ };
 
 // Verify OTP - Auto-confirm booking
 exports.verifyOTP = async (req, res) => {
@@ -179,12 +193,26 @@ exports.resendOTP = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
+    // Check OTP rate limit: minimum 1 minute between OTP requests for same user and event
+    const recentOtpRequest = await Booking.findOne({
+      user: req.user.id,
+      event: booking.event,
+      lastOtpSent: { $gt: new Date(Date.now() - 60000) } // within last minute
+    });
+
+    if (recentOtpRequest) {
+      return res.status(429).json({ 
+        message: 'Please wait 1 minute before requesting another OTP for this event' 
+      });
+    }
+
     // Generate new OTP
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
     booking.otp = otp;
     booking.otpExpires = otpExpires;
+    booking.lastOtpSent = new Date();
     await booking.save();
 
     sendOTPEmail(req.user.email, otp, req.user.name)
