@@ -161,6 +161,14 @@ exports.sendOTPEmail = async (email, otp, name) => {
     from: `"Evento" <${EMAIL_USER}>`,
     to: email,
     subject: 'Evento - Your OTP for Booking Verification',
+    text: `Hello ${name},
+
+Your OTP for booking verification is: ${otp}
+
+This OTP is valid for 10 minutes. Do not share this code with anyone.
+If you did not request this, please ignore this email.
+
+- Evento`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
