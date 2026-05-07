@@ -18,8 +18,10 @@ const messageRoutes = require('./routes/messages');
 const app = express();
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
 const corsOptions = {
-  origin: FRONTEND_URL,
+  origin: NODE_ENV === 'production' ? true : FRONTEND_URL,
   credentials: true
 };
 
@@ -39,6 +41,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Evento API is running' });
 });
 
+if (NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '..', 'frontend', 'build')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'frontend', 'build', 'index.html'));
+  });
+}
+
 const PORT = process.env.PORT || 5000;
 
 async function startServer() {
@@ -47,8 +56,8 @@ async function startServer() {
     await mongoose.connect(mongoUri);
     console.log('MongoDB connected successfully');
     
-    const server = app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);
     });
     return server;
   } catch (err) {

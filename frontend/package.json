@@ -2,6 +2,7 @@
   "name": "evento-frontend",
   "version": "1.0.0",
   "private": true,
+  "proxy": "http://localhost:5000",
   "dependencies": {
     "@yudiel/react-qr-scanner": "^2.5.1",
     "axios": "^1.6.2",

@@ -1,11 +1,16 @@
 import axios from 'axios';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5000' : 'https://evento-j034.onrender.com'),
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
 });
+
+// In production, setup a proxy redirect for API calls
+// The backend should be deployed at /api or use same domain
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
