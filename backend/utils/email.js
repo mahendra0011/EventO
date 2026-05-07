@@ -162,83 +162,21 @@ exports.sendLoginNotificationEmail = async (email, name, ipAddress = 'Unknown') 
   return sendEmail(mailOptions);
 };
 
-// Stylish OTP Email (safe to fire-and-forget from controllers)
+// Simple OTP Email (plain text)
 exports.sendOTPEmail = async (email, otp, name, eventTitle = 'Event Booking') => {
   const mailOptions = {
     from: `"Evento" <${EMAIL_USER}>`,
     to: email,
-    subject: '🔐 Your Verification Code - Evento Booking',
+    subject: 'Your Event Booking Verification Code',
     text: `Hello ${name},
 
 Your verification code for booking ${eventTitle} is: ${otp}
 
 This code is valid for 10 minutes and can only be used once.
 
-Evento Team`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-      </head>
-      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-        <div style="max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-            <div style="width: 80px; height: 80px; background: white; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="4" width="16" height="16" rx="2" stroke="#667eea" stroke-width="2"/>
-                <circle cx="12" cy="12" r="3" fill="#667eea"/>
-              </svg>
-            </div>
-            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Evento</h1>
-            <p style="color: rgba(255,255,255,0.9); margin-top: 8px; font-size: 14px;">Secure Event Booking Platform</p>
-          </div>
-          
-          <div style="padding: 40px 30px;">
-            <h2 style="color: #1a1a2e; margin: 0 0 16px; font-size: 24px; font-weight: 600;">Hello ${name}! 👋</h2>
-            <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
-              Your verification code for <strong>${eventTitle}</strong> is ready. Please enter it below to complete your booking.
-            </p>
-            
-            <div style="background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%); border-radius: 12px; padding: 30px; text-align: center; margin: 24px 0;">
-              <p style="color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px;">Verification Code</p>
-              <div style="font-family: 'Courier New', monospace; font-size: 42px; font-weight: 700; color: #667eea; letter-spacing: 8px; margin: 0;">
-                ${otp}
-              </div>
-            </div>
-            
-            <div style="display: flex; gap: 20px; margin: 24px 0; padding: 20px; background: #f8f9ff; border-radius: 8px;">
-              <div style="flex: 1; text-align: center;">
-                <div style="color: #999; font-size: 11px; text-transform: uppercase; margin-bottom: 4px;">Valid For</div>
-                <div style="color: #667eea; font-weight: 600; font-size: 14px;">10 Minutes</div>
-              </div>
-              <div style="width: 1px; background: #ddd;"></div>
-              <div style="flex: 1; text-align: center;">
-                <div style="color: #999; font-size: 11px; text-transform: uppercase; margin-bottom: 4px;">Usage</div>
-                <div style="color: #667eea; font-weight: 600; font-size: 14px;">Single Use</div>
-              </div>
-            </div>
-            
-            <p style="color: #888; font-size: 13px; line-height: 1.6; margin: 0;">
-              🔒 This code is confidential. Never share it with anyone.<br>
-              ⏰ Expires in 10 minutes. Request a new code if expired.
-            </p>
-          </div>
-          
-          <div style="background: #f5f7fa; padding: 24px 30px; text-align: center; border-top: 1px solid #eee;">
-            <a href="${FRONTEND_URL}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 32px; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600; margin-bottom: 16px;">
-              Go to Dashboard
-            </a>
-            <p style="color: #999; font-size: 12px; margin: 0;">
-              © 2024 Evento. Secure Event Management.<br>
-              Need help? Contact <a href="mailto:support@evento.com" style="color: #667eea; text-decoration: none;">support@evento.com</a>
-            </p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
+Please do not share this code with anyone.
+
+Evento Team`
   };
 
   return sendEmail(mailOptions);
