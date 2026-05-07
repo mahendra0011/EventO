@@ -36,6 +36,9 @@ const bookingSchema = new mongoose.Schema({
   otpExpires: {
     type: Date
   },
+  lastOtpSent: {
+    type: Date
+  },
   isOtpVerified: {
     type: Boolean,
     default: false
