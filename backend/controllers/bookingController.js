@@ -77,11 +77,25 @@ exports.createBooking = async (req, res) => {
       .then(success => {
         if (!success) {
           console.warn('OTP email failed for booking', booking._id, 'to:', req.user.email);
+          // FALLBACK: Log OTP to console for testing when email fails
+          console.log('=============================================');
+          console.log('OTP FOR TESTING (EMAIL FAILED):', otp);
+          console.log('Email to:', req.user.email);
+          console.log('Valid until:', otpExpires.toISOString());
+          console.log('=============================================');
         } else {
           console.log('OTP email sent for booking', booking._id, 'to:', req.user.email, 'OTP:', otp);
         }
       })
-      .catch(err => console.error('OTP email error:', err.message));
+      .catch(err => {
+        console.error('OTP email error:', err.message);
+        // FALLBACK: Log OTP to console for testing when email fails
+        console.log('=============================================');
+        console.log('OTP FOR TESTING (EMAIL ERROR):', otp);
+        console.log('Email to:', req.user.email);
+        console.log('Valid until:', otpExpires.toISOString());
+        console.log('=============================================');
+      });
 
     const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
     if (eventWithOrganizer?.organizer) {
