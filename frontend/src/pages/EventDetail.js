@@ -19,6 +19,8 @@ const EventDetail = () => {
   const [otp, setOtp] = useState('');
   const [bookingId, setBookingId] = useState(null);
   const [showOtpModal, setShowOtpModal] = useState(false);
+  /** false when SMTP failed — server returns OTP in the API response instead */
+  const [otpEmailDelivered, setOtpEmailDelivered] = useState(true);
   const [inWishlist, setInWishlist] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
@@ -82,8 +84,19 @@ const EventDetail = () => {
 
       setBookingId(res.data.bookingId);
       setShowBookingModal(false);
+      const sent = res.data.emailSent !== false;
+      setOtpEmailDelivered(sent);
+      if (res.data.otp) {
+        setOtp(String(res.data.otp));
+      } else {
+        setOtp('');
+      }
       setShowOtpModal(true);
-      toast.success('OTP sent to your email!');
+      if (!sent) {
+        toast.error('Could not send email. Your OTP is shown in the verification field.');
+      } else {
+        toast.success('OTP sent to your email!');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Booking failed');
     } finally {
@@ -111,10 +124,19 @@ const EventDetail = () => {
 
   const handleResendOtp = async () => {
     try {
-      await api.post('/bookings/resend-otp', { bookingId });
-      toast.success('OTP resent to your email!');
+      const res = await api.post('/bookings/resend-otp', { bookingId });
+      const sent = res.data.emailSent !== false;
+      setOtpEmailDelivered(sent);
+      if (res.data.otp) {
+        setOtp(String(res.data.otp));
+      }
+      if (!sent) {
+        toast.error('Could not send email. New OTP is shown in the verification field.');
+      } else {
+        toast.success('OTP resent to your email!');
+      }
     } catch (error) {
-      toast.error('Failed to resend OTP');
+      toast.error(error.response?.data?.message || 'Failed to resend OTP');
     }
   };
 
@@ -571,9 +593,16 @@ const EventDetail = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
             <h2 className="text-2xl font-bold mb-4">Verify OTP</h2>
-            <p className="text-gray-600 mb-6">
-              Enter the 6-digit OTP sent to your email address.
-            </p>
+            {otpEmailDelivered ? (
+              <p className="text-gray-600 mb-6">
+                Enter the 6-digit OTP sent to your email address.
+              </p>
+            ) : (
+              <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                Email delivery is unavailable (check server email settings). The code below is your OTP — verify to
+                confirm your booking.
+              </div>
+            )}
             <input
               type="text"
               value={otp}

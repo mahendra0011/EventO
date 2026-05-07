@@ -83,14 +83,15 @@ const sendEmail = async (mailOptions) => {
   if (!emailEnabled) {
     console.log('Email disabled. Would send to:', mailOptions.to);
     console.log('Subject:', mailOptions.subject);
-    return true; // Don't block user flow when email is disabled
+    return false;
   }
 
   try {
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent:', info.messageId);
-    if (EMAIL_PROVIDER === 'ethereal') {
-      console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      console.log('Preview URL:', previewUrl);
     }
     return true;
   } catch (error) {
