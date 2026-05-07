@@ -49,7 +49,14 @@ exports.createBooking = async (req, res) => {
 
     await booking.save();
 
-    const otpEmailSent = await sendOTPEmail(req.user.email, otp, req.user.name);
+    // Send OTP by email in the background so the API responds immediately
+    sendOTPEmail(req.user.email, otp, req.user.name)
+      .then((ok) => {
+        if (!ok) {
+          console.warn('OTP email did not send for booking', booking._id, '→', req.user.email);
+        }
+      })
+      .catch((err) => console.error('OTP email error:', err.message));
 
     // Create notification for host
     const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
@@ -64,13 +71,12 @@ exports.createBooking = async (req, res) => {
     }
 
     res.status(201).json({
-      message: otpEmailSent
-        ? 'Booking created. Please verify OTP sent to your email.'
-        : 'Booking created. Email could not be sent — use the OTP shown below to verify.',
+      message:
+        'Booking created. Use the verification code below (we are also emailing it to your inbox).',
       bookingId: booking._id,
       totalPrice,
-      emailSent: otpEmailSent,
-      ...(otpEmailSent ? {} : { otp })
+      otp,
+      emailQueued: true
     });
   } catch (error) {
     console.error('Create booking error:', error);
@@ -177,14 +183,16 @@ exports.resendOTP = async (req, res) => {
     booking.otpExpires = otpExpires;
     await booking.save();
 
-    const otpEmailSent = await sendOTPEmail(req.user.email, otp, req.user.name);
+    sendOTPEmail(req.user.email, otp, req.user.name)
+      .then((ok) => {
+        if (!ok) console.warn('Resend OTP email failed for', req.user.email);
+      })
+      .catch((err) => console.error('Resend OTP email error:', err.message));
 
     res.json({
-      message: otpEmailSent
-        ? 'OTP resent successfully'
-        : 'Email could not be sent — use the OTP below.',
-      emailSent: otpEmailSent,
-      ...(otpEmailSent ? {} : { otp })
+      message: 'New code below — we are also emailing it to you.',
+      otp,
+      emailQueued: true
     });
   } catch (error) {
     console.error('Resend OTP error:', error);

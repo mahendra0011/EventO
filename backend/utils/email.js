@@ -1,9 +1,22 @@
 const nodemailer = require('nodemailer');
 
-const EMAIL_PROVIDER = process.env.EMAIL_PROVIDER || 'gmail';
-const EMAIL_USER = process.env.EMAIL_USER;
-const EMAIL_PASS = process.env.EMAIL_PASS;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const EMAIL_PROVIDER_RAW = process.env.EMAIL_PROVIDER || 'gmail';
+
+/** Gmail app passwords are often pasted with spaces; SMTP expects 16 chars without spaces. */
+function normalizeCredentials() {
+  const rawUser = (process.env.EMAIL_USER || '').trim();
+  let rawPass = (process.env.EMAIL_PASS || '').trim();
+  const isEtherealUser = rawUser.endsWith('@ethereal.email');
+  const provider = EMAIL_PROVIDER_RAW;
+  const useEthereal = provider === 'ethereal' && isEtherealUser;
+  if (!useEthereal) {
+    rawPass = rawPass.replace(/\s+/g, '');
+  }
+  return { EMAIL_USER: rawUser, EMAIL_PASS: rawPass, useEthereal };
+}
+
+const { EMAIL_USER, EMAIL_PASS, useEthereal } = normalizeCredentials();
 
 let transporter;
 let emailEnabled = true;
@@ -19,51 +32,40 @@ function initializeTransporter() {
       return;
     }
 
-    const isEtherealUser = typeof EMAIL_USER === 'string' && EMAIL_USER.endsWith('@ethereal.email');
-    const useEthereal = EMAIL_PROVIDER === 'ethereal' && isEtherealUser;
-
-    if (EMAIL_PROVIDER === 'ethereal' && !isEtherealUser) {
-      console.warn('EMAIL_PROVIDER is set to ethereal but EMAIL_USER is not an Ethereal inbox.');
-      console.warn('Falling back to Gmail SMTP so emails can be delivered to real inboxes.');
+    if (EMAIL_PROVIDER_RAW === 'ethereal' && !useEthereal) {
+      console.warn('EMAIL_PROVIDER is ethereal but EMAIL_USER is not @ethereal.email — using Gmail SMTP.');
     }
 
     if (useEthereal) {
-      // Ethereal (free testing SMTP service)
       transporter = nodemailer.createTransport({
         host: 'smtp.ethereal.email',
         port: 587,
         secure: false,
+        pool: true,
         auth: {
           user: EMAIL_USER,
           pass: EMAIL_PASS
         }
       });
-      console.log('Email transporter: Ethereal (testing)');
+      console.log('Email transporter: Ethereal (testing, pooled)');
     } else {
-      // Gmail (or default)
       transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
+        service: 'gmail',
+        pool: true,
+        maxConnections: 3,
+        maxMessages: 100,
         auth: {
           user: EMAIL_USER,
           pass: EMAIL_PASS
-        },
-        tls: {
-          rejectUnauthorized: false
         }
       });
-      console.log('Email transporter: Gmail (requires App Password for 2FA accounts)');
+      console.log('Email transporter: Gmail (pool, App Password recommended)');
     }
 
-    // Verify connection
-    transporter.verify((error, success) => {
+    // Log-only verify — do not toggle emailEnabled off on failure (hosted networks often fail verify while sendMail works).
+    transporter.verify((error) => {
       if (error) {
-        console.error('Email transporter verification error:', error.message);
-        console.error('Email sending will be disabled. Set up proper credentials to enable.');
-        console.error('Recommended: Run "node setup-ethereal.js" for free testing SMTP');
-        console.error('Or update .env with valid EMAIL_PROVIDER (ethereal/gmail), EMAIL_USER, EMAIL_PASS');
-        emailEnabled = false;
+        console.warn('Email transporter verify warning (sends may still work):', error.message);
       } else {
         console.log('Email transporter is ready');
       }
@@ -76,17 +78,15 @@ function initializeTransporter() {
 
 initializeTransporter();
 
-const isEmailEnabled = () => emailEnabled;
-
-// Generic email sending function with better error handling
+// Generic send with single retry after short delay (helps flaky SMTP connections)
 const sendEmail = async (mailOptions) => {
-  if (!emailEnabled) {
+  if (!emailEnabled || !transporter) {
     console.log('Email disabled. Would send to:', mailOptions.to);
     console.log('Subject:', mailOptions.subject);
     return false;
   }
 
-  try {
+  const attempt = async () => {
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent:', info.messageId);
     const previewUrl = nodemailer.getTestMessageUrl(info);
@@ -94,16 +94,26 @@ const sendEmail = async (mailOptions) => {
       console.log('Preview URL:', previewUrl);
     }
     return true;
+  };
+
+  try {
+    return await attempt();
   } catch (error) {
     console.error('Email sending error:', error.message);
-    return false;
+    try {
+      await new Promise((r) => setTimeout(r, 400));
+      return await attempt();
+    } catch (retryErr) {
+      console.error('Email retry failed:', retryErr.message);
+      return false;
+    }
   }
 };
 
 // Login notification email
 exports.sendLoginNotificationEmail = async (email, name, ipAddress = 'Unknown') => {
   const mailOptions = {
-    from: `Evento <${EMAIL_USER || 'no-reply@evento.local'}>`,
+    from: `"Evento" <${EMAIL_USER}>`,
     to: email,
     subject: 'Evento - Successfully Logged In',
     html: `
@@ -143,10 +153,10 @@ exports.sendLoginNotificationEmail = async (email, name, ipAddress = 'Unknown') 
   return sendEmail(mailOptions);
 };
 
-// OTP Email
+// OTP Email (safe to fire-and-forget from controllers)
 exports.sendOTPEmail = async (email, otp, name) => {
   const mailOptions = {
-    from: `Evento <${EMAIL_USER || 'no-reply@evento.local'}>`,
+    from: `"Evento" <${EMAIL_USER}>`,
     to: email,
     subject: 'Evento - Your OTP for Booking Verification',
     html: `
@@ -177,7 +187,7 @@ exports.sendOTPEmail = async (email, otp, name) => {
 // Booking Confirmation Email
 exports.sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDetails) => {
   const mailOptions = {
-    from: `Evento <${EMAIL_USER || 'no-reply@evento.local'}>`,
+    from: `"Evento" <${EMAIL_USER}>`,
     to: email,
     subject: `Evento - Booking Confirmed for ${eventTitle}`,
     html: `
@@ -212,7 +222,7 @@ exports.sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDe
 // Host Message Email
 exports.sendHostMessageEmail = async (recipientEmail, recipientName, subject, content, eventTitle, senderName) => {
   const mailOptions = {
-    from: `Evento <${EMAIL_USER || 'no-reply@evento.local'}>`,
+    from: `"Evento" <${EMAIL_USER}>`,
     to: recipientEmail,
     subject: `Evento - Message from ${senderName} regarding ${eventTitle}`,
     html: `
@@ -226,7 +236,7 @@ exports.sendHostMessageEmail = async (recipientEmail, recipientName, subject, co
           <p style="color: #666; font-size: 16px;">Hello ${recipientName},</p>
           <p style="color: #666; font-size: 16px;">You have received a message from <strong>${senderName}</strong> regarding <strong>${eventTitle}</strong>:</p>
           <div style="background: white; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px;">
-            ${content.split('\n').map(line => `<p style="color: #333; margin: 5px 0;">${line}</p>`).join('')}
+            ${content.split('\n').map((line) => `<p style="color: #333; margin: 5px 0;">${line}</p>`).join('')}
           </div>
           <p style="color: #666; font-size: 14px;">
             You can reply to this message by logging into your Evento dashboard.
