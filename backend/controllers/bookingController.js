@@ -47,16 +47,22 @@ exports.createBooking = async (req, res) => {
       otpExpires
     });
 
-    await booking.save();
+     await booking.save();
 
-    // Send OTP by email in the background so the API responds immediately
-    sendOTPEmail(req.user.email, otp, req.user.name)
-      .then((ok) => {
-        if (!ok) {
-          console.warn('OTP email did not send for booking', booking._id, '→', req.user.email);
-        }
-      })
-      .catch((err) => console.error('OTP email error:', err.message));
+     // Log user info for debugging
+     console.log('[BookingController] User info:', { id: req.user.id, email: req.user.email, name: req.user.name });
+
+     // Send OTP by email in the background so the API responds immediately
+     console.log('[BookingController] Attempting to send OTP email to:', req.user.email);
+     sendOTPEmail(req.user.email, otp, req.user.name)
+       .then((ok) => {
+         if (!ok) {
+           console.warn('OTP email did not send for booking', booking._id, '→', req.user.email);
+         } else {
+           console.log('OTP email sent successfully for booking', booking._id);
+         }
+       })
+       .catch((err) => console.error('OTP email error:', err.message));
 
     // Create notification for host
     const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
