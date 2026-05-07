@@ -1,4 +1,6 @@
 const nodemailer = require('nodemailer');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const EMAIL_PROVIDER_RAW = process.env.EMAIL_PROVIDER || 'gmail';

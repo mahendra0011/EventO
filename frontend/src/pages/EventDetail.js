@@ -82,13 +82,9 @@ const EventDetail = () => {
 
       setBookingId(res.data.bookingId);
       setShowBookingModal(false);
-      if (res.data.otp != null) {
-        setOtp(String(res.data.otp));
-      } else {
-        setOtp('');
-      }
+      setOtp('');
       setShowOtpModal(true);
-      toast.success('Enter your code below — we are also emailing it.');
+      toast.success('OTP sent to your email!');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Booking failed');
     } finally {
@@ -116,11 +112,9 @@ const EventDetail = () => {
 
   const handleResendOtp = async () => {
     try {
-      const res = await api.post('/bookings/resend-otp', { bookingId });
-      if (res.data.otp != null) {
-        setOtp(String(res.data.otp));
-      }
-      toast.success('New code below — also sending to your email.');
+      await api.post('/bookings/resend-otp', { bookingId });
+      setOtp('');
+      toast.success('OTP resent to your email!');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to resend OTP');
     }
@@ -579,11 +573,9 @@ const EventDetail = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
             <h2 className="text-2xl font-bold mb-4">Verify OTP</h2>
-            <p className="text-gray-600 mb-2">
-              Enter your 6-digit code below. The same code is sent to <span className="font-medium">{user?.email}</span>{' '}
-              (check spam if you do not see it).
+            <p className="text-gray-600 mb-6">
+              Enter the 6-digit OTP sent to your email address.
             </p>
-            <p className="text-sm text-gray-500 mb-6">You can verify immediately using the field below — no need to wait for the email.</p>
             <input
               type="text"
               value={otp}

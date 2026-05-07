@@ -71,11 +71,9 @@ exports.createBooking = async (req, res) => {
     }
 
     res.status(201).json({
-      message:
-        'Booking created. Use the verification code below (we are also emailing it to your inbox).',
+      message: 'Booking created. Please verify OTP sent to your email.',
       bookingId: booking._id,
       totalPrice,
-      otp,
       emailQueued: true
     });
   } catch (error) {
@@ -190,8 +188,7 @@ exports.resendOTP = async (req, res) => {
       .catch((err) => console.error('Resend OTP email error:', err.message));
 
     res.json({
-      message: 'New code below — we are also emailing it to you.',
-      otp,
+      message: 'OTP resent successfully. Please check your email.',
       emailQueued: true
     });
   } catch (error) {
