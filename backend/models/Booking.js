@@ -39,6 +39,9 @@ const bookingSchema = new mongoose.Schema({
   lastOtpSent: {
     type: Date
   },
+  usedOtps: [{
+    type: String
+  }],
   isOtpVerified: {
     type: Boolean,
     default: false
@@ -63,7 +66,6 @@ const bookingSchema = new mongoose.Schema({
   }
 });
 
-// Index for better query performance
 bookingSchema.index({ user: 1, status: 1 });
 bookingSchema.index({ event: 1, status: 1 });
 

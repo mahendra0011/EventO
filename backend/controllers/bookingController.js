@@ -2,54 +2,62 @@ const Booking = require('../models/Booking');
 const Event = require('../models/Event');
 const Notification = require('../models/Notification');
 const { sendOTPEmail, sendBookingConfirmationEmail } = require('../utils/email');
+const crypto = require('crypto');
 
-// Generate OTP
-const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+const OTP_EXPIRY_MINUTES = 10;
+const OTP_RATE_LIMIT_SECONDS = 60;
+
+const generateSecureOTP = () => {
+  return crypto.randomInt(100000, 999999).toString();
 };
 
-// Create booking request
 exports.createBooking = async (req, res) => {
   try {
     const { eventId, numberOfTickets, attendeeDetails } = req.body;
 
-    // Validation
     if (!eventId || !numberOfTickets) {
       return res.status(400).json({ message: 'Event ID and number of tickets are required' });
     }
 
-    // Check if event exists
     const event = await Event.findById(eventId);
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    // Check if enough tickets available
     if (event.availableTickets < numberOfTickets) {
       return res.status(400).json({ message: 'Not enough tickets available' });
     }
 
-    // Check OTP rate limit: minimum 1 minute between OTP requests for same user and event
-    const recentOtpRequest = await Booking.findOne({
+    const existingPendingBooking = await Booking.findOne({
       user: req.user.id,
       event: eventId,
-      lastOtpSent: { $gt: new Date(Date.now() - 60000) } // within last minute
+      status: 'pending'
     });
 
-    if (recentOtpRequest) {
-      return res.status(429).json({ 
-        message: 'Please wait 1 minute before requesting another OTP for this event' 
+    if (existingPendingBooking) {
+      return res.status(400).json({
+        message: 'You already have a pending booking for this event',
+        bookingId: existingPendingBooking._id
       });
     }
 
-    // Calculate total price
+    const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
+    const recentOtpRequest = await Booking.findOne({
+      user: req.user.id,
+      event: eventId,
+      lastOtpSent: { $gt: oneMinuteAgo }
+    });
+
+    if (recentOtpRequest) {
+      return res.status(429).json({
+        message: `Please wait ${OTP_RATE_LIMIT_SECONDS} seconds before requesting another OTP`
+      });
+    }
+
     const totalPrice = event.price * numberOfTickets;
+    const otp = generateSecureOTP();
+    const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-    // Generate OTP
-    const otp = generateOTP();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    // Create booking
     const booking = new Booking({
       user: req.user.id,
       event: eventId,
@@ -58,51 +66,42 @@ exports.createBooking = async (req, res) => {
       attendeeDetails,
       otp,
       otpExpires,
-      lastOtpSent: new Date()
+      lastOtpSent: new Date(),
+      usedOtps: []
     });
 
-     await booking.save();
+    await booking.save();
 
-      // Log user info for debugging
-      console.log('[BookingController] User info:', { id: req.user.id, email: req.user.email, name: req.user.name });
+    sendOTPEmail(req.user.email, otp, req.user.name, event.title)
+      .then(success => {
+        if (!success) {
+          console.warn('OTP email failed for booking', booking._id);
+        }
+      })
+      .catch(err => console.error('OTP email error:', err.message));
 
-      // Send OTP by email in the background so the API responds immediately
-      console.log('[BookingController] Attempting to send OTP email to:', req.user.email);
-      sendOTPEmail(req.user.email, otp, req.user.name)
-        .then((ok) => {
-          if (!ok) {
-            console.warn('OTP email did not send for booking', booking._id, '→', req.user.email);
-          } else {
-            console.log('OTP email sent successfully for booking', booking._id);
-          }
-        })
-        .catch((err) => console.error('OTP email error:', err.message));
+    const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
+    if (eventWithOrganizer?.organizer) {
+      await Notification.create({
+        user: eventWithOrganizer.organizer._id,
+        title: 'New Booking Request',
+        message: `${req.user.name} requested booking for "${event.title}"`,
+        type: 'booking',
+        link: '/host/bookings'
+      });
+    }
 
-     // Create notification for host
-     const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
-     if (eventWithOrganizer && eventWithOrganizer.organizer) {
-       await Notification.create({
-         user: eventWithOrganizer.organizer._id,
-         title: 'New Booking Received',
-         message: `${req.user.name} booked ${numberOfTickets} ticket(s) for "${event.title}"`,
-         type: 'booking',
-         link: `/host/bookings`
-       });
-     }
+    res.status(201).json({
+      message: 'Booking created. Check your email for OTP verification.',
+      bookingId: booking._id,
+      totalPrice
+    });
+  } catch (error) {
+    console.error('Create booking error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
-     res.status(201).json({
-       message: 'Booking created. Please verify OTP sent to your email.',
-       bookingId: booking._id,
-       totalPrice,
-       emailQueued: true
-     });
-   } catch (error) {
-     console.error('Create booking error:', error);
-     res.status(500).json({ message: 'Server error' });
-   }
- };
-
-// Verify OTP - Auto-confirm booking
 exports.verifyOTP = async (req, res) => {
   try {
     const { bookingId, otp } = req.body;
@@ -112,36 +111,40 @@ exports.verifyOTP = async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
-    // Check if booking belongs to user
     if (booking.user.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    // Check if OTP is expired
+    if (booking.isOtpVerified) {
+      return res.status(400).json({ message: 'Booking already verified' });
+    }
+
     if (booking.otpExpires < new Date()) {
       return res.status(400).json({ message: 'OTP has expired' });
     }
 
-    // Verify OTP
+    if (booking.usedOtps?.includes(otp)) {
+      return res.status(400).json({ message: 'OTP has already been used' });
+    }
+
     if (booking.otp !== otp) {
       return res.status(400).json({ message: 'Invalid OTP' });
     }
 
-    // Auto-confirm booking
+    booking.usedOtps = [...(booking.usedOtps || []), otp];
     booking.isOtpVerified = true;
     booking.otp = undefined;
     booking.otpExpires = undefined;
     booking.status = 'confirmed';
     booking.paymentStatus = 'completed';
     booking.confirmedAt = new Date();
+
     await booking.save();
 
-    // Update event available tickets
     const event = await Event.findById(booking.event);
     event.availableTickets -= booking.numberOfTickets;
     await event.save();
 
-    // Send confirmation email after OTP verification
     sendBookingConfirmationEmail(
       req.user.email,
       req.user.name,
@@ -151,34 +154,23 @@ exports.verifyOTP = async (req, res) => {
         totalPrice: booking.totalPrice,
         bookingId: booking._id
       }
-    ).then(success => {
-      if (!success) {
-        console.log('Booking confirmation email may have failed after OTP verification');
-      }
-    }).catch(err => {
-      console.error('OTP verification confirmation email error:', err.message);
-    });
+    ).catch(err => console.error('Confirmation email error:', err.message));
 
-    // Create notification for user
     await Notification.create({
       user: booking.user,
-      title: 'Booking Confirmed!',
-      message: `Your booking for "${event.title}" is confirmed.`,
+      title: 'Booking Confirmed',
+      message: `Your booking for "${event.title}" is confirmed`,
       type: 'booking',
-      link: `/booking/${booking._id}/confirmation`
+      link: `/bookings/${booking._id}/confirmation`
     });
 
-    res.json({ 
-      message: 'Booking confirmed successfully.', 
-      booking 
-    });
+    res.json({ message: 'Booking confirmed successfully', booking });
   } catch (error) {
     console.error('Verify OTP error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Resend OTP
 exports.resendOTP = async (req, res) => {
   try {
     const { bookingId } = req.body;
@@ -188,50 +180,43 @@ exports.resendOTP = async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
-    // Check if booking belongs to user
     if (booking.user.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    // Check OTP rate limit: minimum 1 minute between OTP requests for same user and event
-    const recentOtpRequest = await Booking.findOne({
-      user: req.user.id,
-      event: booking.event,
-      lastOtpSent: { $gt: new Date(Date.now() - 60000) } // within last minute
-    });
+    if (booking.isOtpVerified) {
+      return res.status(400).json({ message: 'Booking already verified' });
+    }
 
-    if (recentOtpRequest) {
-      return res.status(429).json({ 
-        message: 'Please wait 1 minute before requesting another OTP for this event' 
+    const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
+    if (booking.lastOtpSent > oneMinuteAgo) {
+      return res.status(429).json({
+        message: `Please wait ${OTP_RATE_LIMIT_SECONDS} seconds before requesting another OTP`
       });
     }
 
-    // Generate new OTP
-    const otp = generateOTP();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    const otp = generateSecureOTP();
+    const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
     booking.otp = otp;
     booking.otpExpires = otpExpires;
     booking.lastOtpSent = new Date();
     await booking.save();
 
-    sendOTPEmail(req.user.email, otp, req.user.name)
-      .then((ok) => {
-        if (!ok) console.warn('Resend OTP email failed for', req.user.email);
+    const event = await Event.findById(booking.event).select('title');
+    sendOTPEmail(req.user.email, otp, req.user.name, event?.title)
+      .then(success => {
+        if (!success) console.warn('Resend OTP email failed');
       })
-      .catch((err) => console.error('Resend OTP email error:', err.message));
+      .catch(err => console.error('Resend OTP error:', err.message));
 
-    res.json({
-      message: 'OTP resent successfully. Please check your email.',
-      emailQueued: true
-    });
+    res.json({ message: 'OTP resent successfully' });
   } catch (error) {
     console.error('Resend OTP error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Get user bookings
 exports.getUserBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ user: req.user.id })
@@ -245,7 +230,6 @@ exports.getUserBookings = async (req, res) => {
   }
 };
 
-// Get single booking
 exports.getBooking = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
@@ -256,7 +240,6 @@ exports.getBooking = async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
-    // Check if user is authorized
     if (booking.user._id.toString() !== req.user.id && req.user.role !== 'host') {
       return res.status(403).json({ message: 'Not authorized' });
     }
@@ -268,7 +251,6 @@ exports.getBooking = async (req, res) => {
   }
 };
 
-// Cancel booking
 exports.cancelBooking = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id).populate('event');
@@ -277,40 +259,35 @@ exports.cancelBooking = async (req, res) => {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
-    // Check if user is authorized
     if (booking.user.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    // Only pending bookings can be cancelled by user
     if (booking.status === 'confirmed') {
-      return res.status(400).json({ message: 'Cannot cancel confirmed booking. Contact support.' });
+      return res.status(400).json({ message: 'Cannot cancel confirmed booking' });
     }
 
     booking.status = 'cancelled';
     booking.cancelledAt = new Date();
     await booking.save();
 
-    // Return tickets to event
     const event = await Event.findById(booking.event._id);
     event.availableTickets += booking.numberOfTickets;
     await event.save();
 
-    // Notify user
     await Notification.create({
       user: booking.user,
       title: 'Booking Cancelled',
-      message: `Your booking for "${event.title}" has been cancelled.`,
+      message: `Your booking for "${event.title}" was cancelled`,
       type: 'booking',
       link: '/dashboard'
     });
 
-    // Notify host
     if (event.organizer) {
       await Notification.create({
         user: event.organizer._id,
         title: 'Booking Cancelled',
-        message: `${req.user.name || 'A user'} cancelled booking for "${event.title}"`,
+        message: `Booking for "${event.title}" was cancelled`,
         type: 'booking',
         link: '/host/bookings'
       });
@@ -323,20 +300,16 @@ exports.cancelBooking = async (req, res) => {
   }
 };
 
-// Host: Get all bookings for host's events only
 exports.getAllBookings = async (req, res) => {
   try {
     const hostId = req.user.id;
     const { status, page = 1, limit = 10 } = req.query;
 
-    // Get host's events
     const hostEvents = await Event.find({ organizer: hostId });
     const hostEventIds = hostEvents.map(e => e._id);
 
     let query = { event: { $in: hostEventIds } };
-    if (status) {
-      query.status = status;
-    }
+    if (status) query.status = status;
 
     const bookings = await Booking.find(query)
       .populate('event', 'title date time venue image price')
@@ -359,7 +332,6 @@ exports.getAllBookings = async (req, res) => {
   }
 };
 
-// Admin: Confirm booking
 exports.confirmBooking = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
@@ -379,13 +351,11 @@ exports.confirmBooking = async (req, res) => {
     booking.confirmedAt = new Date();
     await booking.save();
 
-    // Update event available tickets
     const event = await Event.findById(booking.event._id);
     event.availableTickets -= booking.numberOfTickets;
     await event.save();
 
-    // Send confirmation email
-    const emailSent = await sendBookingConfirmationEmail(
+    sendBookingConfirmationEmail(
       booking.user.email,
       booking.user.name,
       booking.event.title,
@@ -394,10 +364,7 @@ exports.confirmBooking = async (req, res) => {
         totalPrice: booking.totalPrice,
         bookingId: booking._id
       }
-    );
-    if (!emailSent) {
-      console.log('Booking confirmation email may have failed to send to:', booking.user.email);
-    }
+    ).catch(err => console.error('Confirmation email error:', err.message));
 
     res.json({ message: 'Booking confirmed successfully', booking });
   } catch (error) {
@@ -406,7 +373,6 @@ exports.confirmBooking = async (req, res) => {
   }
 };
 
-// Admin: Reject booking
 exports.rejectBooking = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
