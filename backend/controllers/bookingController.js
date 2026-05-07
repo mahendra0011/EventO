@@ -72,10 +72,13 @@ exports.createBooking = async (req, res) => {
 
     await booking.save();
 
+    console.log('[Booking] Created booking', booking._id, 'for user', req.user.id, 'with email', req.user.email);
     sendOTPEmail(req.user.email, otp, req.user.name, event.title)
       .then(success => {
         if (!success) {
-          console.warn('OTP email failed for booking', booking._id);
+          console.warn('OTP email failed for booking', booking._id, 'to:', req.user.email);
+        } else {
+          console.log('OTP email sent for booking', booking._id, 'to:', req.user.email, 'OTP:', otp);
         }
       })
       .catch(err => console.error('OTP email error:', err.message));
