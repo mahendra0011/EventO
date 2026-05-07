@@ -84,7 +84,13 @@ const EventDetail = () => {
       setShowBookingModal(false);
       setOtp('');
       setShowOtpModal(true);
-      toast.success('OTP sent to your email!');
+      
+      if (res.data.emailSent === false && res.data.otp) {
+        setOtp(res.data.otp);
+        toast.success('OTP displayed below (email failed to send)');
+      } else {
+        toast.success(res.data.message);
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Booking failed');
     } finally {
@@ -112,9 +118,14 @@ const EventDetail = () => {
 
   const handleResendOtp = async () => {
     try {
-      await api.post('/bookings/resend-otp', { bookingId });
+      const res = await api.post('/bookings/resend-otp', { bookingId });
       setOtp('');
-      toast.success('OTP resent to your email!');
+      if (res.data.emailSent === false && res.data.otp) {
+        setOtp(res.data.otp);
+        toast.success('OTP displayed below (email failed to send)');
+      } else {
+        toast.success(res.data.message);
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to resend OTP');
     }
