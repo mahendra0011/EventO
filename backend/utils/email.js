@@ -27,9 +27,11 @@ let emailEnabled = true;
 function initializeTransporter() {
   try {
     if (!EMAIL_USER || !EMAIL_PASS) {
+      console.warn('========================================');
       console.warn('Email credentials (EMAIL_USER / EMAIL_PASS) not found in .env');
-      console.warn('Email sending will be disabled. To enable email, set up credentials.');
-      console.warn('Recommended: Run "node setup-ethereal.js" for free testing SMTP');
+      console.warn('Email sending will be disabled.');
+      console.warn('Run "node setup-ethereal.js" for free testing SMTP');
+      console.warn('========================================');
       emailEnabled = false;
       return;
     }
@@ -89,19 +91,24 @@ const sendEmail = async (mailOptions) => {
   }
 
   const attempt = async () => {
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent:', info.messageId);
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    if (previewUrl) {
-      console.log('Preview URL:', previewUrl);
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Email sent:', info.messageId);
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      if (previewUrl) {
+        console.log('Preview URL:', previewUrl);
+      }
+      return true;
+    } catch (error) {
+      console.error('Email send failed:', error.message);
+      console.error('To:', mailOptions.to, 'From:', mailOptions.from);
+      throw error;
     }
-    return true;
   };
 
   try {
     return await attempt();
   } catch (error) {
-    console.error('Email sending error:', error.message);
     try {
       await new Promise((r) => setTimeout(r, 400));
       return await attempt();

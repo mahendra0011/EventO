@@ -49,16 +49,14 @@ exports.createBooking = async (req, res) => {
 
     await booking.save();
 
-    // Send OTP by email and wait for result
-    let emailSent = false;
-    try {
-      emailSent = await sendOTPEmail(req.user.email, otp, req.user.name);
-      if (!emailSent) {
-        console.warn('OTP email failed to send for booking', booking._id);
-      }
-    } catch (err) {
-      console.error('OTP email error:', err.message);
-    }
+    // Send OTP by email in the background so the API responds immediately
+    sendOTPEmail(req.user.email, otp, req.user.name)
+      .then((ok) => {
+        if (!ok) {
+          console.warn('OTP email did not send for booking', booking._id, '→', req.user.email);
+        }
+      })
+      .catch((err) => console.error('OTP email error:', err.message));
 
     // Create notification for host
     const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
@@ -73,13 +71,10 @@ exports.createBooking = async (req, res) => {
     }
 
     res.status(201).json({
-      message: emailSent
-        ? 'Booking created. Please verify OTP sent to your email.'
-        : 'Booking created but email delivery failed. Use the OTP shown below.',
+      message: 'Booking created. Please verify OTP sent to your email.',
       bookingId: booking._id,
       totalPrice,
-      emailSent,
-      ...(emailSent ? {} : { otp })
+      emailQueued: true
     });
   } catch (error) {
     console.error('Create booking error:', error);
@@ -186,19 +181,15 @@ exports.resendOTP = async (req, res) => {
     booking.otpExpires = otpExpires;
     await booking.save();
 
-    let emailSent = false;
-    try {
-      emailSent = await sendOTPEmail(req.user.email, otp, req.user.name);
-    } catch (err) {
-      console.error('Resend OTP email error:', err.message);
-    }
+    sendOTPEmail(req.user.email, otp, req.user.name)
+      .then((ok) => {
+        if (!ok) console.warn('Resend OTP email failed for', req.user.email);
+      })
+      .catch((err) => console.error('Resend OTP email error:', err.message));
 
     res.json({
-      message: emailSent
-        ? 'OTP resent successfully. Please check your email.'
-        : 'OTP generated but email delivery failed. Use the OTP shown below.',
-      emailSent,
-      ...(emailSent ? {} : { otp })
+      message: 'OTP resent successfully. Please check your email.',
+      emailQueued: true
     });
   } catch (error) {
     console.error('Resend OTP error:', error);
