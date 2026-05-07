@@ -164,6 +164,7 @@ exports.sendLoginNotificationEmail = async (email, name, ipAddress = 'Unknown') 
 
 // OTP Email (safe to fire-and-forget from controllers)
 exports.sendOTPEmail = async (email, otp, name) => {
+  console.log('[sendOTPEmail] To:', email, 'User:', name, 'OTP:', otp);
   const mailOptions = {
     from: `"Evento" <${EMAIL_USER}>`,
     to: email,
