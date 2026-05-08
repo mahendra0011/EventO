@@ -27,12 +27,17 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
       const res = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', res.data.token);
-      setUser(res.data.user);
+      // Only set user if OTP not required (i.e., OTP disabled or already verified)
+      if (!res.data.requiresOTP) {
+        setUser(res.data.user);
+      }
       return res.data;
     };
 
     const verifyLoginOTP = async (otp) => {
       const res = await api.post('/auth/verify-login-otp', { otp });
+      // OTP verified, set user
+      setUser(res.data.user);
       return res.data;
     };
 
@@ -44,7 +49,9 @@ export const AuthProvider = ({ children }) => {
     const hostLogin = async (email, password, hostKeyword) => {
       const res = await api.post('/auth/host-keyword-login', { email, password, hostKeyword });
       localStorage.setItem('token', res.data.token);
-      setUser(res.data.user);
+      if (!res.data.requiresOTP) {
+        setUser(res.data.user);
+      }
       return res.data;
     };
 
