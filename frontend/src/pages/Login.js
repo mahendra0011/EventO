@@ -54,39 +54,14 @@ const Login = () => {
     return () => {
       if (resendInterval.current) clearInterval(resendInterval.current);
     };
-  }, [requiresOTP, resendCountdown]);
+   }, [requiresOTP, resendCountdown]);
 
-  const startResendCountdown = () => {
-    setResendCountdown(OTP_RATE_LIMIT_SECONDS);
-    setCanResend(false);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      let response;
-      if (isHost) {
-        response = await hostLogin(email, password, hostKeyword);
-      } else {
-        response = await login(email, password);
-      }
-
-      if (response.requiresOTP) {
-        setRequiresOTP(true);
-        setOtpSent(new Date());
-        toast.success('OTP sent to your email!');
-      } else {
-        toast.success('Login successful!');
-        navigate(isHost ? '/host' : '/dashboard');
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
-    } finally {
-      setLoading(false);
+  // Enable resend when countdown reaches 0
+  useEffect(() => {
+    if (resendCountdown === 0) {
+      setCanResend(true);
     }
-  };
+  }, [resendCountdown]);
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
