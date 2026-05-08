@@ -574,7 +574,7 @@ const AdminDashboard = () => {
                             {getStatusBadge(booking.status)}
                           </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                             {/* Manual confirmation removed - bookings auto-confirm after OTP */}
+                             {/* Manual confirmation removed - bookings auto-confirm */}
                            </td>
                         </tr>
                       ))}

@@ -23,8 +23,8 @@ exports.getDashboardStats = async (req, res) => {
     // Get confirmed bookings
     const confirmedBookings = hostBookings.filter(b => b.status === 'confirmed').length;
 
-    // Get pending bookings (OTP verified but not confirmed)
-    const pendingBookings = hostBookings.filter(b => b.status === 'pending' && b.isOtpVerified).length;
+    // Get pending bookings (not confirmed)
+    const pendingBookings = hostBookings.filter(b => b.status === 'pending').length;
 
     // Calculate total revenue
     const totalRevenue = hostBookings

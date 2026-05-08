@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const {
   createBooking,
-  verifyOTP,
-  resendOTP,
   getUserBookings,
   getBooking,
   cancelBooking,
@@ -17,16 +15,6 @@ const { auth, hostAuth } = require('../middleware/auth');
 // @desc    Create booking request
 // @access  Private
 router.post('/', auth, createBooking);
-
-// @route   POST /api/bookings/verify-otp
-// @desc    Verify OTP
-// @access  Private
-router.post('/verify-otp', auth, verifyOTP);
-
-// @route   POST /api/bookings/resend-otp
-// @desc    Resend OTP
-// @access  Private
-router.post('/resend-otp', auth, resendOTP);
 
 // @route   GET /api/bookings/user
 // @desc    Get user bookings

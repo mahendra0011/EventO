@@ -1,15 +1,7 @@
 const Booking = require('../models/Booking');
 const Event = require('../models/Event');
 const Notification = require('../models/Notification');
-const { sendOTPEmail, sendBookingConfirmationEmail } = require('../utils/email');
-const crypto = require('crypto');
-
-const OTP_EXPIRY_MINUTES = 10;
-const OTP_RATE_LIMIT_SECONDS = 60;
-
-const generateSecureOTP = () => {
-  return crypto.randomInt(100000, 999999).toString();
-};
+const { sendBookingConfirmationEmail } = require('../utils/email');
 
 exports.createBooking = async (req, res) => {
    try {
@@ -41,78 +33,48 @@ exports.createBooking = async (req, res) => {
        });
      }
 
-     // Check for OTP rate limit (minimum 1 minute gap between OTP requests)
-     const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
-     const recentOtpRequest = await Booking.findOne({
-       user: req.user.id,
-       event: eventId,
-       lastOtpSent: { $gt: oneMinuteAgo }
-     });
-
-     if (recentOtpRequest) {
-       return res.status(429).json({
-         message: `Please wait ${OTP_RATE_LIMIT_SECONDS} seconds before requesting another OTP`
-       });
-     }
-
-     // Generate secure 6-digit OTP
-     const otp = generateSecureOTP();
-     const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000); // 10 minutes validity
-
+     // Create booking directly without OTP
      const booking = new Booking({
        user: req.user.id,
        event: eventId,
        numberOfTickets,
        totalPrice: event.price * numberOfTickets,
        attendeeDetails,
-       otp,
-       otpExpires,
-       lastOtpSent: new Date(),
-       usedOtps: [] // Track used OTPs to prevent reuse
+       status: 'confirmed',
+       paymentStatus: 'completed'
      });
 
      await booking.save();
 
-     console.log('[Booking] Created booking', booking._id, 'for user', req.user.id, 'with email', req.user.email);
+     console.log('[Booking] Created booking', booking._id, 'for user', req.user.id);
      
-     // Send OTP via email
-     sendOTPEmail(req.user.email, otp, req.user.name, event.title)
-       .then(success => {
-         if (!success) {
-           console.warn('OTP email failed for booking', booking._id, 'to:', req.user.email);
-           // FALLBACK: Log OTP to console for testing when email fails
-           console.log('=============================================');
-           console.log('OTP FOR TESTING (EMAIL FAILED):', otp);
-           console.log('Email to:', req.user.email);
-           console.log('Valid until:', otpExpires.toISOString());
-           console.log('=============================================');
-         } else {
-           console.log('OTP email sent for booking', booking._id, 'to:', req.user.email, 'OTP:', otp);
-         }
-       })
-       .catch(err => {
-         console.error('OTP email error:', err.message);
-         // FALLBACK: Log OTP to console for testing when email fails
-         console.log('=============================================');
-         console.log('OTP FOR TESTING (EMAIL ERROR):', otp);
-         console.log('Email to:', req.user.email);
-         console.log('Valid until:', otpExpires.toISOString());
-         console.log('=============================================');
-       });
+     // Update event available tickets
+     event.availableTickets -= booking.numberOfTickets;
+     await event.save();
 
-     const eventWithOrganizer = await Event.findById(eventId).populate('organizer');
-     if (eventWithOrganizer?.organizer) {
-       await Notification.create({
-         user: eventWithOrganizer.organizer._id,
-         title: 'New Booking Request',
-         message: `${req.user.name} requested booking for "${event.title}"`,
-         type: 'booking',
-         link: '/host/bookings'
-       });
-     }
+     // Send confirmation email
+     sendBookingConfirmationEmail(
+       req.user.email,
+       req.user.name,
+       event.title,
+       {
+         numberOfTickets: booking.numberOfTickets,
+         totalPrice: booking.totalPrice,
+         bookingId: booking._id
+       }
+     ).catch(err => console.error('Confirmation email error:', err.message));
+
+     // Create notification for user
+     await Notification.create({
+       user: booking.user,
+       title: 'Booking Confirmed',
+       message: `Your booking for "${event.title}" is confirmed`,
+       type: 'booking',
+       link: `/bookings/${booking._id}/confirmation`
+     });
 
      res.status(201).json({
-       message: 'Booking created. Check your email for OTP verification.',
+       message: 'Booking confirmed successfully',
        bookingId: booking._id,
        totalPrice: event.price * numberOfTickets
      });

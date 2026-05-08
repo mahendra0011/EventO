@@ -482,14 +482,14 @@ const Home = () => {
                 bgStyle: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
                 glowColor: 'rgba(59, 130, 246, 0.5)'
               },
-              {
-                icon: ShieldCheck,
-                title: 'Secure Booking',
-                description: 'OTP verification for safety',
-                gradient: 'from-emerald-500 to-emerald-700',
-                bgStyle: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                glowColor: 'rgba(16, 185, 129, 0.5)'
-              },
+               {
+                 icon: ShieldCheck,
+                 title: 'Secure Booking',
+                 description: 'Instant confirmation for safety',
+                 gradient: 'from-emerald-500 to-emerald-700',
+                 bgStyle: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                 glowColor: 'rgba(16, 185, 129, 0.5)'
+               },
               {
                 icon: CreditCard,
                 title: 'Secure Payments',
@@ -768,7 +768,7 @@ const Home = () => {
                 name: 'Sarah Johnson',
                 role: 'Music Lover',
                 image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
-                quote: 'Booked tickets for my favorite band in seconds! The OTP verification gave me complete peace of mind.'
+                 quote: 'Booked tickets for my favorite band in seconds! The instant confirmation gave me complete peace of mind.'
               },
               {
                 name: 'Michael Chen',

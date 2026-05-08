@@ -30,27 +30,6 @@ const bookingSchema = new mongoose.Schema({
     enum: ['pending', 'completed', 'failed', 'refunded'],
     default: 'pending'
   },
-  // OTP fields for booking verification
-  otp: {
-    type: String,
-    select: false
-  },
-  otpExpires: {
-    type: Date,
-    select: false
-  },
-  lastOtpSent: {
-    type: Date,
-    select: false
-  },
-  usedOtps: [{
-    type: String
-  }],
-  isOtpVerified: {
-    type: Boolean,
-    default: false,
-    select: false
-  },
   attendeeDetails: [{
     name: String,
     email: String,

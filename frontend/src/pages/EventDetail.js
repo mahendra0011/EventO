@@ -16,9 +16,6 @@ const EventDetail = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [numberOfTickets, setNumberOfTickets] = useState(1);
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [bookingId, setBookingId] = useState(null);
-  const [showOtpModal, setShowOtpModal] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [avgRating, setAvgRating] = useState(0);
@@ -61,85 +58,54 @@ const EventDetail = () => {
     }
   };
 
-  const handleBooking = async () => {
-    if (!user) {
-      toast.error('Please login to book tickets');
-      navigate('/login');
-      return;
-    }
+   const handleBooking = async () => {
+     if (!user) {
+       toast.error('Please login to book tickets');
+       navigate('/login');
+       return;
+     }
 
-    setBookingLoading(true);
-    try {
-      const res = await api.post('/bookings', {
-        eventId: event._id,
-        numberOfTickets,
-        attendeeDetails: [{
-          name: user.name,
-          email: user.email,
-          phone: user.phone || ''
-        }]
-      });
+     setBookingLoading(true);
+     try {
+       const res = await api.post('/bookings', {
+         eventId: event._id,
+         numberOfTickets,
+         attendeeDetails: [{
+           name: user.name,
+           email: user.email,
+           phone: user.phone || ''
+         }]
+       });
 
-      setBookingId(res.data.bookingId);
-      setShowBookingModal(false);
-      setOtp('');
-      setShowOtpModal(true);
-      toast.success('OTP sent to your email!');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Booking failed');
-    } finally {
-      setBookingLoading(false);
-    }
-  };
+       navigate(`/booking/${res.data.bookingId}/confirmation`);
+       toast.success('Booking confirmed successfully!');
+     } catch (error) {
+       toast.error(error.response?.data?.message || 'Booking failed');
+     } finally {
+       setBookingLoading(false);
+     }
+   };
 
-  const handleVerifyOtp = async () => {
-    setBookingLoading(true);
-    try {
-      await api.post('/bookings/verify-otp', {
-        bookingId,
-        otp
-      });
-
-      toast.success('Booking confirmed successfully!');
-      setShowOtpModal(false);
-      navigate(`/booking/${bookingId}/confirmation`);
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'OTP verification failed');
-    } finally {
-      setBookingLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    try {
-      await api.post('/bookings/resend-otp', { bookingId });
-      setOtp('');
-      toast.success('OTP resent to your email!');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to resend OTP');
-    }
-  };
-
-  const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/events/${event._id}`;
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      toast.success('Event link copied to clipboard!');
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = shareUrl;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      setCopied(true);
-      toast.success('Event link copied to clipboard!');
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+   const handleShare = async () => {
+     const shareUrl = `${window.location.origin}/events/${event._id}`;
+     try {
+       await navigator.clipboard.writeText(shareUrl);
+       setCopied(true);
+       toast.success('Event link copied to clipboard!');
+       setTimeout(() => setCopied(false), 2000);
+     } catch (err) {
+       // Fallback for older browsers
+       const textArea = document.createElement('textarea');
+       textArea.value = shareUrl;
+       document.body.appendChild(textArea);
+       textArea.select();
+       document.execCommand('copy');
+       document.body.removeChild(textArea);
+       setCopied(true);
+       toast.success('Event link copied to clipboard!');
+       setTimeout(() => setCopied(false), 2000);
+     }
+   };
 
   const handleWishlist = async () => {
     if (!user) {
@@ -527,83 +493,47 @@ const EventDetail = () => {
         </div>
       </div>
 
-      {/* Booking Confirmation Modal */}
-      {showBookingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-4">Confirm Booking</h2>
-            <div className="space-y-4 mb-6">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Event</span>
-                <span className="font-semibold">{event.title}</span>
+        {/* Booking Confirmation Modal */}
+        {showBookingModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+              <h2 className="text-2xl font-bold mb-4">Confirm Booking</h2>
+              <div className="space-y-4 mb-6">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Event</span>
+                  <span className="font-semibold">{event.title}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Tickets</span>
+                  <span className="font-semibold">{numberOfTickets}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Amount</span>
+                  <span className="font-semibold text-primary-600">₹{(event.price * numberOfTickets).toLocaleString('en-IN')}</span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tickets</span>
-                <span className="font-semibold">{numberOfTickets}</span>
+              <p className="text-gray-600 mb-6">
+                Your booking has been confirmed successfully!
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowBookingModal(false)}
+                  className="flex-1 btn-secondary"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => navigate(`/booking/${res.data.bookingId}/confirmation`)}
+                  className="flex-1 btn-primary"
+                >
+                  View Confirmation
+                </button>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Amount</span>
-                <span className="font-semibold text-primary-600">₹{(event.price * numberOfTickets).toLocaleString('en-IN')}</span>
-              </div>
-            </div>
-            <p className="text-gray-600 mb-6">
-              An OTP will be sent to your email for verification.
-            </p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowBookingModal(false)}
-                className="flex-1 btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleBooking}
-                disabled={bookingLoading}
-                className="flex-1 btn-primary"
-              >
-                {bookingLoading ? 'Processing...' : 'Confirm'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* OTP Verification Modal */}
-      {showOtpModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-4">Verify OTP</h2>
-            <p className="text-gray-600 mb-6">
-              Enter the 6-digit OTP sent to your email address.
-            </p>
-            <input
-              type="text"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              placeholder="Enter OTP"
-              maxLength={6}
-              className="input-field text-center text-2xl tracking-widest mb-6"
-            />
-            <div className="flex gap-4">
-              <button
-                onClick={handleResendOtp}
-                className="flex-1 btn-secondary"
-              >
-                Resend OTP
-              </button>
-              <button
-                onClick={handleVerifyOtp}
-                disabled={bookingLoading || otp.length !== 6}
-                className="flex-1 btn-primary"
-              >
-                {bookingLoading ? 'Verifying...' : 'Verify'}
-              </button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  };
 
 export default EventDetail;

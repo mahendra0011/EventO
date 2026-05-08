@@ -15,7 +15,7 @@ exports.getDashboardStats = async (req, res) => {
     const confirmedBookings = await Booking.countDocuments({ status: 'confirmed' });
 
     // Get pending bookings
-    const pendingBookings = await Booking.countDocuments({ status: 'pending', isOtpVerified: true });
+    const pendingBookings = await Booking.countDocuments({ status: 'pending' });
 
     // Get total users
     const totalUsers = await User.countDocuments({ role: 'user' });
