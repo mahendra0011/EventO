@@ -179,6 +179,7 @@ const EventDetail = () => {
         setBookingOtpTimer(10 * 60);
         setBookingResendCountdown(60);
         setBookingCanResend(false);
+        setBookingOtp('');
         toast.success('OTP resent to your email!');
       } catch (error) {
         toast.error(error.response?.data?.message || 'Failed to resend OTP');

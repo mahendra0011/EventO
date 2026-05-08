@@ -118,6 +118,7 @@ const Login = () => {
       setOtpTimer(OTP_EXPIRY_MINUTES * 60);
       setResendCountdown(OTP_RATE_LIMIT_SECONDS);
       setCanResend(false);
+      setOtp('');
       toast.success('OTP resent to your email!');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to resend OTP');
