@@ -16,7 +16,9 @@ const Register = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { register, hostRegister } = useAuth();
+  const [showVerification, setShowVerification] = useState(false);
+  const [otp, setOtp] = useState('');
+  const { register, hostRegister, verifyEmail, resendVerification } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -50,14 +52,46 @@ const Register = () => {
         navigate('/host');
       } else {
         // Regular user registration
-        await register(formData.name, formData.email, formData.password, formData.phone);
-        toast.success('Registration successful!');
-        navigate('/dashboard');
+        const res = await register(formData.name, formData.email, formData.password, formData.phone);
+        if (res.requiresVerification) {
+          setShowVerification(true);
+          toast.success('Please check your email for verification code');
+        } else {
+          toast.success('Registration successful!');
+          navigate('/dashboard');
+        }
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.length !== 6) {
+      toast.error('Please enter a valid 6-digit code');
+      return;
+    }
+    setLoading(true);
+    try {
+      await verifyEmail(otp);
+      toast.success('Email verified successfully!');
+      navigate('/dashboard');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await resendVerification();
+      toast.success('Verification code resent!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to resend');
     }
   };
 
@@ -226,17 +260,54 @@ const Register = () => {
             </button>
           </form>
 
+          {/* Verification Screen */}
+          {showVerification && (
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Verify Your Email</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Please enter the 6-digit code sent to your email
+              </p>
+              <form onSubmit={handleVerifyOtp} className="space-y-3">
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Enter 6-digit code"
+                  className="input-field text-center text-2xl tracking-widest"
+                  maxLength={6}
+                />
+                <button
+                  type="submit"
+                  disabled={loading || otp.length !== 6}
+                  className="w-full btn-primary"
+                >
+                  {loading ? 'Verifying...' : 'Verify Email'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={loading}
+                  className="w-full text-primary-600 hover:text-primary-700 text-sm font-medium"
+                >
+                  Resend Code
+                </button>
+              </form>
+            </div>
+          )}
+
           {/* Divider */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or</span>
+          {!showVerification && (
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Or</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Login Link */}
           <div className="mt-6 text-center">

@@ -65,19 +65,32 @@ export const AuthProvider = ({ children }) => {
       return res.data;
     };
 
-   const hostRegister = async (name, email, password, phone, secretKeyword) => {
-     const res = await api.post('/auth/host-keyword-register', { name, email, password, phone, secretKeyword });
-     localStorage.setItem('token', res.data.token);
-     setUser(res.data.user);
-     return res.data;
-   };
+const hostRegister = async (name, email, password, phone, secretKeyword) => {
+      const res = await api.post('/auth/host-keyword-register', { name, email, password, phone, secretKeyword });
+      localStorage.setItem('token', res.data.token);
+      setUser(res.data.user);
+      return res.data;
+    };
 
-   const register = async (name, email, password, phone) => {
-     const res = await api.post('/auth/register', { name, email, password, phone });
-     localStorage.setItem('token', res.data.token);
-     setUser(res.data.user);
-     return res.data;
-   };
+    const register = async (name, email, password, phone) => {
+      const res = await api.post('/auth/register', { name, email, password, phone });
+      localStorage.setItem('token', res.data.token);
+      if (!res.data.requiresVerification) {
+        setUser(res.data.user);
+      }
+      return res.data;
+    };
+
+    const verifyEmail = async (otp) => {
+      const res = await api.post('/auth/verify-email', { otp });
+      setUser(res.data.user);
+      return res.data;
+    };
+
+    const resendVerification = async () => {
+      const res = await api.post('/auth/resend-verification');
+      return res.data;
+    };
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -103,7 +116,9 @@ export const AuthProvider = ({ children }) => {
       verifyLoginOTP,
       resendLoginOTP,
       verifyBookingOTP,
-      resendBookingOTP
+      resendBookingOTP,
+      verifyEmail,
+      resendVerification
     }}>
       {children}
     </AuthContext.Provider>
