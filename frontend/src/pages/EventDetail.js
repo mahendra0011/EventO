@@ -146,6 +146,13 @@ const EventDetail = () => {
       };
     }, [showBookingModal, bookingCanResend, bookingResendCountdown]);
 
+    // Enable resend when countdown reaches 0
+    useEffect(() => {
+      if (bookingResendCountdown === 0) {
+        setBookingCanResend(true);
+      }
+    }, [bookingResendCountdown]);
+
     const handleVerifyBookingOTP = async (e) => {
       e.preventDefault();
       if (!bookingOtp || bookingOtp.length !== 6) {

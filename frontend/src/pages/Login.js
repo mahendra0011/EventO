@@ -16,7 +16,6 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [requiresOTP, setRequiresOTP] = useState(false);
   const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(null);
   const [otpTimer, setOtpTimer] = useState(OTP_EXPIRY_MINUTES * 60);
   const [canResend, setCanResend] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(OTP_RATE_LIMIT_SECONDS);
