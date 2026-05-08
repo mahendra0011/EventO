@@ -119,10 +119,34 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    // Check if login OTP verification is required
     if (!user.loginOtpVerified) {
-      return res.status(403).json({ 
-        message: 'Please verify your email first. Check your inbox for the verification code.',
-        requiresVerification: true 
+      // Rate limiting for login OTP
+      const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
+      if (user.lastLoginOtpSent && user.lastLoginOtpSent > oneMinuteAgo) {
+        return res.status(429).json({
+          message: `Please wait ${OTP_RATE_LIMIT_SECONDS} seconds before requesting another code`
+        });
+      }
+
+      // Generate and send login OTP
+      const otp = generateSecureOTP();
+      const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+      user.loginOtp = otp;
+      user.loginOtpExpires = otpExpires;
+      user.lastLoginOtpSent = new Date();
+      await user.save();
+
+      sendLoginOTPEmail(user.email, otp, user.name)
+        .then(success => {
+          if (!success) console.warn('Login OTP email failed');
+        })
+        .catch(err => console.error('Login OTP email error:', err.message));
+
+      return res.status(200).json({
+        message: 'Login OTP sent to your email. Please verify to continue.',
+        requiresLoginOtp: true
       });
     }
 
@@ -180,6 +204,90 @@ exports.verifyEmail = async (req, res) => {
     });
   } catch (error) {
     console.error('Verify email error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.verifyLoginOtp = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.loginOtp) {
+      return res.status(400).json({ message: 'No login OTP pending' });
+    }
+
+    if (user.loginOtpExpires < new Date()) {
+      return res.status(400).json({ message: 'Login OTP has expired' });
+    }
+
+    if (user.loginOtp !== otp) {
+      return res.status(400).json({ message: 'Invalid login OTP' });
+    }
+
+    user.loginOtp = undefined;
+    user.loginOtpExpires = undefined;
+    user.loginOtpVerified = true;
+    await user.save();
+
+    const token = generateToken(user._id);
+
+    res.json({
+      message: 'Login verified successfully',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Verify login OTP error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.resendLoginOtp = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.loginOtpVerified) {
+      return res.status(400).json({ message: 'Login already verified' });
+    }
+
+    const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
+    if (user.lastLoginOtpSent > oneMinuteAgo) {
+      return res.status(429).json({
+        message: `Please wait ${OTP_RATE_LIMIT_SECONDS} seconds before requesting another code`
+      });
+    }
+
+    const otp = generateSecureOTP();
+    const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    user.loginOtp = otp;
+    user.loginOtpExpires = otpExpires;
+    user.lastLoginOtpSent = new Date();
+    await user.save();
+
+    sendLoginOTPEmail(user.email, otp, user.name)
+      .then(success => {
+        if (!success) console.warn('Resend login OTP email failed');
+      })
+      .catch(err => console.error('Resend login OTP error:', err.message));
+
+    res.json({ message: 'Login OTP resent successfully' });
+  } catch (error) {
+    console.error('Resend login OTP error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
