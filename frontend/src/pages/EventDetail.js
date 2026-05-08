@@ -24,6 +24,7 @@ const EventDetail = () => {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [copied, setCopied] = useState(false);
+  const [lastBookingId, setLastBookingId] = useState(null);
 
   useEffect(() => {
     fetchEvent();
@@ -66,20 +67,21 @@ const EventDetail = () => {
      }
 
      setBookingLoading(true);
-     try {
-       const res = await api.post('/bookings', {
-         eventId: event._id,
-         numberOfTickets,
-         attendeeDetails: [{
-           name: user.name,
-           email: user.email,
-           phone: user.phone || ''
-         }]
-       });
+      try {
+        const res = await api.post('/bookings', {
+          eventId: event._id,
+          numberOfTickets,
+          attendeeDetails: [{
+            name: user.name,
+            email: user.email,
+            phone: user.phone || ''
+          }]
+        });
 
-       navigate(`/booking/${res.data.bookingId}/confirmation`);
-       toast.success('Booking confirmed successfully!');
-     } catch (error) {
+        setLastBookingId(res.data.bookingId);
+        setShowBookingModal(true);
+        toast.success('Booking confirmed successfully!');
+      } catch (error) {
        toast.error(error.response?.data?.message || 'Booking failed');
      } finally {
        setBookingLoading(false);
@@ -522,10 +524,10 @@ const EventDetail = () => {
                 >
                   Close
                 </button>
-                <button
-                  onClick={() => navigate(`/booking/${res.data.bookingId}/confirmation`)}
-                  className="flex-1 btn-primary"
-                >
+                  <button
+                    onClick={() => navigate(`/booking/${lastBookingId}/confirmation`)}
+                    className="flex-1 btn-primary"
+                  >
                   View Confirmation
                 </button>
               </div>
