@@ -1,256 +1,155 @@
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
-const EMAIL_PROVIDER_RAW = process.env.EMAIL_PROVIDER || 'gmail';
+const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
+const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'sandbox808f4534764043d6972145653dd80fbd.mailgun.org';
+const MAILGUN_BASE_URL = process.env.MAILGUN_BASE_URL || 'https://api.mailgun.net';
+const AUTHORIZED_RECIPIENTS = (process.env.AUTHORIZED_RECIPIENTS || 'sourceforget32@gmail.com').split(',').map(e => e.trim());
 
-/** Gmail app passwords are often pasted with spaces; SMTP expects 16 chars without spaces. */
-function normalizeCredentials() {
-  const rawUser = (process.env.EMAIL_USER || '').trim();
-  let rawPass = (process.env.EMAIL_PASS || '').trim();
-  const isEtherealUser = rawUser.endsWith('@ethereal.email');
-  const provider = EMAIL_PROVIDER_RAW;
-  const useEthereal = provider === 'ethereal' && isEtherealUser;
-  if (!useEthereal) {
-    rawPass = rawPass.replace(/\s+/g, '');
+const mailgunAuth = {
+  username: 'api',
+  password: MAILGUN_API_KEY
+};
+
+const isAuthorizedRecipient = (email) => {
+  return AUTHORIZED_RECIPIENTS.includes(email.toLowerCase());
+};
+
+const sendEmail = async (to, subject, text, html = null) => {
+  if (!isAuthorizedRecipient(to)) {
+    console.warn(`[Mailgun] Email to ${to} not in authorized recipients list`);
+    console.log(`[Mailgun] Would send: Subject="${subject}", Text="${text.substring(0, 100)}..."`);
+    return { success: true, message: 'Email logged (not authorized recipient)' };
   }
-  return { EMAIL_USER: rawUser, EMAIL_PASS: rawPass, useEthereal };
-}
 
-const { EMAIL_USER, EMAIL_PASS, useEthereal } = normalizeCredentials();
-
-let transporter;
-let emailEnabled = true;
-
-// Initialize transporter based on provider
-function initializeTransporter() {
   try {
-    if (!EMAIL_USER || !EMAIL_PASS) {
-      console.warn('========================================');
-      console.warn('Email credentials (EMAIL_USER / EMAIL_PASS) not found in .env');
-      console.warn('Email sending will be disabled.');
-      console.warn('Run "node setup-ethereal.js" for free testing SMTP');
-      console.warn('========================================');
-      emailEnabled = false;
-      return;
-    }
-
-    if (EMAIL_PROVIDER_RAW === 'ethereal' && !useEthereal) {
-      console.warn('EMAIL_PROVIDER is ethereal but EMAIL_USER is not @ethereal.email — using Gmail SMTP.');
-    }
-
-    if (useEthereal) {
-      transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        pool: true,
-        auth: {
-          user: EMAIL_USER,
-          pass: EMAIL_PASS
-        }
-      });
-      console.log('Email transporter: Ethereal (testing, pooled)');
+    const formData = new URLSearchParams();
+    formData.append('from', `Evento <noreply@${MAILGUN_DOMAIN}>`);
+    formData.append('to', to);
+    formData.append('subject', subject);
+    if (html) {
+      formData.append('html', html);
     } else {
-      transporter = nodemailer.createTransport({
-        service: 'gmail',
-        pool: true,
-        maxConnections: 3,
-        maxMessages: 100,
-        auth: {
-          user: EMAIL_USER,
-          pass: EMAIL_PASS
-        }
-      });
-      console.log('Email transporter: Gmail (pool, App Password recommended)');
+      formData.append('text', text);
     }
 
-    // Log-only verify — do not toggle emailEnabled off on failure (hosted networks often fail verify while sendMail works).
-    transporter.verify((error) => {
-      if (error) {
-        console.warn('Email transporter verify warning (sends may still work):', error.message);
-      } else {
-        console.log('Email transporter is ready');
-      }
+    const response = await axios.post(`${MAILGUN_BASE_URL}/v3/${MAILGUN_DOMAIN}/messages`, formData, {
+      auth: mailgunAuth
     });
+
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error('Failed to initialize email transporter:', error.message);
-    emailEnabled = false;
-  }
-}
-
-initializeTransporter();
-
-// Generic send with single retry after short delay (helps flaky SMTP connections)
-const sendEmail = async (mailOptions) => {
-  if (!emailEnabled || !transporter) {
-    console.log('Email disabled. Would send to:', mailOptions.to);
-    console.log('Subject:', mailOptions.subject);
-    return false;
-  }
-
-  const attempt = async () => {
-    try {
-      const info = await transporter.sendMail(mailOptions);
-      console.log('Email sent:', info.messageId);
-      const previewUrl = nodemailer.getTestMessageUrl(info);
-      if (previewUrl) {
-        console.log('Preview URL:', previewUrl);
-      }
-      return true;
-    } catch (error) {
-      console.error('Email send failed:', error.message);
-      console.error('To:', mailOptions.to, 'From:', mailOptions.from);
-      throw error;
-    }
-  };
-
-  try {
-    return await attempt();
-  } catch (error) {
-    try {
-      await new Promise((r) => setTimeout(r, 400));
-      return await attempt();
-    } catch (retryErr) {
-      console.error('Email retry failed:', retryErr.message);
-      return false;
-    }
+    console.error('[Mailgun] Email send error:', error.response?.data || error.message);
+    return { success: false, error: error.message };
   }
 };
 
-// Login notification email
-exports.sendLoginNotificationEmail = async (email, name, ipAddress = 'Unknown') => {
-  const mailOptions = {
-    from: `"Evento" <${EMAIL_USER}>`,
-    to: email,
-    subject: 'Evento - Successfully Logged In',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 28px;">Evento</h1>
-          <p style="color: white; margin-top: 10px; opacity: 0.9;">Event Booking Platform</p>
-        </div>
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #333; margin-top: 0;">Welcome back, ${name}! 👋</h2>
-          <p style="color: #666; font-size: 16px; line-height: 1.6;">
-            You have successfully logged into your Evento account. This login notification is for your security.
-          </p>
-          <div style="background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #667eea;">
-            <h3 style="color: #667eea; margin-top: 0;">Login Details:</h3>
-            <p style="color: #666; margin: 5px 0;"><strong>Email:</strong> ${email}</p>
-            <p style="color: #666; margin: 5px 0;"><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-            <p style="color: #666; margin: 5px 0;"><strong>IP Address:</strong> ${ipAddress}</p>
-          </div>
-          <p style="color: #666; font-size: 14px; line-height: 1.6;">
-            If this was not you, please secure your account immediately by changing your password or contact our support team.
-          </p>
-          <a href="${FRONTEND_URL}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 10px;">
-            Go to Dashboard
-          </a>
-        </div>
-        <div style="background: #333; padding: 20px; text-align: center;">
-          <p style="color: #999; margin: 0; font-size: 12px;">
-            © 2024 Evento. All rights reserved.<br>
-            You received this email because you logged into your Evento account.
-          </p>
-        </div>
-      </div>
-    `
-  };
-
-  return sendEmail(mailOptions);
+const generateSecureOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Simple OTP Email (plain text)
+const OTP_EXPIRY_MINUTES = 10;
+const OTP_RATE_LIMIT_SECONDS = 60;
+
 exports.sendOTPEmail = async (email, otp, name, eventTitle = 'Event Booking') => {
-  const mailOptions = {
-    from: `"Evento" <${EMAIL_USER}>`,
-    to: email,
-    subject: 'Your Event Booking Verification Code',
-    text: `Hello ${name},
+  const subject = 'Your Event Booking Verification Code';
+  const text = `Hello ${name},
 
 Your verification code for booking ${eventTitle} is: ${otp}
 
-This code is valid for 10 minutes and can only be used once.
+This code is valid for ${OTP_EXPIRY_MINUTES} minutes and can only be used once.
 
 Please do not share this code with anyone.
 
-Evento Team`
-  };
+Evento Team`;
 
-  return sendEmail(mailOptions);
+  return sendEmail(email, subject, text);
 };
 
-// Booking Confirmation Email
 exports.sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDetails) => {
-  const mailOptions = {
-    from: `"Evento" <${EMAIL_USER}>`,
-    to: email,
-    subject: `Evento - Booking Confirmed for ${eventTitle}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-          <h1 style="color: white; margin: 0;">Evento</h1>
-          <p style="color: white; margin-top: 10px;">Event Booking Platform</p>
-        </div>
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #333;">Booking Confirmed! 🎉</h2>
-          <p style="color: #666; font-size: 16px;">Hello ${name},</p>
-          <p style="color: #666; font-size: 16px;">Your booking for <strong>${eventTitle}</strong> has been confirmed.</p>
-          <div style="background: white; padding: 20px; margin: 20px 0; border-radius: 8px;">
-            <h3 style="color: #667eea; margin-top: 0;">Booking Details:</h3>
-            <p style="color: #666; margin: 5px 0;"><strong>Event:</strong> ${eventTitle}</p>
-            <p style="color: #666; margin: 5px 0;"><strong>Tickets:</strong> ${bookingDetails.numberOfTickets}</p>
-            <p style="color: #666; margin: 5px 0;"><strong>Total Amount:</strong> $${bookingDetails.totalPrice}</p>
-            <p style="color: #666; margin: 5px 0;"><strong>Booking ID:</strong> ${bookingDetails.bookingId}</p>
-          </div>
-          <p style="color: #666; font-size: 14px;">Thank you for choosing Evento!</p>
-        </div>
-        <div style="background: #333; padding: 20px; text-align: center;">
-          <p style="color: #999; margin: 0; font-size: 12px;">© 2024 Evento. All rights reserved.</p>
-        </div>
+  const subject = `Evento - Booking Confirmed for ${eventTitle}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #667eea; padding: 30px; text-align: center;">
+        <h1 style="color: white; margin: 0;">Evento</h1>
+        <p style="color: white; margin-top: 10px;">Event Booking Platform</p>
       </div>
-    `
-  };
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333;">Booking Confirmed! 🎉</h2>
+        <p style="color: #666; font-size: 16px;">Hello ${name},</p>
+        <p style="color: #666; font-size: 16px;">Your booking for <strong>${eventTitle}</strong> has been confirmed.</p>
+        <div style="background: white; padding: 20px; margin: 20px 0; border-radius: 8px;">
+          <h3 style="color: #667eea; margin-top: 0;">Booking Details:</h3>
+          <p style="color: #666; margin: 5px 0;"><strong>Event:</strong> ${eventTitle}</p>
+          <p style="color: #666; margin: 5px 0;"><strong>Tickets:</strong> ${bookingDetails.numberOfTickets}</p>
+          <p style="color: #666; margin: 5px 0;"><strong>Total Amount:</strong> $${bookingDetails.totalPrice}</p>
+          <p style="color: #666; margin: 5px 0;"><strong>Booking ID:</strong> ${bookingDetails.bookingId}</p>
+        </div>
+        <p style="color: #666; font-size: 14px;">Thank you for choosing Evento!</p>
+      </div>
+      <div style="background: #333; padding: 20px; text-align: center;">
+        <p style="color: #999; margin: 0; font-size: 12px;">© 2024 Evento. All rights reserved.</p>
+      </div>
+    </div>
+  `;
 
-  return sendEmail(mailOptions);
+  return sendEmail(email, subject, '', html);
 };
 
-// Host Message Email
-exports.sendHostMessageEmail = async (recipientEmail, recipientName, subject, content, eventTitle, senderName) => {
-  const mailOptions = {
-    from: `"Evento" <${EMAIL_USER}>`,
-    to: recipientEmail,
-    subject: `Evento - Message from ${senderName} regarding ${eventTitle}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-          <h1 style="color: white; margin: 0;">Evento</h1>
-          <p style="color: white; margin-top: 10px;">Event Booking Platform</p>
-        </div>
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #333;">Message from Event Host</h2>
-          <p style="color: #666; font-size: 16px;">Hello ${recipientName},</p>
-          <p style="color: #666; font-size: 16px;">You have received a message from <strong>${senderName}</strong> regarding <strong>${eventTitle}</strong>:</p>
-          <div style="background: white; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px;">
-            ${content.split('\n').map((line) => `<p style="color: #333; margin: 5px 0;">${line}</p>`).join('')}
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            You can reply to this message by logging into your Evento dashboard.
-          </p>
-          <p style="color: #666; font-size: 14px;">
-            <a href="${FRONTEND_URL}/dashboard/messages" style="color: #667eea; text-decoration: none; font-weight: bold;">
-              Go to Messages
-            </a>
-          </p>
-        </div>
-        <div style="background: #333; padding: 20px; text-align: center;">
-          <p style="color: #999; margin: 0; font-size: 12px;">© 2024 Evento. All rights reserved.</p>
-        </div>
+exports.sendLoginNotificationEmail = async (email, name, ipAddress = 'Unknown') => {
+  const subject = 'Evento - Successfully Logged In';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #667eea; padding: 30px; text-align: center;">
+        <h1 style="color: white; margin: 0;">Evento</h1>
+        <p style="color: white; margin-top: 10px; opacity: 0.9;">Event Booking Platform</p>
       </div>
-    `
-  };
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #333; margin-top: 0;">Welcome back, ${name}! 👋</h2>
+        <p style="color: #666; font-size: 16px; line-height: 1.6;">
+          You have successfully logged into your Evento account.
+        </p>
+        <div style="background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #667eea;">
+          <h3 style="color: #667eea; margin-top: 0;">Login Details:</h3>
+          <p style="color: #666; margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+          <p style="color: #666; margin: 5px 0;"><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+          <p style="color: #666; margin: 5px 0;"><strong>IP Address:</strong> ${ipAddress}</p>
+        </div>
+        <p style="color: #666; font-size: 14px; line-height: 1.6;">
+          If this was not you, please secure your account immediately.
+        </p>
+        <a href="${FRONTEND_URL}/dashboard" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 10px;">
+          Go to Dashboard
+        </a>
+      </div>
+      <div style="background: #333; padding: 20px; text-align: center;">
+        <p style="color: #999; margin: 0; font-size: 12px;">
+          © 2024 Evento. All rights reserved.
+        </p>
+      </div>
+    </div>
+  `;
 
-  return sendEmail(mailOptions);
+  return sendEmail(email, subject, '', html);
 };
+
+exports.sendLoginOTPEmail = async (email, otp, name) => {
+  const subject = 'Your Login Verification Code';
+  const text = `Hello ${name},
+
+Your login verification code is: ${otp}
+
+This code is valid for ${OTP_EXPIRY_MINUTES} minutes.
+
+Please do not share this code with anyone.
+
+Evento Team`;
+
+  return sendEmail(email, subject, text);
+};
+
+exports.generateSecureOTP = generateSecureOTP;
+exports.OTP_EXPIRY_MINUTES = OTP_EXPIRY_MINUTES;
+exports.OTP_RATE_LIMIT_SECONDS = OTP_RATE_LIMIT_SECONDS;
