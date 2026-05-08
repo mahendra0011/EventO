@@ -24,19 +24,39 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   };
 
-   const login = async (email, password) => {
-     const res = await api.post('/auth/login', { email, password });
-     localStorage.setItem('token', res.data.token);
-     setUser(res.data.user);
-     return res.data;
-   };
+    const login = async (email, password) => {
+      const res = await api.post('/auth/login', { email, password });
+      localStorage.setItem('token', res.data.token);
+      setUser(res.data.user);
+      return res.data;
+    };
 
-   const hostLogin = async (email, password, hostKeyword) => {
-     const res = await api.post('/auth/host-keyword-login', { email, password, hostKeyword });
-     localStorage.setItem('token', res.data.token);
-     setUser(res.data.user);
-     return res.data;
-   };
+    const verifyLoginOTP = async (otp) => {
+      const res = await api.post('/auth/verify-login-otp', { otp });
+      return res.data;
+    };
+
+    const resendLoginOTP = async () => {
+      const res = await api.post('/auth/resend-login-otp');
+      return res.data;
+    };
+
+    const hostLogin = async (email, password, hostKeyword) => {
+      const res = await api.post('/auth/host-keyword-login', { email, password, hostKeyword });
+      localStorage.setItem('token', res.data.token);
+      setUser(res.data.user);
+      return res.data;
+    };
+
+    const verifyBookingOTP = async (bookingId, otp) => {
+      const res = await api.post('/bookings/verify-otp', { bookingId, otp });
+      return res.data;
+    };
+
+    const resendBookingOTP = async (bookingId) => {
+      const res = await api.post('/bookings/resend-otp', { bookingId });
+      return res.data;
+    };
 
    const hostRegister = async (name, email, password, phone, secretKeyword) => {
      const res = await api.post('/auth/host-keyword-register', { name, email, password, phone, secretKeyword });
@@ -64,7 +84,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateProfile, hostLogin, hostRegister }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      login,
+      register,
+      logout,
+      updateProfile,
+      hostLogin,
+      hostRegister,
+      verifyLoginOTP,
+      resendLoginOTP,
+      verifyBookingOTP,
+      resendBookingOTP
+    }}>
       {children}
     </AuthContext.Provider>
   );

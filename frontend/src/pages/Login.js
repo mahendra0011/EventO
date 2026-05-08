@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { Mail, Lock, Eye, EyeOff, Calendar, Key, Shield } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Calendar, Key, Shield, ShieldCheck, Timer, RefreshCw } from 'lucide-react';
+
+const OTP_EXPIRY_MINUTES = 10;
+const OTP_RATE_LIMIT_SECONDS = 60;
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -11,9 +14,18 @@ const Login = () => {
   const [hostKeyword, setHostKeyword] = useState('');
   const [isHost, setIsHost] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login, hostLogin } = useAuth();
+  const [requiresOTP, setRequiresOTP] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(null);
+  const [otpTimer, setOtpTimer] = useState(OTP_EXPIRY_MINUTES * 60);
+  const [canResend, setCanResend] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(OTP_RATE_LIMIT_SECONDS);
+
+  const { login, hostLogin, verifyLoginOTP, resendLoginOTP } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const timerInterval = useRef(null);
+  const resendInterval = useRef(null);
 
   useEffect(() => {
     if (searchParams.get('host') === 'true') {
@@ -21,19 +33,54 @@ const Login = () => {
     }
   }, [searchParams]);
 
+  // OTP countdown timer
+  useEffect(() => {
+    if (requiresOTP && otpTimer > 0) {
+      timerInterval.current = setInterval(() => {
+        setOtpTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timerInterval.current) clearInterval(timerInterval.current);
+    };
+  }, [requiresOTP, otpTimer]);
+
+  // Resend countdown
+  useEffect(() => {
+    if (requiresOTP && resendCountdown > 0) {
+      resendInterval.current = setInterval(() => {
+        setResendCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (resendInterval.current) clearInterval(resendInterval.current);
+    };
+  }, [requiresOTP, resendCountdown]);
+
+  const startResendCountdown = () => {
+    setResendCountdown(OTP_RATE_LIMIT_SECONDS);
+    setCanResend(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      let response;
       if (isHost) {
-        await hostLogin(email, password, hostKeyword);
-        toast.success('Host login successful!');
-        navigate('/host');
+        response = await hostLogin(email, password, hostKeyword);
       } else {
-        await login(email, password);
+        response = await login(email, password);
+      }
+
+      if (response.requiresOTP) {
+        setRequiresOTP(true);
+        setOtpSent(new Date());
+        toast.success('OTP sent to your email!');
+      } else {
         toast.success('Login successful!');
-        navigate('/dashboard');
+        navigate(isHost ? '/host' : '/dashboard');
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
@@ -42,6 +89,155 @@ const Login = () => {
     }
   };
 
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.length !== 6) {
+      toast.error('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await verifyLoginOTP(otp);
+      toast.success('Login verified successfully!');
+      navigate(isHost ? '/host' : '/dashboard');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setLoading(true);
+    try {
+      await resendLoginOTP();
+      setOtpTimer(OTP_EXPIRY_MINUTES * 60);
+      setOtpSent(new Date());
+      startResendCountdown();
+      toast.success('OTP resent to your email!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to resend OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // OTP Verification View
+  if (requiresOTP) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-xl shadow-2xl p-8">
+            {/* Logo */}
+            <div className="text-center mb-8">
+              <Link to="/" className="inline-flex items-center space-x-2">
+                <Calendar className="h-10 w-10 text-primary-600" />
+                <span className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+                  Evento
+                </span>
+              </Link>
+              <h2 className="mt-4 text-2xl font-bold text-gray-900">Verify Your Email</h2>
+              <p className="mt-2 text-gray-600">
+                We sent a 6-digit code to <strong>{email}</strong>
+              </p>
+            </div>
+
+            {/* OTP Form */}
+            <form onSubmit={handleVerifyOTP} className="space-y-5">
+              {/* OTP Input */}
+              <div>
+                <label htmlFor="otp" className="label">Enter Verification Code</label>
+                <div className="relative">
+                  <ShieldCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    id="otp"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    required
+                    className="input-field pl-10 text-center text-2xl tracking-widest"
+                    placeholder="000000"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Timer */}
+              <div className="flex items-center justify-center space-x-2 text-gray-600">
+                <Timer className="h-4 w-4" />
+                <span className="text-sm">
+                  Expires in <strong>{formatTime(otpTimer)}</strong>
+                </span>
+              </div>
+
+              {/* Verify Button */}
+              <button
+                type="submit"
+                disabled={loading || otpTimer === 0}
+                className="w-full btn-primary"
+              >
+                {loading ? 'Verifying...' : 'Verify OTP'}
+              </button>
+            </form>
+
+            {/* Resend */}
+            <div className="mt-6 text-center">
+              {canResend ? (
+                <button
+                  onClick={handleResendOTP}
+                  disabled={loading}
+                  className="text-primary-600 hover:text-primary-700 font-semibold flex items-center justify-center mx-auto space-x-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Resend OTP</span>
+                </button>
+              ) : (
+                <p className="text-sm text-gray-600">
+                  Resend OTP in <strong>{resendCountdown}s</strong>
+                </p>
+              )}
+            </div>
+
+            {/* Back to Login */}
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => {
+                  setRequiresOTP(false);
+                  setOtp('');
+                  setOtpTimer(OTP_EXPIRY_MINUTES * 60);
+                  setCanResend(false);
+                  setResendCountdown(OTP_RATE_LIMIT_SECONDS);
+                }}
+                className="text-gray-600 hover:text-gray-800 text-sm"
+              >
+                ← Back to Login
+              </button>
+            </div>
+
+            {/* Info */}
+            <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p className="text-xs text-yellow-800">
+                <strong>Tip:</strong> Check your spam folder if you don't see the email.
+                <br />
+                OTP is valid for {OTP_EXPIRY_MINUTES} minutes.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular Login Form (original JSX)
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
@@ -162,18 +358,18 @@ const Login = () => {
             </p>
           </div>
 
-           {/* Info Box */}
-           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-             <p className="text-xs text-gray-600">
-               <strong className="text-primary-700">Users:</strong> Use email & password to login.
-               <br />
-               <strong className="text-secondary-700">Hosts:</strong> Check "Login as Host" and enter secret keyword.
-               <br />
-               <Link to="/register" className="text-secondary-600 hover:text-secondary-700 font-semibold">
-                 Register as Host
-               </Link>
-             </p>
-           </div>
+          {/* Info Box */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-xs text-gray-600">
+              <strong className="text-primary-700">Users:</strong> Use email & password to login.
+              <br />
+              <strong className="text-secondary-700">Hosts:</strong> Check "Login as Host" and enter secret keyword.
+              <br />
+              <Link to="/register" className="text-secondary-600 hover:text-secondary-700 font-semibold">
+                Register as Host
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

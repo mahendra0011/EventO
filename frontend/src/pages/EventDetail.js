@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+import { verifyBookingOTP, resendBookingOTP } from '../utils/api';
 import toast from 'react-hot-toast';
-import { Calendar, Clock, MapPin, IndianRupee, Users, Ticket, ArrowLeft, Heart, Phone, Mail, User, Star, Share2, Copy, Check } from 'lucide-react';
+import { Calendar, Clock, MapPin, IndianRupee, Users, Ticket, ArrowLeft, Heart, Phone, Mail, User, Star, Share2, Copy, Check, ShieldCheck, Timer, RefreshCw, CheckCircle } from 'lucide-react';
 import { addToWishlist, removeFromWishlist, checkWishlist } from '../utils/api';
 
 const EventDetail = () => {
@@ -25,6 +26,13 @@ const EventDetail = () => {
   const [comment, setComment] = useState('');
   const [copied, setCopied] = useState(false);
   const [lastBookingId, setLastBookingId] = useState(null);
+  const [bookingOtp, setBookingOtp] = useState('');
+  const [bookingOtpTimer, setBookingOtpTimer] = useState(10 * 60);
+  const [bookingCanResend, setBookingCanResend] = useState(false);
+  const [bookingResendCountdown, setBookingResendCountdown] = useState(60);
+  const [bookingOtpVerified, setBookingOtpVerified] = useState(false);
+  const bookingTimerInterval = useRef(null);
+  const bookingResendInterval = useRef(null);
 
   useEffect(() => {
     fetchEvent();
@@ -59,14 +67,14 @@ const EventDetail = () => {
     }
   };
 
-   const handleBooking = async () => {
-     if (!user) {
-       toast.error('Please login to book tickets');
-       navigate('/login');
-       return;
-     }
+    const handleBooking = async () => {
+      if (!user) {
+        toast.error('Please login to book tickets');
+        navigate('/login');
+        return;
+      }
 
-     setBookingLoading(true);
+      setBookingLoading(true);
       try {
         const res = await api.post('/bookings', {
           eventId: event._id,
@@ -80,34 +88,116 @@ const EventDetail = () => {
 
         setLastBookingId(res.data.bookingId);
         setShowBookingModal(true);
+        // Start OTP timers
+        setBookingOtpTimer(10 * 60);
+        setBookingResendCountdown(60);
+        setBookingCanResend(false);
+        setBookingOtpVerified(false);
+        setBookingOtp('');
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Booking failed');
+      } finally {
+        setBookingLoading(false);
+      }
+    };
+
+    const handleShare = async () => {
+      const shareUrl = `${window.location.origin}/events/${event._id}`;
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        toast.success('Event link copied to clipboard!');
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopied(true);
+        toast.success('Event link copied to clipboard!');
+        setTimeout(() => setCopied(false), 2000);
+      }
+    };
+
+    // Booking OTP countdown timer
+    useEffect(() => {
+      if (showBookingModal && !bookingOtpVerified && bookingOtpTimer > 0) {
+        bookingTimerInterval.current = setInterval(() => {
+          setBookingOtpTimer(prev => prev - 1);
+        }, 1000);
+      }
+      return () => {
+        if (bookingTimerInterval.current) clearInterval(bookingTimerInterval.current);
+      };
+    }, [showBookingModal, bookingOtpVerified, bookingOtpTimer]);
+
+    // Booking resend countdown
+    useEffect(() => {
+      if (showBookingModal && !bookingCanResend && bookingResendCountdown > 0) {
+        bookingResendInterval.current = setInterval(() => {
+          setBookingResendCountdown(prev => prev - 1);
+        }, 1000);
+      }
+      return () => {
+        if (bookingResendInterval.current) clearInterval(bookingResendInterval.current);
+      };
+    }, [showBookingModal, bookingCanResend, bookingResendCountdown]);
+
+    const handleVerifyBookingOTP = async (e) => {
+      e.preventDefault();
+      if (!bookingOtp || bookingOtp.length !== 6) {
+        toast.error('Please enter a valid 6-digit OTP');
+        return;
+      }
+
+      setBookingLoading(true);
+      try {
+        await verifyBookingOTP(lastBookingId, bookingOtp);
+        setBookingOtpVerified(true);
         toast.success('Booking confirmed successfully!');
       } catch (error) {
-       toast.error(error.response?.data?.message || 'Booking failed');
-     } finally {
-       setBookingLoading(false);
-     }
-   };
+        toast.error(error.response?.data?.message || 'Verification failed');
+      } finally {
+        setBookingLoading(false);
+      }
+    };
 
-   const handleShare = async () => {
-     const shareUrl = `${window.location.origin}/events/${event._id}`;
-     try {
-       await navigator.clipboard.writeText(shareUrl);
-       setCopied(true);
-       toast.success('Event link copied to clipboard!');
-       setTimeout(() => setCopied(false), 2000);
-     } catch (err) {
-       // Fallback for older browsers
-       const textArea = document.createElement('textarea');
-       textArea.value = shareUrl;
-       document.body.appendChild(textArea);
-       textArea.select();
-       document.execCommand('copy');
-       document.body.removeChild(textArea);
-       setCopied(true);
-       toast.success('Event link copied to clipboard!');
-       setTimeout(() => setCopied(false), 2000);
-     }
-   };
+    const handleResendBookingOTP = async () => {
+      setBookingLoading(true);
+      try {
+        await resendBookingOTP(lastBookingId);
+        setBookingOtpTimer(10 * 60);
+        setBookingResendCountdown(60);
+        setBookingCanResend(false);
+        toast.success('OTP resent to your email!');
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Failed to resend OTP');
+      } finally {
+        setBookingLoading(false);
+      }
+    };
+
+    const formatTime = (seconds) => {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const handleCloseBookingModal = () => {
+      setShowBookingModal(false);
+      // Reset states after a delay
+      setTimeout(() => {
+        setLastBookingId(null);
+        setBookingOtp('');
+        setBookingOtpTimer(10 * 60);
+        setBookingCanResend(false);
+        setBookingResendCountdown(60);
+        setBookingOtpVerified(false);
+      }, 300);
+    };
 
   const handleWishlist = async () => {
     if (!user) {
@@ -495,43 +585,139 @@ const EventDetail = () => {
         </div>
       </div>
 
-        {/* Booking Confirmation Modal */}
-        {showBookingModal && (
+        {/* Booking OTP Verification Modal */}
+        {showBookingModal && lastBookingId && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-              <h2 className="text-2xl font-bold mb-4">Confirm Booking</h2>
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Event</span>
-                  <span className="font-semibold">{event.title}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tickets</span>
-                  <span className="font-semibold">{numberOfTickets}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Amount</span>
-                  <span className="font-semibold text-primary-600">₹{(event.price * numberOfTickets).toLocaleString('en-IN')}</span>
-                </div>
-              </div>
-              <p className="text-gray-600 mb-6">
-                Your booking has been confirmed successfully!
-              </p>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setShowBookingModal(false)}
-                  className="flex-1 btn-secondary"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-xl p-8 max-w-md w-full mx-4"
+            >
+              {!bookingOtpVerified ? (
+                <>
+                  <div className="text-center mb-6">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
+                      <ShieldCheck className="h-8 w-8 text-primary-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900">Verify Your Booking</h2>
+                    <p className="mt-2 text-gray-600">
+                      We sent a 6-digit code to your email<br />
+                      <strong>{user?.email}</strong>
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleVerifyBookingOTP} className="space-y-5">
+                    {/* OTP Input */}
+                    <div>
+                      <label className="label text-center block">Enter Verification Code</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={bookingOtp}
+                        onChange={(e) => setBookingOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        required
+                        className="input-field text-center text-2xl tracking-widest"
+                        placeholder="000000"
+                        autoFocus
+                      />
+                    </div>
+
+                    {/* Timer */}
+                    <div className="flex items-center justify-center space-x-2 text-gray-600">
+                      <Timer className="h-4 w-4" />
+                      <span className="text-sm">
+                        Expires in <strong className={bookingOtpTimer < 60 ? 'text-red-600' : ''}>{formatTime(bookingOtpTimer)}</strong>
+                      </span>
+                    </div>
+
+                    {/* Verify Button */}
+                    <button
+                      type="submit"
+                      disabled={bookingLoading || bookingOtpTimer === 0}
+                      className="w-full btn-primary"
+                    >
+                      {bookingLoading ? 'Verifying...' : 'Verify & Confirm Booking'}
+                    </button>
+                  </form>
+
+                  {/* Resend */}
+                  <div className="mt-6 text-center">
+                    {bookingCanResend ? (
+                      <button
+                        onClick={handleResendBookingOTP}
+                        disabled={bookingLoading}
+                        className="text-primary-600 hover:text-primary-700 font-semibold flex items-center justify-center mx-auto space-x-2"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        <span>Resend OTP</span>
+                      </button>
+                    ) : (
+                      <p className="text-sm text-gray-600">
+                        Resend OTP in <strong>{bookingResendCountdown}s</strong>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Cancel */}
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={handleCloseBookingModal}
+                      className="text-gray-500 hover:text-gray-700 text-sm"
+                    >
+                      Cancel Booking
+                    </button>
+                  </div>
+
+                  {/* Booking Summary */}
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Event</span>
+                        <span className="font-semibold truncate ml-4">{event.title}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Tickets</span>
+                        <span className="font-semibold">{numberOfTickets}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total</span>
+                        <span className="font-semibold text-primary-600">₹{(event.price * numberOfTickets).toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Success State */
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center"
                 >
-                  Close
-                </button>
-                  <button
-                    onClick={() => navigate(`/booking/${lastBookingId}/confirmation`)}
-                    className="flex-1 btn-primary"
-                  >
-                  View Confirmation
-                </button>
-              </div>
-            </div>
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
+                    <CheckCircle className="h-12 w-12 text-green-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
+                  <p className="text-gray-600 mb-6">
+                    Your booking is confirmed. A confirmation email has been sent.
+                  </p>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => navigate(`/booking/${lastBookingId}/confirmation`)}
+                      className="w-full btn-primary"
+                    >
+                      View E-Ticket
+                    </button>
+                    <button
+                      onClick={handleCloseBookingModal}
+                      className="w-full btn-secondary"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
           </div>
         )}
       </div>

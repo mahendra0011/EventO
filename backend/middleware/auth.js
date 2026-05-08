@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Verify JWT token
+// Verify JWT token and check OTP verification (skip for OTP endpoints)
 const auth = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -18,6 +18,22 @@ const auth = async (req, res, next) => {
     }
 
     req.user = user;
+
+    // Skip OTP check for OTP verification/resend endpoints
+    const otpPaths = [
+      '/auth/verify-login-otp',
+      '/auth/resend-login-otp',
+      '/bookings/verify-otp',
+      '/bookings/resend-otp'
+    ];
+    
+    if (!otpPaths.includes(req.path) && !user.loginOtpVerified) {
+      return res.status(403).json({
+        message: 'Please verify your email via OTP',
+        requiresOTP: true
+      });
+    }
+
     next();
   } catch (error) {
     res.status(401).json({ message: 'Token is not valid' });
