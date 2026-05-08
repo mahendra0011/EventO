@@ -6,6 +6,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const SENDGRID_API_KEY = process.env.MAILGUN_API_KEY;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@evento.com';
 const FROM_NAME = process.env.FROM_NAME || 'Evento';
+const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || 'support@evento.com';
 
 const sendEmail = async (to, subject, text, html = null) => {
   if (!SENDGRID_API_KEY) {
@@ -24,7 +25,19 @@ const sendEmail = async (to, subject, text, html = null) => {
         email: FROM_EMAIL,
         name: FROM_NAME
       },
-      subject: subject
+      reply_to: {
+        email: REPLY_TO_EMAIL
+      },
+      subject: subject,
+      // Add mail settings for better deliverability
+      mail_settings: {
+        sandbox_mode: {
+          enable: process.env.NODE_ENV === 'development'
+        },
+        bypass_list_management: {
+          enable: true
+        }
+      }
     };
 
     if (html) {
