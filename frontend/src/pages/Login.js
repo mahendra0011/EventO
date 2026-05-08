@@ -63,6 +63,35 @@ const Login = () => {
     }
   }, [resendCountdown]);
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      let response;
+      if (isHost) {
+        response = await hostLogin(email, password, hostKeyword);
+      } else {
+        response = await login(email, password);
+      }
+
+      if (response.requiresOTP) {
+        setRequiresOTP(true);
+        setOtpTimer(OTP_EXPIRY_MINUTES * 60);
+        setResendCountdown(OTP_RATE_LIMIT_SECONDS);
+        setCanResend(false);
+        setOtp('');
+        toast.success('OTP sent to your email!');
+      } else {
+        toast.success('Login successful!');
+        navigate(isHost ? '/host' : '/dashboard');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     if (!otp || otp.length !== 6) {
@@ -87,8 +116,8 @@ const Login = () => {
     try {
       await resendLoginOTP();
       setOtpTimer(OTP_EXPIRY_MINUTES * 60);
-      setOtpSent(new Date());
-      startResendCountdown();
+      setResendCountdown(OTP_RATE_LIMIT_SECONDS);
+      setCanResend(false);
       toast.success('OTP resent to your email!');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to resend OTP');
