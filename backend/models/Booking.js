@@ -47,6 +47,22 @@ const bookingSchema = new mongoose.Schema({
   },
   notes: {
     type: String
+  },
+  otp: {
+    type: String
+  },
+  otpExpires: {
+    type: Date
+  },
+  isOtpVerified: {
+    type: Boolean,
+    default: false
+  },
+  usedOtps: [{
+    type: String
+  }],
+  lastOtpSent: {
+    type: Date
   }
 });
 
