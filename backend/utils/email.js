@@ -3,45 +3,46 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
-const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
-const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'sandbox808f4534764043d6972145653dd80fbd.mailgun.org';
-const MAILGUN_BASE_URL = process.env.MAILGUN_BASE_URL || 'https://api.mailgun.net';
-const AUTHORIZED_RECIPIENTS = (process.env.AUTHORIZED_RECIPIENTS || 'sourceforget32@gmail.com').split(',').map(e => e.trim());
-
-const mailgunAuth = {
-  username: 'api',
-  password: MAILGUN_API_KEY
-};
-
-const isAuthorizedRecipient = (email) => {
-  return AUTHORIZED_RECIPIENTS.includes(email.toLowerCase());
-};
+const SENDGRID_API_KEY = process.env.MAILGUN_API_KEY;
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@evento.com';
+const FROM_NAME = process.env.FROM_NAME || 'Evento';
 
 const sendEmail = async (to, subject, text, html = null) => {
-  if (!isAuthorizedRecipient(to)) {
-    console.warn(`[Mailgun] Email to ${to} not in authorized recipients list`);
-    console.log(`[Mailgun] Would send: Subject="${subject}", Text="${text.substring(0, 100)}..."`);
-    return { success: true, message: 'Email logged (not authorized recipient)' };
+  if (!SENDGRID_API_KEY) {
+    console.warn('[Email] No API key configured, skipping email');
+    return { success: true, message: 'Email skipped (no API key)' };
   }
 
   try {
-    const formData = new URLSearchParams();
-    formData.append('from', `Evento <noreply@${MAILGUN_DOMAIN}>`);
-    formData.append('to', to);
-    formData.append('subject', subject);
+    const data = {
+      personalizations: [
+        {
+          to: [{ email: to }]
+        }
+      ],
+      from: {
+        email: FROM_EMAIL,
+        name: FROM_NAME
+      },
+      subject: subject
+    };
+
     if (html) {
-      formData.append('html', html);
+      data.content = [{ type: 'text/html', value: html }];
     } else {
-      formData.append('text', text);
+      data.content = [{ type: 'text/plain', value: text }];
     }
 
-    const response = await axios.post(`${MAILGUN_BASE_URL}/v3/${MAILGUN_DOMAIN}/messages`, formData, {
-      auth: mailgunAuth
+    const response = await axios.post('https://api.sendgrid.com/v3/mail/send', data, {
+      headers: {
+        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
     });
 
     return { success: true, data: response.data };
   } catch (error) {
-    console.error('[Mailgun] Email send error:', error.response?.data || error.message);
+    console.error('[SendGrid] Email send error:', error.response?.data || error.message);
     return { success: false, error: error.message };
   }
 };
@@ -140,6 +141,23 @@ exports.sendLoginOTPEmail = async (email, otp, name) => {
   const text = `Hello ${name},
 
 Your login verification code is: ${otp}
+
+This code is valid for ${OTP_EXPIRY_MINUTES} minutes.
+
+Please do not share this code with anyone.
+
+Evento Team`;
+
+  return sendEmail(email, subject, text);
+};
+
+exports.sendEmailVerificationOTP = async (email, otp, name) => {
+  const subject = 'Verify Your Email - Evento';
+  const text = `Hello ${name},
+
+Welcome to Evento! Please verify your email address to complete your registration.
+
+Your verification code is: ${otp}
 
 This code is valid for ${OTP_EXPIRY_MINUTES} minutes.
 

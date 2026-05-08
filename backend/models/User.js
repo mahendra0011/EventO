@@ -52,6 +52,12 @@ const userSchema = new mongoose.Schema({
   },
   lastLoginOtpSent: {
     type: Date
+  },
+  emailVerificationOtp: {
+    type: String
+  },
+  emailVerificationOtpExpires: {
+    type: Date
   }
 });
 
