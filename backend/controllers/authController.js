@@ -28,6 +28,9 @@ exports.hostRegister = async (req, res) => {
       secretKeyword
     });
 
+    // Hosts are considered verified after registration
+    user.loginOtpVerified = true;
+
     await user.save();
     const token = generateToken(user._id);
 
@@ -65,6 +68,9 @@ exports.register = async (req, res) => {
       password,
       phone
     });
+
+    // Users are considered verified after registration
+    user.loginOtpVerified = true;
 
     await user.save();
     const token = generateToken(user._id);
@@ -373,6 +379,9 @@ exports.hostKeywordRegister = async (req, res) => {
       role: 'host',
       secretKeyword
     });
+
+    // Hosts are considered verified after registration
+    user.loginOtpVerified = true;
 
     await user.save();
     const token = generateToken(user._id);

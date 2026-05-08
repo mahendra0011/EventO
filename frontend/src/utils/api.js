@@ -31,8 +31,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
+      // Handle 403 with requiresOTP - redirect to login
+      if (error.response.status === 403 && error.response.data.requiresOTP) {
+        localStorage.removeItem('token');
+        window.location.href = '/login?otp_required=true';
+      }
       // Handle 401 Unauthorized
-      if (error.response.status === 401) {
+      else if (error.response.status === 401) {
         localStorage.removeItem('token');
         window.location.href = '/login';
       }
@@ -196,6 +201,18 @@ export const editMessage = async (messageId, content) => {
 // Get reactions for a message
 export const getMessageReactions = async (messageId) => {
   const res = await api.get(`/messages/${messageId}/reactions`);
+  return res.data;
+};
+
+// Booking OTP Verification
+export const verifyBookingOTP = async (bookingId, otp) => {
+  const res = await api.post('/bookings/verify-otp', { bookingId, otp });
+  return res.data;
+};
+
+// Resend Booking OTP
+export const resendBookingOTP = async (bookingId) => {
+  const res = await api.post('/bookings/resend-otp', { bookingId });
   return res.data;
 };
 
