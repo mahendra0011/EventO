@@ -173,6 +173,58 @@ const createHtmlTemplate = (title, body, otp, eventTitle = '', name = '') => {
 </html>`;
 };
 
+const escapeHtml = (value = '') => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+// Keep OTP mail simple and transactional to reduce spam-folder placement.
+const createTransactionalHtmlTemplate = (title, body, otp, eventTitle = '', name = '') => {
+  const safeTitle = escapeHtml(title);
+  const safeBody = escapeHtml(body).replace(/\n/g, '<br>');
+  const safeName = escapeHtml(name || 'there');
+  const safeEventTitle = escapeHtml(eventTitle);
+  const safeOtp = escapeHtml(otp || '');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${safeTitle}</title>
+</head>
+<body style="margin:0; padding:0; background:#ffffff; color:#111827;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#ffffff;">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:520px;">
+          <tr>
+            <td style="font-family:Arial, sans-serif; font-size:16px; line-height:1.6; color:#111827;">
+              <h1 style="font-size:22px; line-height:1.3; margin:0 0 18px 0; color:#111827;">${safeTitle}</h1>
+              <p style="margin:0 0 16px 0;">Hello ${safeName},</p>
+              <p style="margin:0 0 18px 0;">${safeBody}</p>
+              ${safeOtp ? `
+              <p style="margin:0 0 8px 0; font-size:14px; color:#374151;">Verification code:</p>
+              <p style="font-family:'Courier New', monospace; font-size:30px; line-height:1.2; letter-spacing:6px; font-weight:bold; margin:0 0 20px 0; color:#111827;">${safeOtp}</p>
+              ` : ''}
+              ${safeEventTitle ? `
+              <p style="margin:0 0 16px 0; font-size:14px; color:#374151;"><strong>Event:</strong> ${safeEventTitle}</p>
+              ` : ''}
+              <p style="margin:0 0 10px 0; font-size:14px; color:#374151;">This code is valid for ${OTP_EXPIRY_MINUTES} minutes and can only be used once.</p>
+              <p style="margin:0 0 24px 0; font-size:14px; color:#374151;">If you did not request this code, you can ignore this email.</p>
+              <p style="margin:0; font-size:13px; color:#6b7280;">Evento</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+};
+
 // Main email sending function
 const sendEmail = async (to, subject, text, html = null) => {
   if (!SENDGRID_API_KEY) {
@@ -181,7 +233,7 @@ const sendEmail = async (to, subject, text, html = null) => {
   }
 
   try {
-    const emailHtml = html || createHtmlTemplate(subject, text);
+    const emailHtml = html || createTransactionalHtmlTemplate(subject, text);
     const otpMatch = text.match(/\b\d{6}\b/);
     const otp = otpMatch ? otpMatch[0] : null;
 
@@ -291,35 +343,26 @@ exports.sendEmailVerificationOTP = async (email, otp, name) => {
     console.log(`===============================================\n`);
   }
 
-  const subject = 'Verify Your Email - Evento';
+  const subject = 'Your Evento verification code';
   const plainText = `Welcome to Evento, ${name}!
 
-Please verify your email address to activate your account.
-
-Your 6-digit verification code is: ${otp}
-
-This code is valid for ${OTP_EXPIRY_MINUTES} minutes.
-
-After verification, you can:
-- Browse and book events
-- Create and manage your bookings
-- Write reviews for events you attend
-- Track your event history
-
-If you didn't create an Evento account, please ignore this email.
-
-Evento - Event Booking Platform
-${FRONTEND_URL}`;
-
-  const htmlBody = createHtmlTemplate(
-    'Verify Your Email - Evento',
-    `Welcome to Evento! Please verify your email address to activate your account.
-
-Your 6-digit verification code is:
+Use this verification code to finish creating your account:
 
 ${otp}
 
-After verification, you can browse events, book tickets, and more!`,
+This code is valid for ${OTP_EXPIRY_MINUTES} minutes.
+
+If you didn't create an Evento account, please ignore this email.
+
+Evento`;
+
+  const htmlBody = createTransactionalHtmlTemplate(
+    'Your Evento verification code',
+    `Use this verification code to finish creating your account:
+
+${otp}
+
+If you didn't create an Evento account, please ignore this email.`,
     otp,
     '',
     name
@@ -337,27 +380,26 @@ exports.sendLoginOTPEmail = async (email, otp, name) => {
     console.log(`=================================\n`);
   }
 
-  const subject = 'Your Evento Login Verification Code';
+  const subject = 'Your Evento login code';
   const plainText = `Hello ${name},
 
-Your 6-digit login verification code is: ${otp}
-
-This code is valid for ${OTP_EXPIRY_MINUTES} minutes.
-
-If you didn't attempt to login, please secure your account immediately:
-- Change your password
-- Enable two-factor authentication if available
-
-Evento - Event Booking Platform
-${FRONTEND_URL}`;
-
-  const htmlBody = createHtmlTemplate(
-    'Login Verification - Evento',
-    `Your 6-digit login verification code is:
+Use this login code to access your Evento account:
 
 ${otp}
 
-If you didn't attempt to login, please secure your account immediately.`,
+This code is valid for ${OTP_EXPIRY_MINUTES} minutes.
+
+If you didn't try to log in, please ignore this email.
+
+Evento`;
+
+  const htmlBody = createTransactionalHtmlTemplate(
+    'Your Evento login code',
+    `Use this login code to access your Evento account:
+
+${otp}
+
+If you didn't try to log in, please ignore this email.`,
     otp,
     '',
     name
@@ -376,31 +418,26 @@ exports.sendOTPEmail = async (email, otp, name, eventTitle = 'Event Booking') =>
     console.log(`===================================\n`);
   }
 
-  const subject = 'Verify Your Booking - Evento';
+  const subject = 'Your Evento booking code';
   const plainText = `Hello ${name},
 
-Please verify your booking for ${eventTitle}.
-
-Your 6-digit verification code is: ${otp}
-
-This code is valid for ${OTP_EXPIRY_MINUTES} minutes and can only be used once.
-
-For security, do not share this code with anyone.
-
-If you didn't book this ticket, please contact our support team immediately.
-
-Evento - Event Booking Platform
-${FRONTEND_URL}`;
-
-  const htmlBody = createHtmlTemplate(
-    'Verify Your Booking - Evento',
-    `Please verify your booking for "${eventTitle}".
-
-Your 6-digit verification code is:
+Use this code to verify your booking for ${eventTitle}:
 
 ${otp}
 
-This code is valid for ${OTP_EXPIRY_MINUTES} minutes and can only be used once.`,
+This code is valid for ${OTP_EXPIRY_MINUTES} minutes and can only be used once.
+
+If you didn't book this ticket, please ignore this email.
+
+Evento`;
+
+  const htmlBody = createTransactionalHtmlTemplate(
+    'Your Evento booking code',
+    `Use this code to verify your booking for "${eventTitle}":
+
+${otp}
+
+If you didn't book this ticket, please ignore this email.`,
     otp,
     eventTitle,
     name
