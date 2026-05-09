@@ -10,35 +10,34 @@ const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || 'support@evento.com';
 
 const sendEmail = async (to, subject, text, html = null) => {
   if (!SENDGRID_API_KEY) {
-    console.warn('[Email] No API key configured, skipping email');
-    return { success: true, message: 'Email skipped (no API key)' };
+    console.warn('[Email] No API key configured (MAILGUN_API_KEY env var missing)');
+    return { success: false, message: 'Email skipped (no API key)' };
   }
 
   try {
-   const data = {
-     personalizations: [
-       {
-         to: [{ email: to }]
-       }
-     ],
-     from: {
-       email: FROM_EMAIL,
-       name: FROM_NAME
-     },
-     reply_to: {
-       email: REPLY_TO_EMAIL
-     },
-     subject: subject,
-     // Add mail settings for better deliverability
-     mail_settings: {
-       sandbox_mode: {
-         enable: false // Disable sandbox to actually send emails
-       },
-       bypass_list_management: {
-         enable: true
-       }
-     }
-   };
+    const data = {
+      personalizations: [
+        {
+          to: [{ email: to }]
+        }
+      ],
+      from: {
+        email: FROM_EMAIL,
+        name: FROM_NAME
+      },
+      reply_to: {
+        email: REPLY_TO_EMAIL
+      },
+      subject: subject,
+      mail_settings: {
+        sandbox_mode: { enable: false },
+        bypass_list_management: { enable: true }
+      },
+      headers: {
+        'List-Unsubscribe': `<mailto:${REPLY_TO_EMAIL}?subject=unsubscribe>`,
+        'X-Authenticated-User': to
+      }
+    };
 
     if (html) {
       data.content = [{ type: 'text/html', value: html }];
@@ -46,6 +45,7 @@ const sendEmail = async (to, subject, text, html = null) => {
       data.content = [{ type: 'text/plain', value: text }];
     }
 
+    console.log(`[Email] Sending to ${to} | Subject: ${subject}`);
     const response = await axios.post('https://api.sendgrid.com/v3/mail/send', data, {
       headers: {
         'Authorization': `Bearer ${SENDGRID_API_KEY}`,
@@ -53,6 +53,59 @@ const sendEmail = async (to, subject, text, html = null) => {
       }
     });
 
+    console.log(`[Email] ✓ Successfully sent to ${to}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    const errorDetails = error.response?.data || error.message;
+    console.error('[SendGrid] Failed to send email:', errorDetails);
+    
+    // Log OTP to console as fallback in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DEV FALLBACK] OTP for ${to}: Check backend logs for OTP value`);
+    }
+    
+    return { success: false, error: errorDetails };
+  }
+};
+
+    if (html) {
+      data.content = [{ type: 'text/html', value: html }];
+    } else {
+      data.content = [{ type: 'text/plain', value: text }];
+    }
+
+    console.log(`[Email] Sending to ${to} | Subject: ${subject}`);
+    const response = await axios.post('https://api.sendgrid.com/v3/mail/send', data, {
+      headers: {
+        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log(`[Email] ✓ Sent successfully to ${to}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    const errorMsg = error.response?.data || error.message;
+    console.error('[SendGrid] Email send error:', errorMsg);
+    return { success: false, error: errorMsg };
+  }
+};
+
+    if (html) {
+      data.content = [{ type: 'text/html', value: html }];
+    } else {
+      data.content = [{ type: 'text/plain', value: text }];
+    }
+
+    console.log(`[Email] Sending to ${to} with subject: ${subject}`);
+    const response = await axios.post('https://api.sendgrid.com/v3/mail/send', data, {
+      headers: {
+        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    console.log(`[Email] Sent successfully to ${to}`);
     return { success: true, data: response.data };
   } catch (error) {
     console.error('[SendGrid] Email send error:', error.response?.data || error.message);
@@ -68,6 +121,15 @@ const OTP_EXPIRY_MINUTES = 10;
 const OTP_RATE_LIMIT_SECONDS = 60;
 
 exports.sendOTPEmail = async (email, otp, name, eventTitle = 'Event Booking') => {
+  // Log OTP in development for testing
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`\n========== 📧 BOOKING OTP ==========`);
+    console.log(`Email: ${email}`);
+    console.log(`OTP: ${otp}`);
+    console.log(`Event: ${eventTitle}`);
+    console.log(`===================================\n`);
+  }
+
   const subject = 'Your Event Booking Verification Code';
   const text = `Hello ${name},
 
@@ -150,6 +212,14 @@ exports.sendLoginNotificationEmail = async (email, name, ipAddress = 'Unknown') 
 };
 
 exports.sendLoginOTPEmail = async (email, otp, name) => {
+  // Log OTP in development for testing
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`\n========== 🔐 LOGIN OTP ==========`);
+    console.log(`Email: ${email}`);
+    console.log(`OTP: ${otp}`);
+    console.log(`=================================\n`);
+  }
+
   const subject = 'Your Login Verification Code';
   const text = `Hello ${name},
 
@@ -165,6 +235,14 @@ Evento Team`;
 };
 
 exports.sendEmailVerificationOTP = async (email, otp, name) => {
+  // Log OTP in development for testing
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`\n========== ✅ EMAIL VERIFICATION OTP ==========`);
+    console.log(`Email: ${email}`);
+    console.log(`OTP: ${otp}`);
+    console.log(`===============================================\n`);
+  }
+
   const subject = 'Verify Your Email - Evento';
   const text = `Hello ${name},
 

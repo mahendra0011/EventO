@@ -20,11 +20,14 @@ const auth = async (req, res, next) => {
     req.user = user;
 
     // Skip OTP check for OTP verification/resend endpoints
+    // Note: These paths include the full mount point (e.g., /api/auth/verify-email)
     const otpPaths = [
-      '/auth/verify-login-otp',
-      '/auth/resend-login-otp',
-      '/bookings/verify-otp',
-      '/bookings/resend-otp'
+      '/api/auth/verify-email',
+      '/api/auth/resend-verification',
+      '/api/auth/verify-login-otp',
+      '/api/auth/resend-login-otp',
+      '/api/bookings/verify-otp',
+      '/api/bookings/resend-otp'
     ];
     
     if (!otpPaths.includes(req.path) && !user.loginOtpVerified) {
