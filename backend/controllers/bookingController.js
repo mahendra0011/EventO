@@ -1,7 +1,24 @@
 const Booking = require('../models/Booking');
 const Event = require('../models/Event');
 const Notification = require('../models/Notification');
-const { sendBookingConfirmationEmail, sendOTPEmail, generateSecureOTP, OTP_EXPIRY_MINUTES, OTP_RATE_LIMIT_SECONDS } = require('../utils/email');
+const {
+  sendBookingConfirmationEmail,
+  sendImportantNotificationEmail,
+  sendOTPEmail,
+  generateSecureOTP,
+  OTP_EXPIRY_MINUTES,
+  OTP_RATE_LIMIT_SECONDS
+} = require('../utils/email');
+
+const sendImportantEmail = (user, title, message, link) => {
+  if (!user?.email) return;
+
+  sendImportantNotificationEmail(user.email, user.name, title, message, link)
+    .then(result => {
+      if (!result?.success) console.warn('Important notification email failed:', result?.error || result?.message);
+    })
+    .catch(err => console.error('Important notification email error:', err.message));
+};
 
 exports.createBooking = async (req, res) => {
    try {
@@ -11,7 +28,7 @@ exports.createBooking = async (req, res) => {
        return res.status(400).json({ message: 'Event ID and number of tickets are required' });
      }
 
-     const event = await Event.findById(eventId);
+     const event = await Event.findById(eventId).populate('organizer', 'name email');
      if (!event) {
        return res.status(404).json({ message: 'Event not found' });
      }
@@ -69,6 +86,22 @@ exports.createBooking = async (req, res) => {
        link: `/bookings/${booking._id}/confirm`
      });
 
+     if (event.organizer) {
+       await Notification.create({
+         user: event.organizer._id,
+         title: 'New Booking Pending',
+         message: `${req.user.name} started a booking for "${event.title}"`,
+         type: 'booking',
+         link: '/host/bookings'
+       });
+       sendImportantEmail(
+         event.organizer,
+         'New booking pending',
+         `${req.user.name} started a booking for "${event.title}". The booking is waiting for OTP verification.`,
+         '/host/bookings'
+       );
+     }
+
      res.status(201).json({
        message: emailSent
          ? 'Booking created. Please verify OTP sent to your email.'
@@ -123,7 +156,7 @@ exports.verifyOTP = async (req, res) => {
 
      await booking.save();
 
-     const event = await Event.findById(booking.event);
+     const event = await Event.findById(booking.event).populate('organizer', 'name email');
      event.availableTickets -= booking.numberOfTickets;
      await event.save();
 
@@ -149,6 +182,22 @@ exports.verifyOTP = async (req, res) => {
        type: 'booking',
        link: `/bookings/${booking._id}/confirmation`
      });
+
+     if (event.organizer) {
+       await Notification.create({
+         user: event.organizer._id,
+         title: 'Booking Confirmed',
+         message: `${req.user.name}'s booking for "${event.title}" is confirmed`,
+         type: 'booking',
+         link: '/host/bookings'
+       });
+       sendImportantEmail(
+         event.organizer,
+         'Booking confirmed',
+         `${req.user.name}'s booking for "${event.title}" is confirmed for ${booking.numberOfTickets} ticket(s).`,
+         '/host/bookings'
+       );
+     }
 
      res.json({ message: 'Booking confirmed successfully', booking });
    } catch (error) {
@@ -257,9 +306,7 @@ exports.cancelBooking = async (req, res) => {
      booking.cancelledAt = new Date();
      await booking.save();
 
-     const event = await Event.findById(booking.event._id);
-     event.availableTickets += booking.numberOfTickets;
-     await event.save();
+     const event = await Event.findById(booking.event._id).populate('organizer', 'name email');
 
      await Notification.create({
        user: booking.user,
@@ -269,6 +316,13 @@ exports.cancelBooking = async (req, res) => {
        link: '/dashboard'
      });
 
+     sendImportantEmail(
+       req.user,
+       'Booking cancelled',
+       `Your booking for "${event.title}" was cancelled.`,
+       '/dashboard'
+     );
+
      if (event.organizer) {
        await Notification.create({
          user: event.organizer._id,
@@ -277,6 +331,12 @@ exports.cancelBooking = async (req, res) => {
          type: 'booking',
          link: '/host/bookings'
        });
+       sendImportantEmail(
+         event.organizer,
+         'Booking cancelled',
+         `${req.user.name}'s booking for "${event.title}" was cancelled.`,
+         '/host/bookings'
+       );
      }
 
      res.json({ message: 'Booking cancelled successfully' });
@@ -328,6 +388,10 @@ exports.confirmBooking = async (req, res) => {
        return res.status(404).json({ message: 'Booking not found' });
      }
 
+     if (booking.status === 'confirmed') {
+       return res.status(400).json({ message: 'Booking already confirmed' });
+     }
+
      if (!booking.isOtpVerified) {
        return res.status(400).json({ message: 'OTP not verified' });
      }
@@ -356,6 +420,14 @@ exports.confirmBooking = async (req, res) => {
        })
        .catch(err => console.error('Confirmation email error:', err.message));
 
+     await Notification.create({
+       user: booking.user._id,
+       title: 'Booking Confirmed',
+       message: `Your booking for "${booking.event.title}" is confirmed`,
+       type: 'booking',
+       link: `/bookings/${booking._id}/confirmation`
+     });
+
      res.json({ message: 'Booking confirmed successfully', booking });
    } catch (error) {
      console.error('Confirm booking error:', error);
@@ -365,7 +437,9 @@ exports.confirmBooking = async (req, res) => {
 
 exports.rejectBooking = async (req, res) => {
    try {
-     const booking = await Booking.findById(req.params.id);
+     const booking = await Booking.findById(req.params.id)
+       .populate('event', 'title')
+       .populate('user', 'name email');
 
      if (!booking) {
        return res.status(404).json({ message: 'Booking not found' });
@@ -374,6 +448,21 @@ exports.rejectBooking = async (req, res) => {
      booking.status = 'rejected';
      booking.cancelledAt = new Date();
      await booking.save();
+
+     await Notification.create({
+       user: booking.user._id,
+       title: 'Booking Rejected',
+       message: `Your booking for "${booking.event.title}" was rejected`,
+       type: 'booking',
+       link: '/dashboard'
+     });
+
+     sendImportantEmail(
+       booking.user,
+       'Booking rejected',
+       `Your booking for "${booking.event.title}" was rejected by the host.`,
+       '/dashboard'
+     );
 
      res.json({ message: 'Booking rejected successfully' });
    } catch (error) {

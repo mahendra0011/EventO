@@ -13,7 +13,7 @@ const generateToken = (userId) => {
 };
 
 const getEmailFailureMessage = (purpose) => (
-  `Could not send ${purpose} email. Please check the SendGrid sender/API key configuration and try again.`
+  `Could not send ${purpose} email. Please check the SMTP/Nodemailer configuration and try again.`
 );
 
 exports.hostRegister = async (req, res) => {

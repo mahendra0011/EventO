@@ -1,4 +1,6 @@
 const Notification = require('../models/Notification');
+const User = require('../models/User');
+const { sendImportantNotificationEmail } = require('../utils/email');
 
 // Get user's notifications
 exports.getNotifications = async (req, res) => {
@@ -62,6 +64,18 @@ exports.createNotification = async (userId, title, message, type = 'system', lin
       link
     });
     await notification.save();
+
+    if (['booking', 'reminder', 'system'].includes(type)) {
+      const user = await User.findById(userId).select('name email');
+      if (user?.email) {
+        sendImportantNotificationEmail(user.email, user.name, title, message, link)
+          .then(result => {
+            if (!result?.success) console.warn('Notification email failed:', result?.error || result?.message);
+          })
+          .catch(err => console.error('Notification email error:', err.message));
+      }
+    }
+
     return notification;
   } catch (error) {
     console.error('Create notification error:', error);

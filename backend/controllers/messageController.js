@@ -3,7 +3,7 @@ const Message = require('../models/Message');
 const Event = require('../models/Event');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
-const { sendHostMessageEmail } = require('../utils/email');
+const { sendHostMessageEmail, sendImportantNotificationEmail } = require('../utils/email');
 
 // Send message from user or host
 exports.sendMessage = async (req, res) => {
@@ -87,6 +87,20 @@ exports.sendMessage = async (req, res) => {
       type: 'system',
       link: '/dashboard/messages'
     });
+
+    const emailResult = sender.role === 'host'
+      ? await sendHostMessageEmail(receiver.email, receiver.name, subject, content, event.title, sender.name)
+      : await sendImportantNotificationEmail(
+          receiver.email,
+          receiver.name,
+          `New message from ${sender.name}`,
+          `${sender.name} sent you a message about "${event.title}": ${subject}`,
+          '/dashboard/messages'
+        );
+
+    if (!emailResult?.success) {
+      console.warn('Message notification email failed:', emailResult?.error || emailResult?.message);
+    }
 
     res.status(201).json({ message: 'Message sent successfully', data: message });
   } catch (error) {
@@ -306,7 +320,10 @@ exports.broadcastMessage = async (req, res) => {
 
         // Send email notification
         try {
-          await sendHostMessageEmail(user.email, user.name, subject, content, event.title, req.user.name);
+          const emailResult = await sendHostMessageEmail(user.email, user.name, subject, content, event.title, req.user.name);
+          if (!emailResult?.success) {
+            failedEmails.push(user.email);
+          }
         } catch (emailErr) {
           console.error(`Failed to send email to ${user.email}:`, emailErr);
           failedEmails.push(user.email);
