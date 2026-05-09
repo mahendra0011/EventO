@@ -12,6 +12,10 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
+const getEmailFailureMessage = (purpose) => (
+  `Could not send ${purpose} email. Please check the SendGrid sender/API key configuration and try again.`
+);
+
 exports.hostRegister = async (req, res) => {
   try {
     const { name, email, password, phone, secretKeyword } = req.body;
@@ -83,17 +87,23 @@ exports.register = async (req, res) => {
     user.lastLoginOtpSent = new Date(); // Set timestamp for rate limiting
 
     await user.save();
-    const token = generateToken(user._id);
 
-    sendEmailVerificationOTP(user.email, otp, user.name)
-      .then(result => {
-        if (!result?.success) console.warn('Email verification OTP failed:', result?.error || result?.message);
-      })
-      .catch(err => console.error('Email verification OTP error:', err.message));
+    const emailResult = await sendEmailVerificationOTP(user.email, otp, user.name);
+    if (!emailResult?.success) {
+      console.warn('Email verification OTP failed:', emailResult?.error || emailResult?.message);
+      await User.deleteOne({ _id: user._id });
+      return res.status(502).json({
+        message: getEmailFailureMessage('verification'),
+        emailSent: false
+      });
+    }
+
+    const token = generateToken(user._id);
 
     res.status(201).json({
       message: 'Please check your email for verification code to complete registration.',
       requiresVerification: true,
+      emailSent: true,
       token,
       user: {
         id: user._id,
@@ -140,22 +150,26 @@ exports.login = async (req, res) => {
       const otp = generateSecureOTP();
       const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
+      const emailResult = await sendLoginOTPEmail(user.email, otp, user.name);
+      if (!emailResult?.success) {
+        console.warn('Login OTP email failed:', emailResult?.error || emailResult?.message);
+        return res.status(502).json({
+          message: getEmailFailureMessage('login OTP'),
+          emailSent: false
+        });
+      }
+
       user.loginOtp = otp;
       user.loginOtpExpires = otpExpires;
       user.lastLoginOtpSent = new Date();
       await user.save();
-
-      sendLoginOTPEmail(user.email, otp, user.name)
-        .then(result => {
-          if (!result?.success) console.warn('Login OTP email failed:', result?.error || result?.message);
-        })
-        .catch(err => console.error('Login OTP email error:', err.message));
 
       // Return token even when OTP is required (for verification step)
       const token = generateToken(user._id);
       return res.status(200).json({
         message: 'Login OTP sent to your email. Please verify to continue.',
         requiresOTP: true,
+        emailSent: true,
         token,
         user: {
           id: user._id,
@@ -290,18 +304,21 @@ exports.resendLoginOtp = async (req, res) => {
     const otp = generateSecureOTP();
     const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
+    const emailResult = await sendLoginOTPEmail(user.email, otp, user.name);
+    if (!emailResult?.success) {
+      console.warn('Resend login OTP email failed:', emailResult?.error || emailResult?.message);
+      return res.status(502).json({
+        message: getEmailFailureMessage('login OTP'),
+        emailSent: false
+      });
+    }
+
     user.loginOtp = otp;
     user.loginOtpExpires = otpExpires;
     user.lastLoginOtpSent = new Date();
     await user.save();
 
-    sendLoginOTPEmail(user.email, otp, user.name)
-      .then(result => {
-        if (!result?.success) console.warn('Resend login OTP email failed:', result?.error || result?.message);
-      })
-      .catch(err => console.error('Resend login OTP error:', err.message));
-
-    res.json({ message: 'Login OTP resent successfully' });
+    res.json({ message: 'Login OTP resent successfully', emailSent: true });
   } catch (error) {
     console.error('Resend login OTP error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -330,18 +347,21 @@ exports.resendVerification = async (req, res) => {
     const otp = generateSecureOTP();
     const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
+    const emailResult = await sendEmailVerificationOTP(user.email, otp, user.name);
+    if (!emailResult?.success) {
+      console.warn('Resend verification email failed:', emailResult?.error || emailResult?.message);
+      return res.status(502).json({
+        message: getEmailFailureMessage('verification'),
+        emailSent: false
+      });
+    }
+
     user.emailVerificationOtp = otp;
     user.emailVerificationOtpExpires = otpExpires;
     user.lastLoginOtpSent = new Date();
     await user.save();
 
-    sendEmailVerificationOTP(user.email, otp, user.name)
-      .then(result => {
-        if (!result?.success) console.warn('Resend verification email failed:', result?.error || result?.message);
-      })
-      .catch(err => console.error('Resend verification error:', err.message));
-
-    res.json({ message: 'Verification code resent successfully' });
+    res.json({ message: 'Verification code resent successfully', emailSent: true });
   } catch (error) {
     console.error('Resend verification error:', error);
     res.status(500).json({ message: 'Server error' });

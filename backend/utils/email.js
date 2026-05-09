@@ -19,12 +19,50 @@ const REPLY_TO_EMAIL_ADDRESS = parseEmailAddress(REPLY_TO_EMAIL);
 const SENDER_DOMAIN = FROM_EMAIL_ADDRESS.includes('@')
   ? FROM_EMAIL_ADDRESS.split('@').pop()
   : 'evento.com';
+let cachedVerifiedSenderEmail = null;
 
 // Generate a unique Message-ID for better deliverability
-const generateMessageId = () => {
+const generateMessageId = (fromEmail = FROM_EMAIL_ADDRESS) => {
+  const domain = fromEmail.includes('@') ? fromEmail.split('@').pop() : SENDER_DOMAIN;
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 8);
-  return `<${timestamp}.${random}@${SENDER_DOMAIN}>`;
+  return `<${timestamp}.${random}@${domain}>`;
+};
+
+const isVerifiedSenderError = (errorDetails) => {
+  const errors = errorDetails?.errors || [];
+  return errors.some((item) => (
+    item?.field === 'from' && /verified sender identity/i.test(item?.message || '')
+  ));
+};
+
+const getVerifiedSenderEmail = async () => {
+  if (cachedVerifiedSenderEmail) {
+    return cachedVerifiedSenderEmail;
+  }
+
+  const response = await axios.get('https://api.sendgrid.com/v3/verified_senders', {
+    headers: {
+      'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+      'User-Agent': 'Evento/1.0 (SendGrid API Client)'
+    }
+  });
+
+  const senders = Array.isArray(response.data?.results)
+    ? response.data.results
+    : Array.isArray(response.data)
+      ? response.data
+      : [];
+
+  const verifiedSender = senders.find((sender) => (
+    sender?.verified && !sender?.locked && (sender.from_email || sender.from?.email || sender.email)
+  ));
+
+  cachedVerifiedSenderEmail = verifiedSender
+    ? parseEmailAddress(verifiedSender.from_email || verifiedSender.from?.email || verifiedSender.email)
+    : null;
+
+  return cachedVerifiedSenderEmail;
 };
 
 // Create professional HTML email template
@@ -144,23 +182,19 @@ const sendEmail = async (to, subject, text, html = null) => {
 
   try {
     const emailHtml = html || createHtmlTemplate(subject, text);
-    const messageId = generateMessageId();
     const otpMatch = text.match(/\b\d{6}\b/);
     const otp = otpMatch ? otpMatch[0] : null;
 
-    const emailData = {
+    const createEmailData = (fromEmailAddress) => {
+      const messageId = generateMessageId(fromEmailAddress);
+      return {
       personalizations: [
         {
-          to: [{ email: to }],
-          dynamic_template_data: {
-            subject: subject,
-            otp: otp,
-            recipient_email: to
-          }
+          to: [{ email: to }]
         }
       ],
       from: {
-        email: FROM_EMAIL_ADDRESS,
+        email: fromEmailAddress,
         name: FROM_NAME
       },
       reply_to: {
@@ -172,9 +206,6 @@ const sendEmail = async (to, subject, text, html = null) => {
         bypass_list_management: { enable: true }
       },
       headers: {
-        'List-Unsubscribe': `<mailto:${REPLY_TO_EMAIL_ADDRESS}?subject=unsubscribe>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-        'Precedence': 'bulk',
         'X-Auto-Response-Suppress': 'OOF, AutoReply, NDR',
         'Feedback-ID': `evento-${new Date().getFullYear()}`,
         'X-Report-Abuse': REPLY_TO_EMAIL_ADDRESS,
@@ -192,19 +223,42 @@ const sendEmail = async (to, subject, text, html = null) => {
         { type: 'text/plain', value: text },
         { type: 'text/html', value: emailHtml }
       ]
+      };
     };
 
     console.log(`[Email] 📧 Sending to ${to}`);
     console.log(`[Email]    Subject: ${subject}`);
     console.log(`[Email]    OTP: ${otp || 'N/A'}`);
 
-    const response = await axios.post('https://api.sendgrid.com/v3/mail/send', emailData, {
-      headers: {
-        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-        'Content-Type': 'application/json',
-        'User-Agent': 'Evento/1.0 (SendGrid API Client)'
+    const sendWithFrom = (fromEmailAddress) => axios.post(
+      'https://api.sendgrid.com/v3/mail/send',
+      createEmailData(fromEmailAddress),
+      {
+        headers: {
+          'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'Evento/1.0 (SendGrid API Client)'
+        }
       }
-    });
+    );
+
+    let response;
+    try {
+      response = await sendWithFrom(FROM_EMAIL_ADDRESS);
+    } catch (error) {
+      const errorDetails = error.response?.data || error.message;
+      if (!isVerifiedSenderError(errorDetails)) {
+        throw error;
+      }
+
+      const verifiedSenderEmail = await getVerifiedSenderEmail();
+      if (!verifiedSenderEmail || verifiedSenderEmail === FROM_EMAIL_ADDRESS) {
+        throw error;
+      }
+
+      console.warn(`[SendGrid] FROM_EMAIL is not verified. Retrying with verified sender ${verifiedSenderEmail}.`);
+      response = await sendWithFrom(verifiedSenderEmail);
+    }
 
     console.log(`[Email] ✓ Sent to ${to} (HTTP ${response.status})`);
     return { success: true, data: response.status };
