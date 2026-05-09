@@ -10,13 +10,14 @@ const OTP_RATE_LIMIT_SECONDS = 60;
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyEmail, verifyLoginOTP, resendVerification, resendLoginOTP, verifyBookingOTP, resendBookingOTP } = useAuth();
+  const { user, verifyEmail, verifyLoginOTP, resendVerification, resendLoginOTP, verifyBookingOTP, resendBookingOTP } = useAuth();
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [otpTimer, setOtpTimer] = useState(OTP_EXPIRY_MINUTES * 60);
   const [canResend, setCanResend] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(OTP_RATE_LIMIT_SECONDS);
   const [from, setFrom] = useState(''); // 'registration', 'login', or 'booking'
+  const [recipientEmail, setRecipientEmail] = useState('');
   const [bookingId, setBookingId] = useState(null);
   const timerInterval = useRef(null);
   const resendInterval = useRef(null);
@@ -24,9 +25,30 @@ const VerifyEmail = () => {
   useEffect(() => {
     if (location.state) {
       setFrom(location.state.from || '');
+      setRecipientEmail(location.state.email || '');
       setBookingId(location.state.bookingId || null);
     }
   }, [location.state]);
+
+  const verificationTitle = from === 'booking'
+    ? 'Verify Your Booking'
+    : from === 'login'
+      ? 'Verify Login'
+      : 'Verify Your Email';
+
+  const verificationDescription = from === 'booking'
+    ? 'We sent a 6-digit booking code to your email'
+    : from === 'login'
+      ? 'We sent a 6-digit login code to your email'
+      : 'We sent a 6-digit code to your email';
+
+  const verifyButtonText = from === 'booking'
+    ? 'Verify & Confirm Booking'
+    : from === 'login'
+      ? 'Verify Login'
+      : 'Verify Email';
+
+  const displayEmail = recipientEmail || user?.email;
 
   // OTP countdown timer
   useEffect(() => {
@@ -74,13 +96,12 @@ const VerifyEmail = () => {
 
     setLoading(true);
     try {
-      let res;
       if (from === 'registration') {
-        res = await verifyEmail(otp);
+        await verifyEmail(otp);
         // After email verification, navigate to dashboard
         navigate('/dashboard');
       } else if (from === 'login') {
-        res = await verifyLoginOTP(otp);
+        const res = await verifyLoginOTP(otp);
         // After OTP verification, navigate based on role
         if (res.user && res.user.role === 'host') {
           navigate('/host');
@@ -88,12 +109,12 @@ const VerifyEmail = () => {
           navigate('/dashboard');
         }
       } else if (from === 'booking') {
-        res = await verifyBookingOTP(bookingId, otp);
+        await verifyBookingOTP(bookingId, otp);
         // After booking OTP verification, navigate to booking confirmation
         navigate(`/booking/${bookingId}/confirmation`);
       } else {
         // Default to email verification (registration)
-        res = await verifyEmail(otp);
+        await verifyEmail(otp);
         navigate('/dashboard');
       }
       toast.success('Verification successful!');
@@ -107,15 +128,14 @@ const VerifyEmail = () => {
   const handleResend = async () => {
     setLoading(true);
     try {
-      let res;
       if (from === 'registration') {
-        res = await resendVerification();
+        await resendVerification();
       } else if (from === 'login') {
-        res = await resendLoginOTP();
+        await resendLoginOTP();
       } else if (from === 'booking') {
-        res = await resendBookingOTP(bookingId);
+        await resendBookingOTP(bookingId);
       } else {
-        res = await resendVerification();
+        await resendVerification();
       }
       setOtpTimer(OTP_EXPIRY_MINUTES * 60);
       setResendCountdown(OTP_RATE_LIMIT_SECONDS);
@@ -141,9 +161,15 @@ const VerifyEmail = () => {
                 Evento
               </span>
             </a>
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">Verify Your Email</h2>
+            <h2 className="mt-4 text-2xl font-bold text-gray-900">{verificationTitle}</h2>
             <p className="mt-2 text-gray-600">
-              We sent a 6-digit code to your email
+              {verificationDescription}
+              {displayEmail && (
+                <>
+                  <br />
+                  <strong>{displayEmail}</strong>
+                </>
+              )}
             </p>
           </div>
 
@@ -183,7 +209,7 @@ const VerifyEmail = () => {
               disabled={loading || otpTimer === 0}
               className="w-full btn-primary"
             >
-              {loading ? 'Verifying...' : 'Verify Email'}
+              {loading ? 'Verifying...' : verifyButtonText}
             </button>
           </form>
 

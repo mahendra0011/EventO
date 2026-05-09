@@ -8,12 +8,23 @@ const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@evento.com';
 const FROM_NAME = process.env.FROM_NAME || 'Evento';
 const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || FROM_EMAIL;
 
+const parseEmailAddress = (value) => {
+  const email = String(value || '').trim();
+  const match = email.match(/<([^>]+)>/);
+  return (match ? match[1] : email).trim();
+};
+
+const FROM_EMAIL_ADDRESS = parseEmailAddress(FROM_EMAIL);
+const REPLY_TO_EMAIL_ADDRESS = parseEmailAddress(REPLY_TO_EMAIL);
+const SENDER_DOMAIN = FROM_EMAIL_ADDRESS.includes('@')
+  ? FROM_EMAIL_ADDRESS.split('@').pop()
+  : 'evento.com';
+
 // Generate a unique Message-ID for better deliverability
-const generateMessageId = (email) => {
-  const domain = FROM_EMAIL.includes('@') ? FROM_EMAIL.split('@')[1] : 'evento.com';
+const generateMessageId = () => {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 8);
-  return `<${timestamp}.${random}@${domain}>`;
+  return `<${timestamp}.${random}@${SENDER_DOMAIN}>`;
 };
 
 // Create professional HTML email template
@@ -133,7 +144,7 @@ const sendEmail = async (to, subject, text, html = null) => {
 
   try {
     const emailHtml = html || createHtmlTemplate(subject, text);
-    const messageId = generateMessageId(to);
+    const messageId = generateMessageId();
     const otpMatch = text.match(/\b\d{6}\b/);
     const otp = otpMatch ? otpMatch[0] : null;
 
@@ -149,11 +160,11 @@ const sendEmail = async (to, subject, text, html = null) => {
         }
       ],
       from: {
-        email: FROM_EMAIL.replace(/.*<(.+)>/, '$1'), // Extract email from "Name <email>" format
+        email: FROM_EMAIL_ADDRESS,
         name: FROM_NAME
       },
       reply_to: {
-        email: REPLY_TO_EMAIL
+        email: REPLY_TO_EMAIL_ADDRESS
       },
       subject: subject,
       mail_settings: {
@@ -161,13 +172,13 @@ const sendEmail = async (to, subject, text, html = null) => {
         bypass_list_management: { enable: true }
       },
       headers: {
-        'List-Unsubscribe': `<mailto:${REPLY_TO_EMAIL}?subject=unsubscribe>`,
+        'List-Unsubscribe': `<mailto:${REPLY_TO_EMAIL_ADDRESS}?subject=unsubscribe>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         'Precedence': 'bulk',
         'X-Auto-Response-Suppress': 'OOF, AutoReply, NDR',
         'Feedback-ID': `evento-${new Date().getFullYear()}`,
-        'X-Report-Abuse': REPLY_TO_EMAIL,
-        'X-Complaints-To': REPLY_TO_EMAIL,
+        'X-Report-Abuse': REPLY_TO_EMAIL_ADDRESS,
+        'X-Complaints-To': REPLY_TO_EMAIL_ADDRESS,
         'X-Message-Source': 'Evento Platform',
         'X-Mailer': 'Evento Mailer (SendGrid API)',
         'Message-ID': messageId

@@ -50,7 +50,7 @@ const Register = () => {
       } else {
         const res = await register(formData.name, formData.email, formData.password, formData.phone);
         if (res.requiresVerification) {
-          navigate('/verify-email', { state: { from: 'registration' } });
+          navigate('/verify-email', { state: { from: 'registration', email: formData.email } });
           toast.success('Please check your email for verification code');
         } else {
           toast.success('Registration successful!');

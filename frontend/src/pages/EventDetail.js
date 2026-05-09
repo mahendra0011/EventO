@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
-import { Calendar, Clock, MapPin, IndianRupee, Users, Ticket, ArrowLeft, Heart, Phone, Mail, User, Star, Share2, Copy, Check, ShieldCheck, Timer, RefreshCw, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, IndianRupee, Users, Ticket, ArrowLeft, Heart, Phone, Mail, User, Star, Share2, Check, ShieldCheck, Timer, RefreshCw, CheckCircle } from 'lucide-react';
 import { addToWishlist, removeFromWishlist, checkWishlist } from '../utils/api';
 import { verifyBookingOTP, resendBookingOTP } from '../utils/api';
 
@@ -33,6 +33,16 @@ const EventDetail = () => {
     const [bookingOtpVerified, setBookingOtpVerified] = useState(false);
     const bookingTimerInterval = useRef(null);
     const bookingResendInterval = useRef(null);
+
+    const openBookingOtpFlow = (bookingId) => {
+        setLastBookingId(bookingId);
+        setBookingOtp('');
+        setBookingOtpTimer(10 * 60);
+        setBookingCanResend(false);
+        setBookingResendCountdown(60);
+        setBookingOtpVerified(false);
+        setShowBookingModal(true);
+    };
 
   useEffect(() => {
     fetchEvent();
@@ -86,12 +96,20 @@ const EventDetail = () => {
                 }]
             });
 
-            setLastBookingId(res.data.bookingId);
-            // Redirect to verification page for booking OTP
-            navigate('/verify-email', { state: { from: 'booking', bookingId: res.data.bookingId } });
-            toast.success('OTP sent to your email!');
+            openBookingOtpFlow(res.data.bookingId);
+            if (res.data.emailSent === false) {
+                toast.error(res.data.message || 'Booking created, but OTP email could not be sent. Please try resend.');
+            } else {
+                toast.success('OTP sent to your email!');
+            }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Booking failed');
+            const existingBookingId = error.response?.data?.bookingId;
+            if (existingBookingId) {
+                openBookingOtpFlow(existingBookingId);
+                toast.error(error.response?.data?.message || 'You already have a pending booking. Enter the OTP or resend it.');
+            } else {
+                toast.error(error.response?.data?.message || 'Booking failed');
+            }
         } finally {
             setBookingLoading(false);
         }
@@ -551,11 +569,12 @@ const EventDetail = () => {
                {event.availableTickets > 0 ? (
                  <div className="flex gap-2">
                    <button
-                     onClick={() => setShowBookingModal(true)}
-                     className="flex-1 btn-primary flex items-center justify-center"
+                     onClick={handleBooking}
+                     disabled={bookingLoading}
+                     className="flex-1 btn-primary flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
                    >
                      <Ticket className="h-5 w-5 mr-2" />
-                     Book Now
+                     {bookingLoading ? 'Sending OTP...' : 'Book Now'}
                    </button>
                    <motion.button
                      onClick={handleShare}
@@ -669,7 +688,7 @@ const EventDetail = () => {
                       onClick={handleCloseBookingModal}
                       className="text-gray-500 hover:text-gray-700 text-sm"
                     >
-                      Cancel Booking
+                      Close
                     </button>
                   </div>
 

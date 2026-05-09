@@ -29,7 +29,8 @@ exports.createBooking = async (req, res) => {
      if (existingPendingBooking) {
        return res.status(400).json({
          message: 'You already have a pending booking for this event',
-         bookingId: existingPendingBooking._id
+         bookingId: existingPendingBooking._id,
+         requiresOTP: true
        });
      }
 
@@ -54,11 +55,11 @@ exports.createBooking = async (req, res) => {
      console.log('[Booking] Created booking', booking._id, 'for user', req.user.id);
 
      const eventPopulated = await Event.findById(eventId).select('title');
-     sendOTPEmail(req.user.email, otp, req.user.name, eventPopulated?.title || 'Event Booking')
-       .then(success => {
-         if (!success) console.warn('OTP email failed');
-       })
-       .catch(err => console.error('OTP email error:', err.message));
+     const otpEmailResult = await sendOTPEmail(req.user.email, otp, req.user.name, eventPopulated?.title || 'Event Booking');
+     const emailSent = Boolean(otpEmailResult?.success);
+     if (!emailSent) {
+       console.warn('OTP email failed:', otpEmailResult?.error || otpEmailResult?.message);
+     }
 
      await Notification.create({
        user: booking.user,
@@ -69,10 +70,13 @@ exports.createBooking = async (req, res) => {
      });
 
      res.status(201).json({
-       message: 'Booking created. Please verify OTP sent to your email.',
+       message: emailSent
+         ? 'Booking created. Please verify OTP sent to your email.'
+         : 'Booking created, but OTP email could not be sent. Please try resend.',
        bookingId: booking._id,
        totalPrice: event.price * numberOfTickets,
-       requiresOTP: true
+       requiresOTP: true,
+       emailSent
      });
    } catch (error) {
      console.error('Create booking error:', error);
@@ -132,7 +136,11 @@ exports.verifyOTP = async (req, res) => {
          totalPrice: booking.totalPrice,
          bookingId: booking._id
        }
-     ).catch(err => console.error('Confirmation email error:', err.message));
+     )
+       .then(result => {
+         if (!result?.success) console.warn('Confirmation email failed:', result?.error || result?.message);
+       })
+       .catch(err => console.error('Confirmation email error:', err.message));
 
      await Notification.create({
        user: booking.user,
@@ -176,17 +184,17 @@ exports.resendOTP = async (req, res) => {
      const otp = generateSecureOTP();
      const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
+     const event = await Event.findById(booking.event).select('title');
+     const otpEmailResult = await sendOTPEmail(req.user.email, otp, req.user.name, event?.title || 'Event Booking');
+     if (!otpEmailResult?.success) {
+       console.warn('Resend OTP email failed:', otpEmailResult?.error || otpEmailResult?.message);
+       return res.status(502).json({ message: 'Could not resend OTP email. Please try again.' });
+     }
+
      booking.otp = otp;
      booking.otpExpires = otpExpires;
      booking.lastOtpSent = new Date();
      await booking.save();
-
-     const event = await Event.findById(booking.event).select('title');
-     sendOTPEmail(req.user.email, otp, req.user.name, event?.title || 'Event Booking')
-       .then(success => {
-         if (!success) console.warn('Resend OTP email failed');
-       })
-       .catch(err => console.error('Resend OTP error:', err.message));
 
      res.json({ message: 'OTP resent successfully' });
    } catch (error) {
@@ -342,7 +350,11 @@ exports.confirmBooking = async (req, res) => {
          totalPrice: booking.totalPrice,
          bookingId: booking._id
        }
-     ).catch(err => console.error('Confirmation email error:', err.message));
+     )
+       .then(result => {
+         if (!result?.success) console.warn('Confirmation email failed:', result?.error || result?.message);
+       })
+       .catch(err => console.error('Confirmation email error:', err.message));
 
      res.json({ message: 'Booking confirmed successfully', booking });
    } catch (error) {

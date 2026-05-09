@@ -1,6 +1,12 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const { sendEmailVerificationOTP, generateSecureOTP, OTP_EXPIRY_MINUTES, OTP_RATE_LIMIT_SECONDS } = require('../utils/email');
+const {
+  sendEmailVerificationOTP,
+  sendLoginOTPEmail,
+  generateSecureOTP,
+  OTP_EXPIRY_MINUTES,
+  OTP_RATE_LIMIT_SECONDS
+} = require('../utils/email');
 
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -80,8 +86,8 @@ exports.register = async (req, res) => {
     const token = generateToken(user._id);
 
     sendEmailVerificationOTP(user.email, otp, user.name)
-      .then(success => {
-        if (!success) console.warn('Email verification OTP failed');
+      .then(result => {
+        if (!result?.success) console.warn('Email verification OTP failed:', result?.error || result?.message);
       })
       .catch(err => console.error('Email verification OTP error:', err.message));
 
@@ -140,8 +146,8 @@ exports.login = async (req, res) => {
       await user.save();
 
       sendLoginOTPEmail(user.email, otp, user.name)
-        .then(success => {
-          if (!success) console.warn('Login OTP email failed');
+        .then(result => {
+          if (!result?.success) console.warn('Login OTP email failed:', result?.error || result?.message);
         })
         .catch(err => console.error('Login OTP email error:', err.message));
 
@@ -290,8 +296,8 @@ exports.resendLoginOtp = async (req, res) => {
     await user.save();
 
     sendLoginOTPEmail(user.email, otp, user.name)
-      .then(success => {
-        if (!success) console.warn('Resend login OTP email failed');
+      .then(result => {
+        if (!result?.success) console.warn('Resend login OTP email failed:', result?.error || result?.message);
       })
       .catch(err => console.error('Resend login OTP error:', err.message));
 
@@ -330,8 +336,8 @@ exports.resendVerification = async (req, res) => {
     await user.save();
 
     sendEmailVerificationOTP(user.email, otp, user.name)
-      .then(success => {
-        if (!success) console.warn('Resend verification email failed');
+      .then(result => {
+        if (!result?.success) console.warn('Resend verification email failed:', result?.error || result?.message);
       })
       .catch(err => console.error('Resend verification error:', err.message));
 
