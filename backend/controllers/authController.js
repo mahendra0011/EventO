@@ -31,8 +31,8 @@ const setVerificationOtp = (user, otp, otpExpires) => {
   user.emailVerificationOtpExpires = otpExpires;
   user.loginOtp = undefined;
   user.loginOtpExpires = undefined;
-  user.lastOtpSent = new Date();
-  user.lastLoginOtpSent = user.lastOtpSent;
+  user.lastOtpSent = undefined;
+  user.lastLoginOtpSent = undefined;
 };
 
 const getVerificationOtp = (user) => ({
@@ -45,14 +45,17 @@ const sendVerificationOtp = async (user) => {
   const otp = generateSecureOTP();
   const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
   setVerificationOtp(user, otp, otpExpires);
+  await user.save();
 
   const emailResult = await sendEmailVerificationOTP(user.email, otp, user.name);
   if (!emailResult?.success) {
-    return emailResult;
+    return { ...emailResult, emailSent: false };
   }
 
+  user.lastOtpSent = new Date();
+  user.lastLoginOtpSent = user.lastOtpSent;
   await user.save();
-  return { success: true };
+  return { success: true, emailSent: true };
 };
 
 const ensureVerificationOtpForLogin = async (user) => {
@@ -66,12 +69,12 @@ const ensureVerificationOtpForLogin = async (user) => {
   return sendVerificationOtp(user);
 };
 
-const buildUnverifiedResponse = (user, message) => ({
+const buildUnverifiedResponse = (user, message, emailSent = true) => ({
   success: true,
   verified: false,
   requiresVerification: true,
   requiresOTP: true,
-  emailSent: true,
+  emailSent,
   token: generateToken(user._id),
   role: user.role,
   user: buildAuthUser(user),
@@ -129,16 +132,14 @@ exports.hostRegister = async (req, res) => {
     const emailResult = await sendVerificationOtp(user);
     if (!emailResult?.success) {
       console.warn('Host verification OTP failed:', emailResult?.error || emailResult?.message);
-      await User.deleteOne({ _id: user._id });
-      return res.status(502).json({
-        message: getEmailFailureMessage('verification'),
-        emailSent: false
-      });
     }
 
     res.status(201).json(buildUnverifiedResponse(
       user,
-      'Host account created. Please verify the OTP sent to your email.'
+      emailResult?.success
+        ? 'Host account created. Please verify the OTP sent to your email.'
+        : getEmailFailureMessage('verification'),
+      Boolean(emailResult?.success)
     ));
   } catch (error) {
     console.error('Host register error:', error);
@@ -171,16 +172,14 @@ exports.register = async (req, res) => {
     const emailResult = await sendVerificationOtp(user);
     if (!emailResult?.success) {
       console.warn('Email verification OTP failed:', emailResult?.error || emailResult?.message);
-      await User.deleteOne({ _id: user._id });
-      return res.status(502).json({
-        message: getEmailFailureMessage('verification'),
-        emailSent: false
-      });
     }
 
     res.status(201).json(buildUnverifiedResponse(
       user,
-      'Account created. Please verify the OTP sent to your email.'
+      emailResult?.success
+        ? 'Account created. Please verify the OTP sent to your email.'
+        : getEmailFailureMessage('verification'),
+      Boolean(emailResult?.success)
     ));
   } catch (error) {
     console.error('Register error:', error);
@@ -210,17 +209,16 @@ exports.login = async (req, res) => {
       const emailResult = await ensureVerificationOtpForLogin(user);
       if (!emailResult?.success) {
         console.warn('Login verification OTP failed:', emailResult?.error || emailResult?.message);
-        return res.status(502).json({
-          message: getEmailFailureMessage('verification'),
-          emailSent: false
-        });
       }
 
       return res.status(200).json(buildUnverifiedResponse(
         user,
-        emailResult.reused
+        !emailResult?.success
+          ? getEmailFailureMessage('verification')
+          : emailResult.reused
           ? 'Account is not verified. Use the OTP already sent to your email.'
-          : 'Account is not verified. A new OTP was sent to your email.'
+          : 'Account is not verified. A new OTP was sent to your email.',
+        Boolean(emailResult?.success)
       ));
     }
 
@@ -405,17 +403,16 @@ exports.hostLogin = async (req, res) => {
       const emailResult = await ensureVerificationOtpForLogin(user);
       if (!emailResult?.success) {
         console.warn('Host login verification OTP failed:', emailResult?.error || emailResult?.message);
-        return res.status(502).json({
-          message: getEmailFailureMessage('verification'),
-          emailSent: false
-        });
       }
 
       return res.status(200).json(buildUnverifiedResponse(
         user,
-        emailResult.reused
+        !emailResult?.success
+          ? getEmailFailureMessage('verification')
+          : emailResult.reused
           ? 'Account is not verified. Use the OTP already sent to your email.'
-          : 'Account is not verified. A new OTP was sent to your email.'
+          : 'Account is not verified. A new OTP was sent to your email.',
+        Boolean(emailResult?.success)
       ));
     }
 
@@ -481,17 +478,16 @@ exports.hostKeywordLogin = async (req, res) => {
       const emailResult = await ensureVerificationOtpForLogin(user);
       if (!emailResult?.success) {
         console.warn('Host login verification OTP failed:', emailResult?.error || emailResult?.message);
-        return res.status(502).json({
-          message: getEmailFailureMessage('verification'),
-          emailSent: false
-        });
       }
 
       return res.status(200).json(buildUnverifiedResponse(
         user,
-        emailResult.reused
+        !emailResult?.success
+          ? getEmailFailureMessage('verification')
+          : emailResult.reused
           ? 'Account is not verified. Use the OTP already sent to your email.'
-          : 'Account is not verified. A new OTP was sent to your email.'
+          : 'Account is not verified. A new OTP was sent to your email.',
+        Boolean(emailResult?.success)
       ));
     }
 
@@ -537,16 +533,14 @@ exports.hostKeywordRegister = async (req, res) => {
     const emailResult = await sendVerificationOtp(user);
     if (!emailResult?.success) {
       console.warn('Host verification OTP failed:', emailResult?.error || emailResult?.message);
-      await User.deleteOne({ _id: user._id });
-      return res.status(502).json({
-        message: getEmailFailureMessage('verification'),
-        emailSent: false
-      });
     }
 
     res.status(201).json(buildUnverifiedResponse(
       user,
-      'Host account created. Please verify the OTP sent to your email.'
+      emailResult?.success
+        ? 'Host account created. Please verify the OTP sent to your email.'
+        : getEmailFailureMessage('verification'),
+      Boolean(emailResult?.success)
     ));
   } catch (error) {
     console.error('Host keyword register error:', error);

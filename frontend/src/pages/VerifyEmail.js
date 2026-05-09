@@ -18,6 +18,7 @@ const VerifyEmail = () => {
   const [resendCountdown, setResendCountdown] = useState(OTP_RATE_LIMIT_SECONDS);
   const [from, setFrom] = useState(''); // 'registration', 'login', or 'booking'
   const [recipientEmail, setRecipientEmail] = useState('');
+  const [emailSent, setEmailSent] = useState(true);
   const [bookingId, setBookingId] = useState(null);
   const timerInterval = useRef(null);
   const resendInterval = useRef(null);
@@ -27,6 +28,11 @@ const VerifyEmail = () => {
       setFrom(location.state.from || '');
       setRecipientEmail(location.state.email || '');
       setBookingId(location.state.bookingId || null);
+      setEmailSent(location.state.emailSent !== false);
+      if (location.state.canResendNow) {
+        setCanResend(true);
+        setResendCountdown(0);
+      }
     }
   }, [location.state]);
 
@@ -234,9 +240,10 @@ const VerifyEmail = () => {
           </div>
 
           {/* Info */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-xs text-blue-800">
-              <strong>Tip:</strong> Check your spam folder if you don't see the email.
+          <div className={`mt-6 p-4 rounded-lg border ${emailSent ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`}>
+            <p className={`text-xs ${emailSent ? 'text-blue-800' : 'text-amber-800'}`}>
+              <strong>{emailSent ? 'Tip:' : 'Email not sent:'}</strong>{' '}
+              {emailSent ? "Check your spam folder if you don't see the email." : 'Use Resend Code after checking your SMTP settings.'}
               <br />
               OTP is valid for {OTP_EXPIRY_MINUTES} minutes.
             </p>

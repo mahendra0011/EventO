@@ -34,14 +34,29 @@ const Login = () => {
 
             if (response.requiresVerification || response.requiresOTP) {
                 // Redirect to verification page for OTP
-                navigate('/verify-email', { state: { from: 'login', email } });
-                toast.success('OTP sent to your email!');
+                navigate('/verify-email', {
+                    state: {
+                        from: 'login',
+                        email,
+                        emailSent: response.emailSent !== false,
+                        canResendNow: response.emailSent === false
+                    }
+                });
+                if (response.emailSent === false) {
+                    toast.error(response.message || 'Could not send OTP email. Try resend.');
+                } else {
+                    toast.success('OTP sent to your email!');
+                }
             } else {
                 toast.success('Login successful!');
                 navigate(response.user?.role === 'host' ? '/host' : '/dashboard');
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Login failed');
+            if (error.code === 'ECONNABORTED') {
+                toast.error('The server is taking too long to respond. Please try again.');
+            } else {
+                toast.error(error.response?.data?.message || 'Login failed');
+            }
         } finally {
             setLoading(false);
         }

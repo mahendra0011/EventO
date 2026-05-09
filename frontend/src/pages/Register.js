@@ -19,6 +19,31 @@ const Register = () => {
   const { register, hostRegister } = useAuth();
   const navigate = useNavigate();
 
+  const getErrorMessage = (error) => {
+    if (error.code === 'ECONNABORTED') {
+      return 'The server is taking too long to respond. Please check backend, MongoDB, and email settings.';
+    }
+
+    return error.response?.data?.message || 'Registration failed';
+  };
+
+  const goToVerification = (email, res) => {
+    navigate('/verify-email', {
+      state: {
+        from: 'registration',
+        email,
+        emailSent: res.emailSent !== false,
+        canResendNow: res.emailSent === false
+      }
+    });
+
+    if (res.emailSent === false) {
+      toast.error(res.message || 'Account created, but the OTP email could not be sent. Try resend.');
+    } else {
+      toast.success('Please check your email for verification code');
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -46,8 +71,7 @@ const Register = () => {
       if (formData.isHost) {
         const res = await hostRegister(formData.name, formData.email, formData.password, formData.phone, formData.secretKeyword);
         if (res.requiresVerification || res.requiresOTP) {
-          navigate('/verify-email', { state: { from: 'registration', email: formData.email } });
-          toast.success('Please check your email for verification code');
+          goToVerification(formData.email, res);
         } else {
           toast.success('Host account created!');
           navigate('/host');
@@ -55,15 +79,14 @@ const Register = () => {
       } else {
         const res = await register(formData.name, formData.email, formData.password, formData.phone);
         if (res.requiresVerification || res.requiresOTP) {
-          navigate('/verify-email', { state: { from: 'registration', email: formData.email } });
-          toast.success('Please check your email for verification code');
+          goToVerification(formData.email, res);
         } else {
           toast.success('Registration successful!');
           navigate('/dashboard');
         }
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      toast.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }

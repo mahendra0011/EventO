@@ -10,6 +10,7 @@ const SMTP_PORT = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587)
 const SMTP_SECURE = String(process.env.SMTP_SECURE || process.env.EMAIL_SECURE || '').toLowerCase() === 'true';
 const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || '';
+const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || process.env.SMTP_TIMEOUT_MS || 10000);
 
 const parseEmailAddress = (value) => {
   const email = String(value || '').trim();
@@ -38,6 +39,13 @@ const getTransportOptions = () => {
     return null;
   }
 
+  const timeoutOptions = {
+    connectionTimeout: EMAIL_SEND_TIMEOUT_MS,
+    greetingTimeout: EMAIL_SEND_TIMEOUT_MS,
+    socketTimeout: EMAIL_SEND_TIMEOUT_MS,
+    dnsTimeout: Math.min(EMAIL_SEND_TIMEOUT_MS, 5000)
+  };
+
   if (SMTP_HOST) {
     return {
       host: SMTP_HOST,
@@ -46,7 +54,8 @@ const getTransportOptions = () => {
       auth: {
         user: SMTP_USER,
         pass: SMTP_PASS
-      }
+      },
+      ...timeoutOptions
     };
   }
 
@@ -55,7 +64,8 @@ const getTransportOptions = () => {
     auth: {
       user: SMTP_USER,
       pass: SMTP_PASS
-    }
+    },
+    ...timeoutOptions
   };
 };
 
@@ -79,6 +89,28 @@ const createTextFromHtml = (html = '') => html
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim();
+
+const withTimeout = async (promise, timeoutMs, label) => {
+  if (!timeoutMs || timeoutMs <= 0) {
+    return promise;
+  }
+
+  let timeoutId;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          const error = new Error(`${label} timed out after ${timeoutMs}ms`);
+          error.code = 'EMAIL_TIMEOUT';
+          reject(error);
+        }, timeoutMs);
+      })
+    ]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
 
 const createEmailShell = (title, bodyHtml) => {
   const safeTitle = escapeHtml(title);
@@ -137,7 +169,7 @@ const sendEmail = async ({ to, subject, text, html, replyTo = REPLY_TO_EMAIL }) 
   }
 
   try {
-    const info = await transporter.sendMail({
+    const sendPromise = transporter.sendMail({
       from: FROM_HEADER,
       to,
       replyTo,
@@ -149,6 +181,9 @@ const sendEmail = async ({ to, subject, text, html, replyTo = REPLY_TO_EMAIL }) 
         'X-Mailer': 'Evento Nodemailer'
       }
     });
+    sendPromise.catch(() => {});
+
+    const info = await withTimeout(sendPromise, EMAIL_SEND_TIMEOUT_MS, 'Email send');
 
     console.log(`[Email] Sent "${subject}" to ${to} (${info.messageId})`);
     return {
@@ -158,6 +193,10 @@ const sendEmail = async ({ to, subject, text, html, replyTo = REPLY_TO_EMAIL }) 
       rejected: info.rejected
     };
   } catch (error) {
+    if (error.code === 'EMAIL_TIMEOUT' && cachedTransporter) {
+      cachedTransporter.close();
+      cachedTransporter = null;
+    }
     console.error('[Email] Nodemailer failed:', error.message);
     return { success: false, error: error.message };
   }
