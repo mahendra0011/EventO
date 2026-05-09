@@ -31,8 +31,8 @@ const setVerificationOtp = (user, otp, otpExpires) => {
   user.emailVerificationOtpExpires = otpExpires;
   user.loginOtp = undefined;
   user.loginOtpExpires = undefined;
-  user.lastOtpSent = undefined;
-  user.lastLoginOtpSent = undefined;
+  user.lastOtpSent = new Date();
+  user.lastLoginOtpSent = user.lastOtpSent;
 };
 
 const getVerificationOtp = (user) => ({
@@ -41,21 +41,26 @@ const getVerificationOtp = (user) => ({
   lastOtpSent: user.lastOtpSent || user.lastLoginOtpSent
 });
 
+const queueVerificationEmail = (user, otp, purpose) => {
+  sendEmailVerificationOTP(user.email, otp, user.name)
+    .then(result => {
+      if (!result?.success) {
+        console.warn(`${purpose} verification OTP failed:`, result?.error || result?.message);
+      }
+    })
+    .catch(error => {
+      console.error(`${purpose} verification OTP error:`, error.message);
+    });
+};
+
 const sendVerificationOtp = async (user) => {
   const otp = generateSecureOTP();
   const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
   setVerificationOtp(user, otp, otpExpires);
   await user.save();
 
-  const emailResult = await sendEmailVerificationOTP(user.email, otp, user.name);
-  if (!emailResult?.success) {
-    return { ...emailResult, emailSent: false };
-  }
-
-  user.lastOtpSent = new Date();
-  user.lastLoginOtpSent = user.lastOtpSent;
-  await user.save();
-  return { success: true, emailSent: true };
+  queueVerificationEmail(user, otp, 'Auth');
+  return { success: true, emailSent: true, emailQueued: true };
 };
 
 const ensureVerificationOtpForLogin = async (user) => {

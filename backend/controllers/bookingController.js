@@ -20,6 +20,14 @@ const sendImportantEmail = (user, title, message, link) => {
     .catch(err => console.error('Important notification email error:', err.message));
 };
 
+const queueBookingOtpEmail = (email, otp, name, eventTitle) => {
+  sendOTPEmail(email, otp, name, eventTitle)
+    .then(result => {
+      if (!result?.success) console.warn('Booking OTP email failed:', result?.error || result?.message);
+    })
+    .catch(err => console.error('Booking OTP email error:', err.message));
+};
+
 exports.createBooking = async (req, res) => {
    try {
      const { eventId, numberOfTickets, attendeeDetails } = req.body;
@@ -57,33 +65,30 @@ exports.createBooking = async (req, res) => {
        existingPendingBooking.totalPrice = event.price * numberOfTickets;
        existingPendingBooking.attendeeDetails = attendeeDetails;
 
-       let emailSent = true;
+       let queuedOtp = null;
        let message = 'You already have a pending booking. Use the OTP already sent to your email.';
 
        if (!hasRecentActiveOtp) {
          const otp = generateSecureOTP();
          const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
-         const otpEmailResult = await sendOTPEmail(req.user.email, otp, req.user.name, event.title || 'Event Booking');
-         emailSent = Boolean(otpEmailResult?.success);
-
-         if (emailSent) {
-           existingPendingBooking.otp = otp;
-           existingPendingBooking.otpExpires = otpExpires;
-           existingPendingBooking.lastOtpSent = new Date();
-           message = 'Pending booking found. A new OTP was sent to your email.';
-         } else {
-           console.warn('Pending booking OTP email failed:', otpEmailResult?.error || otpEmailResult?.message);
-           message = 'Pending booking found, but OTP email could not be sent. Please try resend.';
-         }
+         existingPendingBooking.otp = otp;
+         existingPendingBooking.otpExpires = otpExpires;
+         existingPendingBooking.lastOtpSent = new Date();
+         queuedOtp = otp;
+         message = 'Pending booking found. A new OTP was sent to your email.';
        }
 
        await existingPendingBooking.save();
+       if (queuedOtp) {
+         queueBookingOtpEmail(req.user.email, queuedOtp, req.user.name, event.title || 'Event Booking');
+       }
 
        return res.status(200).json({
          message,
          bookingId: existingPendingBooking._id,
          totalPrice: existingPendingBooking.totalPrice,
-         emailSent,
+         emailSent: true,
+         emailQueued: true,
          requiresOTP: true
        });
      }
@@ -108,12 +113,7 @@ exports.createBooking = async (req, res) => {
 
      console.log('[Booking] Created booking', booking._id, 'for user', req.user.id);
 
-     const eventPopulated = await Event.findById(eventId).select('title');
-     const otpEmailResult = await sendOTPEmail(req.user.email, otp, req.user.name, eventPopulated?.title || 'Event Booking');
-     const emailSent = Boolean(otpEmailResult?.success);
-     if (!emailSent) {
-       console.warn('OTP email failed:', otpEmailResult?.error || otpEmailResult?.message);
-     }
+     queueBookingOtpEmail(req.user.email, otp, req.user.name, event.title || 'Event Booking');
 
      await Notification.create({
        user: booking.user,
@@ -140,13 +140,12 @@ exports.createBooking = async (req, res) => {
      }
 
      res.status(201).json({
-       message: emailSent
-         ? 'Booking created. Please verify OTP sent to your email.'
-         : 'Booking created, but OTP email could not be sent. Please try resend.',
+       message: 'Booking created. Please verify OTP sent to your email.',
        bookingId: booking._id,
        totalPrice: event.price * numberOfTickets,
        requiresOTP: true,
-       emailSent
+       emailSent: true,
+       emailQueued: true
      });
    } catch (error) {
      console.error('Create booking error:', error);
@@ -271,18 +270,14 @@ exports.resendOTP = async (req, res) => {
      const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
      const event = await Event.findById(booking.event).select('title');
-     const otpEmailResult = await sendOTPEmail(req.user.email, otp, req.user.name, event?.title || 'Event Booking');
-     if (!otpEmailResult?.success) {
-       console.warn('Resend OTP email failed:', otpEmailResult?.error || otpEmailResult?.message);
-       return res.status(502).json({ message: 'Could not resend OTP email. Please try again.' });
-     }
 
      booking.otp = otp;
      booking.otpExpires = otpExpires;
      booking.lastOtpSent = new Date();
      await booking.save();
+     queueBookingOtpEmail(req.user.email, otp, req.user.name, event?.title || 'Event Booking');
 
-     res.json({ message: 'OTP resent successfully' });
+     res.json({ message: 'OTP resent successfully', emailSent: true, emailQueued: true });
    } catch (error) {
      console.error('Resend OTP error:', error);
      res.status(500).json({ message: 'Server error' });

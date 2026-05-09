@@ -158,9 +158,11 @@ const VerifyEmail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-xl shadow-2xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gray-900 bg-opacity-40" />
+      <div className="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          <div role="dialog" aria-modal="true" className="bg-white rounded-lg shadow-2xl p-8">
           {/* Logo */}
           <div className="text-center mb-8">
             <a href="/" className="inline-flex items-center space-x-2">
@@ -248,8 +250,9 @@ const VerifyEmail = () => {
               OTP is valid for {OTP_EXPIRY_MINUTES} minutes.
             </p>
           </div>
-        </div>
+          </div>
       </div>
+    </div>
     </div>
   );
 };
