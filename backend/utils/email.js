@@ -4,12 +4,16 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const FROM_NAME = process.env.FROM_NAME || process.env.EMAIL_FROM_NAME || 'Evento';
-const SMTP_SERVICE = process.env.SMTP_SERVICE || process.env.EMAIL_SERVICE || '';
-const SMTP_HOST = process.env.SMTP_HOST || process.env.EMAIL_HOST || '';
+const cleanEnvValue = (value = '') => String(value).trim().replace(/^['"]|['"]$/g, '');
+
+const SMTP_SERVICE = cleanEnvValue(process.env.SMTP_SERVICE || process.env.EMAIL_SERVICE || '');
+const SMTP_HOST = cleanEnvValue(process.env.SMTP_HOST || process.env.EMAIL_HOST || '');
 const SMTP_PORT = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 587);
 const SMTP_SECURE = String(process.env.SMTP_SECURE || process.env.EMAIL_SECURE || '').toLowerCase() === 'true';
-const SMTP_USER = process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || '';
-const SMTP_PASS = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || '';
+const SMTP_USER = cleanEnvValue(process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || '');
+const rawSmtpPass = cleanEnvValue(process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || '');
+const isGmailSmtp = /gmail/i.test(SMTP_SERVICE) || /gmail/i.test(SMTP_HOST) || /gmail/i.test(SMTP_USER);
+const SMTP_PASS = isGmailSmtp ? rawSmtpPass.replace(/\s+/g, '') : rawSmtpPass;
 const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || process.env.SMTP_TIMEOUT_MS || 10000);
 
 const parseEmailAddress = (value) => {
@@ -59,8 +63,21 @@ const getTransportOptions = () => {
     };
   }
 
+  if (isGmailSmtp) {
+    return {
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS
+      },
+      ...timeoutOptions
+    };
+  }
+
   return {
-    service: SMTP_SERVICE || 'gmail',
+    service: SMTP_SERVICE,
     auth: {
       user: SMTP_USER,
       pass: SMTP_PASS

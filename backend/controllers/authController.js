@@ -41,26 +41,21 @@ const getVerificationOtp = (user) => ({
   lastOtpSent: user.lastOtpSent || user.lastLoginOtpSent
 });
 
-const queueVerificationEmail = (user, otp, purpose) => {
-  sendEmailVerificationOTP(user.email, otp, user.name)
-    .then(result => {
-      if (!result?.success) {
-        console.warn(`${purpose} verification OTP failed:`, result?.error || result?.message);
-      }
-    })
-    .catch(error => {
-      console.error(`${purpose} verification OTP error:`, error.message);
-    });
-};
-
 const sendVerificationOtp = async (user) => {
   const otp = generateSecureOTP();
   const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
   setVerificationOtp(user, otp, otpExpires);
   await user.save();
 
-  queueVerificationEmail(user, otp, 'Auth');
-  return { success: true, emailSent: true, emailQueued: true };
+  const emailResult = await sendEmailVerificationOTP(user.email, otp, user.name);
+  if (!emailResult?.success) {
+    user.lastOtpSent = undefined;
+    user.lastLoginOtpSent = undefined;
+    await user.save();
+    return { ...emailResult, emailSent: false };
+  }
+
+  return { success: true, emailSent: true };
 };
 
 const ensureVerificationOtpForLogin = async (user) => {
