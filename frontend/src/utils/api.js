@@ -33,15 +33,15 @@ api.interceptors.response.use(
   (error) => {
     if (error.response) {
       // Keep the temporary token so unverified users can complete OTP verification.
+      // Signup/login pages decide when to navigate to /verify-email. A global
+      // redirect here would hijack public pages like Home when an old unverified
+      // token is still in localStorage.
       if (error.response.status === 403 && (error.response.data.requiresVerification || error.response.data.requiresOTP)) {
-        if (window.location.pathname !== '/verify-email') {
-          window.location.href = '/verify-email';
-        }
+        return Promise.reject(error);
       }
       // Handle 401 Unauthorized
       else if (error.response.status === 401) {
         localStorage.removeItem('token');
-        window.location.href = '/login';
       }
     }
     return Promise.reject(error);
