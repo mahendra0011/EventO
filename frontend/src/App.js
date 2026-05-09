@@ -15,6 +15,7 @@ import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail'; // Add this line
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import CreateEvent from './pages/CreateEvent';
@@ -93,7 +94,7 @@ function AnimatedRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route
+        <Route 
           path="/login"
           element={
             <PageTransition>
@@ -108,6 +109,14 @@ function AnimatedRoutes() {
               <Register />
             </PageTransition>
           } 
+        />
+        <Route
+          path="/verify-email"
+          element={
+            <PageTransition>
+              <VerifyEmail />
+            </PageTransition>
+          }
         />
         <Route
           path="/dashboard"

@@ -3,36 +3,36 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
-import { verifyBookingOTP, resendBookingOTP } from '../utils/api';
 import toast from 'react-hot-toast';
 import { Calendar, Clock, MapPin, IndianRupee, Users, Ticket, ArrowLeft, Heart, Phone, Mail, User, Star, Share2, Copy, Check, ShieldCheck, Timer, RefreshCw, CheckCircle } from 'lucide-react';
 import { addToWishlist, removeFromWishlist, checkWishlist } from '../utils/api';
+import { verifyBookingOTP, resendBookingOTP } from '../utils/api';
 
 const EventDetail = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [event, setEvent] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const [numberOfTickets, setNumberOfTickets] = useState(1);
-  const [showBookingModal, setShowBookingModal] = useState(false);
-  const [inWishlist, setInWishlist] = useState(false);
-  const [reviews, setReviews] = useState([]);
-  const [avgRating, setAvgRating] = useState(0);
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [userReview, setUserReview] = useState(null);
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [lastBookingId, setLastBookingId] = useState(null);
-  const [bookingOtp, setBookingOtp] = useState('');
-  const [bookingOtpTimer, setBookingOtpTimer] = useState(10 * 60);
-  const [bookingCanResend, setBookingCanResend] = useState(false);
-  const [bookingResendCountdown, setBookingResendCountdown] = useState(60);
-  const [bookingOtpVerified, setBookingOtpVerified] = useState(false);
-  const bookingTimerInterval = useRef(null);
-  const bookingResendInterval = useRef(null);
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const { user } = useAuth();
+    const [event, setEvent] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [bookingLoading, setBookingLoading] = useState(false);
+    const [numberOfTickets, setNumberOfTickets] = useState(1);
+    const [showBookingModal, setShowBookingModal] = useState(false);
+    const [inWishlist, setInWishlist] = useState(false);
+    const [reviews, setReviews] = useState([]);
+    const [avgRating, setAvgRating] = useState(0);
+    const [showReviewForm, setShowReviewForm] = useState(false);
+    const [userReview, setUserReview] = useState(null);
+    const [rating, setRating] = useState(5);
+    const [comment, setComment] = useState('');
+    const [copied, setCopied] = useState(false);
+    const [lastBookingId, setLastBookingId] = useState(null);
+    const [bookingOtp, setBookingOtp] = useState('');
+    const [bookingOtpTimer, setBookingOtpTimer] = useState(10 * 60);
+    const [bookingCanResend, setBookingCanResend] = useState(false);
+    const [bookingResendCountdown, setBookingResendCountdown] = useState(60);
+    const [bookingOtpVerified, setBookingOtpVerified] = useState(false);
+    const bookingTimerInterval = useRef(null);
+    const bookingResendInterval = useRef(null);
 
   useEffect(() => {
     fetchEvent();
@@ -68,37 +68,33 @@ const EventDetail = () => {
   };
 
     const handleBooking = async () => {
-      if (!user) {
-        toast.error('Please login to book tickets');
-        navigate('/login');
-        return;
-      }
+        if (!user) {
+            toast.error('Please login to book tickets');
+            navigate('/login');
+            return;
+        }
 
-      setBookingLoading(true);
-      try {
-        const res = await api.post('/bookings', {
-          eventId: event._id,
-          numberOfTickets,
-          attendeeDetails: [{
-            name: user.name,
-            email: user.email,
-            phone: user.phone || ''
-          }]
-        });
+        setBookingLoading(true);
+        try {
+            const res = await api.post('/bookings', {
+                eventId: event._id,
+                numberOfTickets,
+                attendeeDetails: [{
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone || ''
+                }]
+            });
 
-        setLastBookingId(res.data.bookingId);
-        setShowBookingModal(true);
-        // Start OTP timers
-        setBookingOtpTimer(10 * 60);
-        setBookingResendCountdown(60);
-        setBookingCanResend(false);
-        setBookingOtpVerified(false);
-        setBookingOtp('');
-      } catch (error) {
-        toast.error(error.response?.data?.message || 'Booking failed');
-      } finally {
-        setBookingLoading(false);
-      }
+            setLastBookingId(res.data.bookingId);
+            // Redirect to verification page for booking OTP
+            navigate('/verify-email', { state: { from: 'booking', bookingId: res.data.bookingId } });
+            toast.success('OTP sent to your email!');
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Booking failed');
+        } finally {
+            setBookingLoading(false);
+        }
     };
 
     const handleShare = async () => {

@@ -29,44 +29,45 @@ const Register = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
+        toast.error('Passwords do not match');
+        return;
     }
 
     if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
+        toast.error('Password must be at least 6 characters');
+        return;
     }
 
     setLoading(true);
 
     try {
-      if (formData.isHost) {
-        // Host registration via context
-        await hostRegister(formData.name, formData.email, formData.password, formData.phone, formData.secretKeyword);
-        toast.success('Host account created!');
-        navigate('/host');
-      } else {
-        // Regular user registration
-        const res = await register(formData.name, formData.email, formData.password, formData.phone);
-        if (res.requiresVerification) {
-          setShowVerification(true);
-          toast.success('Please check your email for verification code');
+        if (formData.isHost) {
+            // Host registration via context
+            await hostRegister(formData.name, formData.email, formData.password, formData.phone, formData.secretKeyword);
+            toast.success('Host account created!');
+            navigate('/host');
         } else {
-          toast.success('Registration successful!');
-          navigate('/dashboard');
+            // Regular user registration
+            const res = await register(formData.name, formData.email, formData.password, formData.phone);
+            if (res.requiresVerification) {
+                // Redirect to verification page
+                navigate('/verify-email', { state: { from: 'registration' } });
+                toast.success('Please check your email for verification code');
+            } else {
+                toast.success('Registration successful!');
+                navigate('/dashboard');
+            }
         }
-      }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+        toast.error(error.response?.data?.message || 'Registration failed');
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
