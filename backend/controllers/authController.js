@@ -41,11 +41,11 @@ const getVerificationOtp = (user) => ({
   lastOtpSent: user.lastOtpSent || user.lastLoginOtpSent
 });
 
-const sendVerificationOtp = async (user) => {
+const sendVerificationOtp = async (user, save = true) => {
   const otp = generateSecureOTP();
   const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
   setVerificationOtp(user, otp, otpExpires);
-  await user.save();
+  if (save) await user.save();
 
   sendEmailVerificationOTP(user.email, otp, user.name).then(result => {
     if (!result?.success) {
@@ -74,7 +74,6 @@ const buildUnverifiedResponse = (user, message, emailSent = true) => ({
   requiresVerification: true,
   requiresOTP: true,
   emailSent,
-  token: generateToken(user._id),
   role: user.role,
   user: buildAuthUser(user),
   message
@@ -126,9 +125,8 @@ exports.hostRegister = async (req, res) => {
       secretKeyword
     });
 
+    sendVerificationOtp(user, false);
     await user.save();
-
-    sendVerificationOtp(user);
 
     res.status(201).json(buildUnverifiedResponse(
       user,
@@ -161,9 +159,8 @@ exports.register = async (req, res) => {
       phone
     });
 
+    sendVerificationOtp(user, false);
     await user.save();
-
-    sendVerificationOtp(user);
 
     res.status(201).json(buildUnverifiedResponse(
       user,
@@ -221,8 +218,8 @@ exports.login = async (req, res) => {
 
 exports.verifyEmail = async (req, res) => {
   try {
-    const { otp } = req.body;
-    const user = await User.findById(req.user.id);
+    const { otp, email } = req.body;
+    const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -252,8 +249,8 @@ exports.verifyEmail = async (req, res) => {
 
 exports.verifyLoginOtp = async (req, res) => {
   try {
-    const { otp } = req.body;
-    const user = await User.findById(req.user.id);
+    const { otp, email } = req.body;
+    const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -283,7 +280,8 @@ exports.verifyLoginOtp = async (req, res) => {
 
 exports.resendLoginOtp = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const { email } = req.body;
+    const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -311,7 +309,8 @@ exports.resendLoginOtp = async (req, res) => {
 
 exports.resendVerification = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const { email } = req.body;
+    const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -480,9 +479,8 @@ exports.hostKeywordRegister = async (req, res) => {
       secretKeyword
     });
 
+    sendVerificationOtp(user, false);
     await user.save();
-
-    sendVerificationOtp(user);
 
     res.status(201).json(buildUnverifiedResponse(
       user,

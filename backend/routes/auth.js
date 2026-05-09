@@ -9,13 +9,13 @@ router.post('/host-register', hostRegister);
 
 router.post('/login', login);
 
-router.post('/verify-email', auth, verifyEmail);
+router.post('/verify-email', verifyEmail);
 
-router.post('/resend-verification', auth, resendVerification);
+router.post('/resend-verification', resendVerification);
 
-router.post('/verify-login-otp', auth, verifyLoginOtp);
+router.post('/verify-login-otp', verifyLoginOtp);
 
-router.post('/resend-login-otp', auth, resendLoginOtp);
+router.post('/resend-login-otp', resendLoginOtp);
 
 router.post('/host-login', hostLogin);
 

@@ -4,8 +4,11 @@ services:
     region: oregon
     plan: free
     env: node
-    buildCommand: cd backend ; npm install
-    startCommand: cd backend ; npm start
+    buildCommand: npm install
+    startCommand: node server.js
+    rootDir: backend
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: "10000"

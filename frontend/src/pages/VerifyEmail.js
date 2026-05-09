@@ -111,10 +111,10 @@ const VerifyEmail = () => {
     setLoading(true);
     try {
       if (from === 'registration') {
-        const res = await verifyEmail(otp);
+        const res = await verifyEmail(displayEmail, otp);
         navigateAfterAuthVerification(res);
       } else if (from === 'login') {
-        const res = await verifyLoginOTP(otp);
+        const res = await verifyLoginOTP(displayEmail, otp);
         navigateAfterAuthVerification(res);
       } else if (from === 'booking') {
         await verifyBookingOTP(bookingId, otp);
@@ -122,7 +122,7 @@ const VerifyEmail = () => {
         navigate(`/booking/${bookingId}/confirmation`);
       } else {
         // Default to email verification (registration)
-        const res = await verifyEmail(otp);
+        const res = await verifyEmail(displayEmail, otp);
         navigateAfterAuthVerification(res);
       }
       toast.success('Verification successful!');
@@ -137,13 +137,13 @@ const VerifyEmail = () => {
     setLoading(true);
     try {
       if (from === 'registration') {
-        await resendVerification();
+        await resendVerification(displayEmail);
       } else if (from === 'login') {
-        await resendLoginOTP();
+        await resendLoginOTP(displayEmail);
       } else if (from === 'booking') {
         await resendBookingOTP(bookingId);
       } else {
-        await resendVerification();
+        await resendVerification(displayEmail);
       }
       setOtpTimer(OTP_EXPIRY_MINUTES * 60);
       setResendCountdown(OTP_RATE_LIMIT_SECONDS);
