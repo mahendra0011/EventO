@@ -15,30 +15,30 @@ const sendEmail = async (to, subject, text, html = null) => {
   }
 
   try {
-    const data = {
-      personalizations: [
-        {
-          to: [{ email: to }]
-        }
-      ],
-      from: {
-        email: FROM_EMAIL,
-        name: FROM_NAME
-      },
-      reply_to: {
-        email: REPLY_TO_EMAIL
-      },
-      subject: subject,
-      // Add mail settings for better deliverability
-      mail_settings: {
-        sandbox_mode: {
-          enable: process.env.NODE_ENV === 'development'
-        },
-        bypass_list_management: {
-          enable: true
-        }
-      }
-    };
+   const data = {
+     personalizations: [
+       {
+         to: [{ email: to }]
+       }
+     ],
+     from: {
+       email: FROM_EMAIL,
+       name: FROM_NAME
+     },
+     reply_to: {
+       email: REPLY_TO_EMAIL
+     },
+     subject: subject,
+     // Add mail settings for better deliverability
+     mail_settings: {
+       sandbox_mode: {
+         enable: false // Disable sandbox to actually send emails
+       },
+       bypass_list_management: {
+         enable: true
+       }
+     }
+   };
 
     if (html) {
       data.content = [{ type: 'text/html', value: html }];

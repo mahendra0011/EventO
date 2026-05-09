@@ -82,8 +82,11 @@ const VerifyEmail = () => {
       } else if (from === 'login') {
         res = await verifyLoginOTP(otp);
         // After OTP verification, navigate based on role
-        // We'll get the user from auth context after verification
-        navigate('/dashboard'); // Simplified - auth context will handle role-based redirect
+        if (res.user && res.user.role === 'host') {
+          navigate('/host');
+        } else {
+          navigate('/dashboard');
+        }
       } else if (from === 'booking') {
         res = await verifyBookingOTP(bookingId, otp);
         // After booking OTP verification, navigate to booking confirmation

@@ -74,6 +74,7 @@ exports.register = async (req, res) => {
     user.emailVerificationOtp = otp;
     user.emailVerificationOtpExpires = otpExpires;
     user.loginOtpVerified = false;
+    user.lastLoginOtpSent = new Date(); // Set timestamp for rate limiting
 
     await user.save();
     const token = generateToken(user._id);
@@ -144,9 +145,18 @@ exports.login = async (req, res) => {
         })
         .catch(err => console.error('Login OTP email error:', err.message));
 
+      // Return token even when OTP is required (for verification step)
+      const token = generateToken(user._id);
       return res.status(200).json({
         message: 'Login OTP sent to your email. Please verify to continue.',
-        requiresLoginOtp: true
+        requiresOTP: true,
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
       });
     }
 
