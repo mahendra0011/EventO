@@ -1,6 +1,22 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// Simple in-memory cache for user lookups
+const userCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const getUser = async (userId) => {
+  const cached = userCache.get(userId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.user;
+  }
+  const user = await User.findById(userId).select('-password');
+  if (user) {
+    userCache.set(userId, { user, timestamp: Date.now() });
+  }
+  return user;
+};
+
 // Verify JWT token and check OTP verification (skip for OTP endpoints)
 const auth = async (req, res, next) => {
   try {
@@ -11,7 +27,7 @@ const auth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await getUser(decoded.userId);
     
     if (!user) {
       return res.status(401).json({ message: 'Token is not valid' });
@@ -20,15 +36,7 @@ const auth = async (req, res, next) => {
     req.user = user;
 
     // Skip OTP check for OTP verification/resend endpoints
-    // req.path gives the path after the router mount point (e.g., /verify-email from /api/auth/verify-email)
-    const otpPaths = [
-      '/verify-email',
-      '/resend-verification',
-      '/verify-login-otp',
-      '/resend-login-otp',
-      '/verify-otp',
-      '/resend-otp'
-    ];
+    const otpPaths = ['/verify-email', '/resend-verification', '/verify-login-otp', '/resend-login-otp', '/verify-otp', '/resend-otp'];
     
     if (!otpPaths.includes(req.path) && !user.isVerified) {
       return res.status(403).json({
@@ -47,7 +55,6 @@ const auth = async (req, res, next) => {
 // Check if user is host
 const hostAuth = async (req, res, next) => {
   try {
-    // First run auth middleware to set req.user
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
@@ -55,7 +62,7 @@ const hostAuth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await getUser(decoded.userId);
     
     if (!user) {
       return res.status(401).json({ message: 'Token is not valid' });

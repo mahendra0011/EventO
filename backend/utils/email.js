@@ -226,50 +226,60 @@ const createOtpHtml = (title, body, otp, eventTitle = '', name = '') => {
   `);
 };
 
-const sendEmail = async ({ to, subject, text, html, replyTo = REPLY_TO_EMAIL }) => {
-  const transporter = getTransporter();
-  if (!transporter) {
-    console.warn('[Email] SMTP credentials are not configured');
-    return { success: false, message: 'Email skipped (SMTP not configured)' };
-  }
+const sendEmail = async ({ to, subject, text, html, replyTo = REPLY_TO_EMAIL, skipWait = false }) => {
+   const transporter = getTransporter();
+   if (!transporter) {
+     console.warn('[Email] SMTP credentials are not configured');
+     return { success: false, message: 'Email skipped (SMTP not configured)' };
+   }
 
-  try {
-    const sendPromise = transporter.sendMail({
-      from: FROM_HEADER,
-      to,
-      replyTo,
-      subject,
-      text: text || createTextFromHtml(html),
-      html,
-      headers: {
-        'X-Auto-Response-Suppress': 'OOF, AutoReply, NDR',
-        'X-Mailer': 'Evento Nodemailer'
-      }
-    });
-    sendPromise.catch(() => {});
+   try {
+     const mailOptions = {
+       from: FROM_HEADER,
+       to,
+       replyTo,
+       subject,
+       text: text || createTextFromHtml(html),
+       html,
+       headers: {
+         'X-Auto-Response-Suppress': 'OOF, AutoReply, NDR',
+         'X-Mailer': 'Evento Nodemailer'
+       }
+     };
 
-    const info = await withTimeout(sendPromise, EMAIL_SEND_TIMEOUT_MS, 'Email send');
+     if (skipWait) {
+       transporter.sendMail(mailOptions).then(info => {
+         console.log(`[Email] Sent "${subject}" to ${to} (${info.messageId})`);
+       }).catch(err => {
+         console.error('[Email] Background send failed:', err.message);
+       });
+       return { success: true, message: 'Email queued for sending' };
+     }
 
-    console.log(`[Email] Sent "${subject}" to ${to} (${info.messageId})`);
-    return {
-      success: true,
-      messageId: info.messageId,
-      accepted: info.accepted,
-      rejected: info.rejected
-    };
-  } catch (error) {
-    if (error.code === 'EMAIL_TIMEOUT' && cachedTransporter) {
-      cachedTransporter.close();
-      cachedTransporter = null;
-    }
-    const diagnostics = getEmailDiagnostics();
-    const renderMessage = diagnostics.renderSmtpBlocked
-      ? ' Render free web services block outbound SMTP ports 25, 465 and 587. Use a paid Render instance or an SMTP provider that supports port 2525.'
-      : '';
-    console.error('[Email] Nodemailer failed:', error.message);
-    return { success: false, error: `${error.message}${renderMessage}` };
-  }
-};
+     const sendPromise = transporter.sendMail(mailOptions);
+
+     const info = await withTimeout(sendPromise, EMAIL_SEND_TIMEOUT_MS, 'Email send');
+
+     console.log(`[Email] Sent "${subject}" to ${to} (${info.messageId})`);
+     return {
+       success: true,
+       messageId: info.messageId,
+       accepted: info.accepted,
+       rejected: info.rejected
+     };
+   } catch (error) {
+     if (error.code === 'EMAIL_TIMEOUT' && cachedTransporter) {
+       cachedTransporter.close();
+       cachedTransporter = null;
+     }
+     const diagnostics = getEmailDiagnostics();
+     const renderMessage = diagnostics.renderSmtpBlocked
+       ? ' Render free web services block outbound SMTP ports 25, 465 and 587. Use a paid Render instance or an SMTP provider that supports port 2525.'
+       : '';
+     console.error('[Email] Nodemailer failed:', error.message);
+     return { success: false, error: `${error.message}${renderMessage}` };
+   }
+ };
 
 const generateSecureOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -308,8 +318,8 @@ ${otp}`,
     name
   );
 
-  return sendEmail({ to: email, subject, text: plainText, html });
-};
+return sendEmail({ to: email, subject, text: plainText, html, skipWait: true });
+ };
 
 exports.sendLoginOTPEmail = async (email, otp, name) => {
   if (process.env.NODE_ENV === 'development') {
@@ -342,8 +352,8 @@ ${otp}`,
     name
   );
 
-  return sendEmail({ to: email, subject, text: plainText, html });
-};
+return sendEmail({ to: email, subject, text: plainText, html, skipWait: true });
+ };
 
 exports.sendOTPEmail = async (email, otp, name, eventTitle = 'Event Booking') => {
   if (process.env.NODE_ENV === 'development') {
@@ -377,8 +387,8 @@ ${otp}`,
     name
   );
 
-  return sendEmail({ to: email, subject, text: plainText, html });
-};
+return sendEmail({ to: email, subject, text: plainText, html, skipWait: true });
+ };
 
 exports.sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDetails) => {
   const subject = `Booking confirmed: ${eventTitle}`;
@@ -406,8 +416,8 @@ ${FRONTEND_URL}`;
     <p style="margin:0;">You can view your ticket from your Evento dashboard.</p>
   `);
 
-  return sendEmail({ to: email, subject, text: plainText, html });
-};
+return sendEmail({ to: email, subject, text: plainText, html, skipWait: true });
+ };
 
 exports.sendImportantNotificationEmail = async (email, name, title, message, link = '') => {
   const subject = `Evento: ${title}`;
@@ -426,8 +436,8 @@ Evento`;
     ${link ? `<p style="margin:0;"><a href="${escapeHtml(actionUrl)}" style="color:#2563eb;">Open Evento</a></p>` : ''}
   `);
 
-  return sendEmail({ to: email, subject, text: plainText, html });
-};
+return sendEmail({ to: email, subject, text: plainText, html, skipWait: true });
+ };
 
 exports.sendHostMessageEmail = async (email, name, subject, content, eventTitle, hostName) => {
   const emailSubject = `Message from ${hostName || 'your event host'}: ${subject}`;
@@ -452,7 +462,7 @@ Evento`;
     <p style="margin:0;"><a href="${FRONTEND_URL}/dashboard/messages" style="color:#2563eb;">Open messages</a></p>
   `);
 
-  return sendEmail({ to: email, subject: emailSubject, text: plainText, html });
+  return sendEmail({ to: email, subject: emailSubject, text: plainText, html, skipWait: true });
 };
 
 exports.sendLoginNotificationEmail = async (email, name, ipAddress = 'Unknown') => {
@@ -478,6 +488,7 @@ exports.sendEmailDiagnostics = async () => {
   return sendEmail({
     to: SMTP_USER,
     subject: 'Evento email diagnostic',
-    text: 'Evento email diagnostic test. If you received this, backend email delivery is working.'
+    text: 'Evento email diagnostic test. If you received this, backend email delivery is working.',
+    skipWait: true
   });
 };

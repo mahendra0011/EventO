@@ -5,6 +5,8 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 mongoose.set('bufferCommands', false);
+mongoose.set('serverSelectionTimeoutMS', 5000);
+mongoose.set('socketTimeoutMS', 45000);
 
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
@@ -78,7 +80,11 @@ const PORT = process.env.PORT || 5000;
 async function startServer() {
   try {
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/evento';
-    await mongoose.connect(mongoUri);
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10
+    });
     console.log('MongoDB connected successfully');
     
     const server = app.listen(PORT, '0.0.0.0', () => {
