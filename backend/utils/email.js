@@ -3,14 +3,14 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
-const SENDGRID_API_KEY = process.env.MAILGUN_API_KEY;
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || process.env.MAILGUN_API_KEY;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@evento.com';
 const FROM_NAME = process.env.FROM_NAME || 'Evento';
 const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || 'support@evento.com';
 
 const sendEmail = async (to, subject, text, html = null) => {
   if (!SENDGRID_API_KEY) {
-    console.warn('[Email] No API key configured (MAILGUN_API_KEY env var missing)');
+    console.warn('[Email] No SendGrid API key configured (SENDGRID_API_KEY env var missing)');
     return { success: false, message: 'Email skipped (no API key)' };
   }
 
@@ -65,51 +65,6 @@ const sendEmail = async (to, subject, text, html = null) => {
     }
     
     return { success: false, error: errorDetails };
-  }
-};
-
-    if (html) {
-      data.content = [{ type: 'text/html', value: html }];
-    } else {
-      data.content = [{ type: 'text/plain', value: text }];
-    }
-
-    console.log(`[Email] Sending to ${to} | Subject: ${subject}`);
-    const response = await axios.post('https://api.sendgrid.com/v3/mail/send', data, {
-      headers: {
-        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    console.log(`[Email] ✓ Sent successfully to ${to}`);
-    return { success: true, data: response.data };
-  } catch (error) {
-    const errorMsg = error.response?.data || error.message;
-    console.error('[SendGrid] Email send error:', errorMsg);
-    return { success: false, error: errorMsg };
-  }
-};
-
-    if (html) {
-      data.content = [{ type: 'text/html', value: html }];
-    } else {
-      data.content = [{ type: 'text/plain', value: text }];
-    }
-
-    console.log(`[Email] Sending to ${to} with subject: ${subject}`);
-    const response = await axios.post('https://api.sendgrid.com/v3/mail/send', data, {
-      headers: {
-        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    console.log(`[Email] Sent successfully to ${to}`);
-    return { success: true, data: response.data };
-  } catch (error) {
-    console.error('[SendGrid] Email send error:', error.response?.data || error.message);
-    return { success: false, error: error.message };
   }
 };
 

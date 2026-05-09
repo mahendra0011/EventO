@@ -275,7 +275,7 @@ exports.resendLoginOtp = async (req, res) => {
     }
 
     const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
-    if (user.lastLoginOtpSent > oneMinuteAgo) {
+    if (user.lastLoginOtpSent && user.lastLoginOtpSent > oneMinuteAgo) {
       return res.status(429).json({
         message: `Please wait ${OTP_RATE_LIMIT_SECONDS} seconds before requesting another code`
       });
@@ -315,7 +315,7 @@ exports.resendVerification = async (req, res) => {
     }
 
     const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
-    if (user.lastLoginOtpSent > oneMinuteAgo) {
+    if (user.lastLoginOtpSent && user.lastLoginOtpSent > oneMinuteAgo) {
       return res.status(429).json({
         message: `Please wait ${OTP_RATE_LIMIT_SECONDS} seconds before requesting another code`
       });

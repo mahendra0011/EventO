@@ -166,12 +166,12 @@ exports.resendOTP = async (req, res) => {
        return res.status(400).json({ message: 'Booking already verified' });
      }
 
-     const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
-     if (booking.lastOtpSent > oneMinuteAgo) {
-       return res.status(429).json({
-         message: `Please wait ${OTP_RATE_LIMIT_SECONDS} seconds before requesting another OTP`
-       });
-     }
+      const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
+      if (booking.lastOtpSent && booking.lastOtpSent > oneMinuteAgo) {
+        return res.status(429).json({
+          message: `Please wait ${OTP_RATE_LIMIT_SECONDS} seconds before requesting another OTP`
+        });
+      }
 
      const otp = generateSecureOTP();
      const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);

@@ -16,9 +16,7 @@ const Register = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showVerification, setShowVerification] = useState(false);
-  const [otp, setOtp] = useState('');
-  const { register, hostRegister, verifyEmail, resendVerification } = useAuth();
+  const { register, hostRegister } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -29,70 +27,40 @@ const Register = () => {
     });
   };
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-        toast.error('Passwords do not match');
-        return;
+      toast.error('Passwords do not match');
+      return;
     }
 
     if (formData.password.length < 6) {
-        toast.error('Password must be at least 6 characters');
-        return;
-    }
-
-    setLoading(true);
-
-    try {
-        if (formData.isHost) {
-            // Host registration via context
-            await hostRegister(formData.name, formData.email, formData.password, formData.phone, formData.secretKeyword);
-            toast.success('Host account created!');
-            navigate('/host');
-        } else {
-            // Regular user registration
-            const res = await register(formData.name, formData.email, formData.password, formData.phone);
-            if (res.requiresVerification) {
-                // Redirect to verification page
-                navigate('/verify-email', { state: { from: 'registration' } });
-                toast.success('Please check your email for verification code');
-            } else {
-                toast.success('Registration successful!');
-                navigate('/dashboard');
-            }
-        }
-    } catch (error) {
-        toast.error(error.response?.data?.message || 'Registration failed');
-    } finally {
-        setLoading(false);
-    }
-};
-
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    if (!otp || otp.length !== 6) {
-      toast.error('Please enter a valid 6-digit code');
+      toast.error('Password must be at least 6 characters');
       return;
     }
+
     setLoading(true);
+
     try {
-      await verifyEmail(otp);
-      toast.success('Email verified successfully!');
-      navigate('/dashboard');
+      if (formData.isHost) {
+        await hostRegister(formData.name, formData.email, formData.password, formData.phone, formData.secretKeyword);
+        toast.success('Host account created!');
+        navigate('/host');
+      } else {
+        const res = await register(formData.name, formData.email, formData.password, formData.phone);
+        if (res.requiresVerification) {
+          navigate('/verify-email', { state: { from: 'registration' } });
+          toast.success('Please check your email for verification code');
+        } else {
+          toast.success('Registration successful!');
+          navigate('/dashboard');
+        }
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Verification failed');
+      toast.error(error.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    try {
-      await resendVerification();
-      toast.success('Verification code resent!');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to resend');
     }
   };
 
@@ -100,7 +68,6 @@ const handleSubmit = async (e) => {
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-xl shadow-2xl p-8">
-          {/* Logo */}
           <div className="text-center mb-8">
             <Link to="/" className="inline-flex items-center space-x-2">
               <Calendar className="h-10 w-10 text-primary-600" />
@@ -112,7 +79,6 @@ const handleSubmit = async (e) => {
             <p className="mt-2 text-gray-600">Join us to discover amazing events</p>
           </div>
 
-          {/* Host Checkbox */}
           <div className="mb-6">
             <label className="flex items-center justify-center space-x-2 cursor-pointer">
               <input
@@ -127,9 +93,7 @@ const handleSubmit = async (e) => {
             </label>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Full Name */}
             <div>
               <label htmlFor="name" className="label">Full Name</label>
               <div className="relative">
@@ -147,7 +111,6 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-            {/* Email */}
             <div>
               <label htmlFor="email" className="label">Email Address</label>
               <div className="relative">
@@ -165,7 +128,6 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-            {/* Phone */}
             <div>
               <label htmlFor="phone" className="label">Phone Number (Optional)</label>
               <div className="relative">
@@ -182,7 +144,6 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <label htmlFor="password" className="label">Password</label>
               <div className="relative">
@@ -208,7 +169,6 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label htmlFor="confirmPassword" className="label">Confirm Password</label>
               <div className="relative">
@@ -227,7 +187,6 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-            {/* Host Secret Keyword (only if host checkbox checked) */}
             {formData.isHost && (
               <div>
                 <label htmlFor="secretKeyword" className="label">
@@ -261,56 +220,6 @@ const handleSubmit = async (e) => {
             </button>
           </form>
 
-          {/* Verification Screen */}
-          {showVerification && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Verify Your Email</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Please enter the 6-digit code sent to your email
-              </p>
-              <form onSubmit={handleVerifyOtp} className="space-y-3">
-                <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="Enter 6-digit code"
-                  className="input-field text-center text-2xl tracking-widest"
-                  maxLength={6}
-                />
-                <button
-                  type="submit"
-                  disabled={loading || otp.length !== 6}
-                  className="w-full btn-primary"
-                >
-                  {loading ? 'Verifying...' : 'Verify Email'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  disabled={loading}
-                  className="w-full text-primary-600 hover:text-primary-700 text-sm font-medium"
-                >
-                  Resend Code
-                </button>
-              </form>
-            </div>
-          )}
-
-          {/* Divider */}
-          {!showVerification && (
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Login Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Already have an account?{' '}
@@ -320,7 +229,6 @@ const handleSubmit = async (e) => {
             </p>
           </div>
 
-          {/* Info */}
           <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <p className="text-xs text-gray-600">
               <strong className="text-primary-700">Users:</strong> Register with name, email, phone, and password.
