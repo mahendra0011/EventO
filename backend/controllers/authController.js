@@ -12,7 +12,7 @@ const generateToken = (userId) => {
 };
 
 const getEmailFailureMessage = (purpose) => (
-  `Could not send ${purpose} email. Please check the SMTP/Nodemailer configuration and try again.`
+  `Could not send ${purpose} email. If this is deployed on Render free, Gmail SMTP is blocked on ports 465/587. Upgrade Render or use an SMTP provider on port 2525.`
 );
 
 const buildAuthUser = (user) => ({

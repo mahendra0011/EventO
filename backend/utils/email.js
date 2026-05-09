@@ -14,7 +14,7 @@ const SMTP_USER = cleanEnvValue(process.env.SMTP_USER || process.env.EMAIL_USER 
 const rawSmtpPass = cleanEnvValue(process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD || '');
 const isGmailSmtp = /gmail/i.test(SMTP_SERVICE) || /gmail/i.test(SMTP_HOST) || /gmail/i.test(SMTP_USER);
 const SMTP_PASS = isGmailSmtp ? rawSmtpPass.replace(/\s+/g, '') : rawSmtpPass;
-const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || process.env.SMTP_TIMEOUT_MS || 10000);
+const EMAIL_SEND_TIMEOUT_MS = Number(process.env.EMAIL_SEND_TIMEOUT_MS || process.env.SMTP_TIMEOUT_MS || 30000);
 
 const parseEmailAddress = (value) => {
   const email = String(value || '').trim();
@@ -28,6 +28,7 @@ const configuredFromEmail = parseEmailAddress(
 const FROM_EMAIL = configuredFromEmail.includes('@') ? configuredFromEmail : SMTP_USER;
 const REPLY_TO_EMAIL = parseEmailAddress(process.env.REPLY_TO_EMAIL || process.env.EMAIL_REPLY_TO || FROM_EMAIL);
 const FROM_HEADER = `${FROM_NAME} <${FROM_EMAIL}>`;
+const isRenderService = Boolean(process.env.RENDER || process.env.RENDER_SERVICE_ID || process.env.RENDER_EXTERNAL_URL);
 
 let cachedTransporter = null;
 
@@ -83,6 +84,53 @@ const getTransportOptions = () => {
       pass: SMTP_PASS
     },
     ...timeoutOptions
+  };
+};
+
+const getResolvedTransportDetails = () => {
+  if (SMTP_HOST) {
+    return {
+      service: SMTP_SERVICE || '',
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_SECURE || SMTP_PORT === 465
+    };
+  }
+
+  if (isGmailSmtp) {
+    return {
+      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true
+    };
+  }
+
+  return {
+    service: SMTP_SERVICE,
+    host: '',
+    port: null,
+    secure: null
+  };
+};
+
+const maskEmail = (email = '') => {
+  const [name, domain] = String(email).split('@');
+  if (!name || !domain) return '';
+  return `${name.slice(0, 2)}***@${domain}`;
+};
+
+const getEmailDiagnostics = () => {
+  const transport = getResolvedTransportDetails();
+  return {
+    configured: Boolean(SMTP_USER && SMTP_PASS),
+    user: maskEmail(SMTP_USER),
+    from: FROM_HEADER,
+    replyTo: REPLY_TO_EMAIL,
+    transport,
+    timeoutMs: EMAIL_SEND_TIMEOUT_MS,
+    gmailAppPasswordSpacesRemoved: isGmailSmtp && rawSmtpPass !== SMTP_PASS,
+    renderSmtpBlocked: isRenderService && [25, 465, 587].includes(Number(transport.port))
   };
 };
 
@@ -214,8 +262,12 @@ const sendEmail = async ({ to, subject, text, html, replyTo = REPLY_TO_EMAIL }) 
       cachedTransporter.close();
       cachedTransporter = null;
     }
+    const diagnostics = getEmailDiagnostics();
+    const renderMessage = diagnostics.renderSmtpBlocked
+      ? ' Render free web services block outbound SMTP ports 25, 465 and 587. Use a paid Render instance or an SMTP provider that supports port 2525.'
+      : '';
     console.error('[Email] Nodemailer failed:', error.message);
-    return { success: false, error: error.message };
+    return { success: false, error: `${error.message}${renderMessage}` };
   }
 };
 
@@ -417,3 +469,15 @@ exports.generateSecureOTP = generateSecureOTP;
 exports.OTP_EXPIRY_MINUTES = OTP_EXPIRY_MINUTES;
 exports.OTP_RATE_LIMIT_SECONDS = OTP_RATE_LIMIT_SECONDS;
 exports._sendEmail = sendEmail;
+exports.getEmailDiagnostics = getEmailDiagnostics;
+exports.sendEmailDiagnostics = async () => {
+  if (!SMTP_USER) {
+    return { success: false, error: 'SMTP_USER is not configured' };
+  }
+
+  return sendEmail({
+    to: SMTP_USER,
+    subject: 'Evento email diagnostic',
+    text: 'Evento email diagnostic test. If you received this, backend email delivery is working.'
+  });
+};

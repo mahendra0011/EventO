@@ -14,6 +14,7 @@ const wishlistRoutes = require('./routes/wishlist');
 const reviewRoutes = require('./routes/reviews');
 const notificationRoutes = require('./routes/notifications');
 const messageRoutes = require('./routes/messages');
+const { getEmailDiagnostics, sendEmailDiagnostics } = require('./utils/email');
 
 const app = express();
 
@@ -39,6 +40,30 @@ app.use('/api/messages', messageRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Evento API is running' });
+});
+
+app.get('/api/health/email', async (req, res) => {
+  const diagnostics = getEmailDiagnostics();
+
+  if (req.query.send !== 'true') {
+    return res.json({
+      status: diagnostics.configured ? 'configured' : 'missing_config',
+      diagnostics
+    });
+  }
+
+  const result = await sendEmailDiagnostics();
+  res.status(result.success ? 200 : 502).json({
+    status: result.success ? 'sent' : 'failed',
+    diagnostics,
+    result: {
+      success: result.success,
+      accepted: result.accepted,
+      rejected: result.rejected,
+      messageId: result.messageId,
+      error: result.error || result.message
+    }
+  });
 });
 
 if (NODE_ENV === 'production') {
