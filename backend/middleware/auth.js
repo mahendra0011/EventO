@@ -30,9 +30,10 @@ const auth = async (req, res, next) => {
       '/resend-otp'
     ];
     
-    if (!otpPaths.includes(req.path) && !user.loginOtpVerified) {
+    if (!otpPaths.includes(req.path) && !user.isVerified) {
       return res.status(403).json({
         message: 'Please verify your email via OTP',
+        requiresVerification: true,
         requiresOTP: true
       });
     }
@@ -62,6 +63,14 @@ const hostAuth = async (req, res, next) => {
 
     if (user.role !== 'host') {
       return res.status(403).json({ message: 'Access denied. Host only.' });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({
+        message: 'Please verify your email via OTP',
+        requiresVerification: true,
+        requiresOTP: true
+      });
     }
 
     req.user = user;

@@ -98,14 +98,20 @@ const EventDetail = () => {
 
             openBookingOtpFlow(res.data.bookingId);
             if (res.data.emailSent === false) {
+                setBookingCanResend(true);
+                setBookingResendCountdown(0);
                 toast.error(res.data.message || 'Booking created, but OTP email could not be sent. Please try resend.');
             } else {
-                toast.success('OTP sent to your email!');
+                toast.success(res.data.message || 'OTP sent to your email!');
             }
         } catch (error) {
             const existingBookingId = error.response?.data?.bookingId;
             if (existingBookingId) {
                 openBookingOtpFlow(existingBookingId);
+                if (error.response?.data?.emailSent === false) {
+                    setBookingCanResend(true);
+                    setBookingResendCountdown(0);
+                }
                 toast.error(error.response?.data?.message || 'You already have a pending booking. Enter the OTP or resend it.');
             } else {
                 toast.error(error.response?.data?.message || 'Booking failed');

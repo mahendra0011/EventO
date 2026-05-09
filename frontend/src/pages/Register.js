@@ -44,12 +44,17 @@ const Register = () => {
 
     try {
       if (formData.isHost) {
-        await hostRegister(formData.name, formData.email, formData.password, formData.phone, formData.secretKeyword);
-        toast.success('Host account created!');
-        navigate('/host');
+        const res = await hostRegister(formData.name, formData.email, formData.password, formData.phone, formData.secretKeyword);
+        if (res.requiresVerification || res.requiresOTP) {
+          navigate('/verify-email', { state: { from: 'registration', email: formData.email } });
+          toast.success('Please check your email for verification code');
+        } else {
+          toast.success('Host account created!');
+          navigate('/host');
+        }
       } else {
         const res = await register(formData.name, formData.email, formData.password, formData.phone);
-        if (res.requiresVerification) {
+        if (res.requiresVerification || res.requiresOTP) {
           navigate('/verify-email', { state: { from: 'registration', email: formData.email } });
           toast.success('Please check your email for verification code');
         } else {

@@ -18,7 +18,9 @@ export const AuthProvider = ({ children }) => {
         const res = await api.get('/auth/me');
         setUser(res.data);
       } catch (error) {
-        localStorage.removeItem('token');
+        if (!(error.response?.status === 403 && (error.response?.data?.requiresVerification || error.response?.data?.requiresOTP))) {
+          localStorage.removeItem('token');
+        }
       }
     }
     setLoading(false);
@@ -27,8 +29,7 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
       const res = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', res.data.token);
-      // Only set user if OTP not required (i.e., OTP disabled or already verified)
-      if (!res.data.requiresOTP) {
+      if (res.data.verified && !res.data.requiresVerification && !res.data.requiresOTP) {
         setUser(res.data.user);
       }
       return res.data;
@@ -50,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     const hostLogin = async (email, password, hostKeyword) => {
       const res = await api.post('/auth/host-keyword-login', { email, password, hostKeyword });
       localStorage.setItem('token', res.data.token);
-      if (!res.data.requiresOTP) {
+      if (res.data.verified && !res.data.requiresVerification && !res.data.requiresOTP) {
         setUser(res.data.user);
       }
       return res.data;
@@ -69,14 +70,16 @@ export const AuthProvider = ({ children }) => {
 const hostRegister = async (name, email, password, phone, secretKeyword) => {
       const res = await api.post('/auth/host-keyword-register', { name, email, password, phone, secretKeyword });
       localStorage.setItem('token', res.data.token);
-      setUser(res.data.user);
+      if (!res.data.requiresVerification && !res.data.requiresOTP) {
+        setUser(res.data.user);
+      }
       return res.data;
     };
 
     const register = async (name, email, password, phone) => {
       const res = await api.post('/auth/register', { name, email, password, phone });
       localStorage.setItem('token', res.data.token);
-      if (!res.data.requiresVerification) {
+      if (!res.data.requiresVerification && !res.data.requiresOTP) {
         setUser(res.data.user);
       }
       return res.data;
@@ -84,6 +87,9 @@ const hostRegister = async (name, email, password, phone, secretKeyword) => {
 
     const verifyEmail = async (otp) => {
       const res = await api.post('/auth/verify-email', { otp });
+      if (res.data.token) {
+        localStorage.setItem('token', res.data.token);
+      }
       setUser(res.data.user);
       return res.data;
     };

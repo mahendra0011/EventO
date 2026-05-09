@@ -50,6 +50,14 @@ const VerifyEmail = () => {
 
   const displayEmail = recipientEmail || user?.email;
 
+  const navigateAfterAuthVerification = (res) => {
+    if (res?.user?.role === 'host') {
+      navigate('/host');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
   // OTP countdown timer
   useEffect(() => {
     if (otpTimer > 0) {
@@ -97,25 +105,19 @@ const VerifyEmail = () => {
     setLoading(true);
     try {
       if (from === 'registration') {
-        await verifyEmail(otp);
-        // After email verification, navigate to dashboard
-        navigate('/dashboard');
+        const res = await verifyEmail(otp);
+        navigateAfterAuthVerification(res);
       } else if (from === 'login') {
         const res = await verifyLoginOTP(otp);
-        // After OTP verification, navigate based on role
-        if (res.user && res.user.role === 'host') {
-          navigate('/host');
-        } else {
-          navigate('/dashboard');
-        }
+        navigateAfterAuthVerification(res);
       } else if (from === 'booking') {
         await verifyBookingOTP(bookingId, otp);
         // After booking OTP verification, navigate to booking confirmation
         navigate(`/booking/${bookingId}/confirmation`);
       } else {
         // Default to email verification (registration)
-        await verifyEmail(otp);
-        navigate('/dashboard');
+        const res = await verifyEmail(otp);
+        navigateAfterAuthVerification(res);
       }
       toast.success('Verification successful!');
     } catch (error) {

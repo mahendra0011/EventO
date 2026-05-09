@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -32,13 +32,13 @@ const Login = () => {
                 response = await login(email, password);
             }
 
-            if (response.requiresOTP) {
+            if (response.requiresVerification || response.requiresOTP) {
                 // Redirect to verification page for OTP
                 navigate('/verify-email', { state: { from: 'login', email } });
                 toast.success('OTP sent to your email!');
             } else {
                 toast.success('Login successful!');
-                navigate(isHost ? '/host' : '/dashboard');
+                navigate(response.user?.role === 'host' ? '/host' : '/dashboard');
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Login failed');

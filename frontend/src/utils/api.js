@@ -31,10 +31,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response) {
-      // Handle 403 with requiresOTP - redirect to login
-      if (error.response.status === 403 && error.response.data.requiresOTP) {
-        localStorage.removeItem('token');
-        window.location.href = '/login?otp_required=true';
+      // Keep the temporary token so unverified users can complete OTP verification.
+      if (error.response.status === 403 && (error.response.data.requiresVerification || error.response.data.requiresOTP)) {
+        if (window.location.pathname !== '/verify-email') {
+          window.location.href = '/verify-email';
+        }
       }
       // Handle 401 Unauthorized
       else if (error.response.status === 401) {

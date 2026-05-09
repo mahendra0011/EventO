@@ -44,9 +44,46 @@ exports.createBooking = async (req, res) => {
      });
 
      if (existingPendingBooking) {
-       return res.status(400).json({
-         message: 'You already have a pending booking for this event',
+       const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
+       const hasRecentActiveOtp = Boolean(
+         existingPendingBooking.otp &&
+         existingPendingBooking.otpExpires &&
+         existingPendingBooking.otpExpires > new Date() &&
+         existingPendingBooking.lastOtpSent &&
+         existingPendingBooking.lastOtpSent > oneMinuteAgo
+       );
+
+       existingPendingBooking.numberOfTickets = numberOfTickets;
+       existingPendingBooking.totalPrice = event.price * numberOfTickets;
+       existingPendingBooking.attendeeDetails = attendeeDetails;
+
+       let emailSent = true;
+       let message = 'You already have a pending booking. Use the OTP already sent to your email.';
+
+       if (!hasRecentActiveOtp) {
+         const otp = generateSecureOTP();
+         const otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+         const otpEmailResult = await sendOTPEmail(req.user.email, otp, req.user.name, event.title || 'Event Booking');
+         emailSent = Boolean(otpEmailResult?.success);
+
+         if (emailSent) {
+           existingPendingBooking.otp = otp;
+           existingPendingBooking.otpExpires = otpExpires;
+           existingPendingBooking.lastOtpSent = new Date();
+           message = 'Pending booking found. A new OTP was sent to your email.';
+         } else {
+           console.warn('Pending booking OTP email failed:', otpEmailResult?.error || otpEmailResult?.message);
+           message = 'Pending booking found, but OTP email could not be sent. Please try resend.';
+         }
+       }
+
+       await existingPendingBooking.save();
+
+       return res.status(200).json({
+         message,
          bookingId: existingPendingBooking._id,
+         totalPrice: existingPendingBooking.totalPrice,
+         emailSent,
          requiresOTP: true
        });
      }
@@ -134,7 +171,7 @@ exports.verifyOTP = async (req, res) => {
        return res.status(400).json({ message: 'Booking already verified' });
      }
 
-     if (booking.otpExpires < new Date()) {
+     if (!booking.otpExpires || booking.otpExpires < new Date()) {
        return res.status(400).json({ message: 'OTP has expired' });
      }
 
