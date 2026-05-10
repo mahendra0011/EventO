@@ -20,6 +20,7 @@ const app = express();
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const REQUIRED_PRODUCTION_ENV_VARS = ['MONGODB_URI', 'JWT_SECRET'];
 
 const corsOptions = {
   origin: NODE_ENV === 'production' ? true : FRONTEND_URL,
@@ -75,9 +76,34 @@ if (NODE_ENV === 'production') {
 
 const PORT = process.env.PORT || 5000;
 
+function validateProductionConfig() {
+  if (NODE_ENV !== 'production') {
+    return;
+  }
+
+  const missingEnvVars = REQUIRED_PRODUCTION_ENV_VARS.filter((key) => !process.env[key]);
+
+  if (missingEnvVars.length > 0) {
+    throw new Error(
+      `Missing required production environment variable(s): ${missingEnvVars.join(', ')}. ` +
+      'Set them in the Render service environment before deploying.'
+    );
+  }
+}
+
+function getMongoUri() {
+  if (process.env.MONGODB_URI) {
+    return process.env.MONGODB_URI;
+  }
+
+  return 'mongodb://localhost:27017/evento';
+}
+
 async function startServer() {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/evento';
+    validateProductionConfig();
+
+    const mongoUri = getMongoUri();
     await mongoose.connect(mongoUri, {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
@@ -90,7 +116,7 @@ async function startServer() {
     });
     return server;
   } catch (err) {
-    console.error('MongoDB connection error:', err);
+    console.error('Server startup error:', err);
     process.exit(1);
   }
 }
