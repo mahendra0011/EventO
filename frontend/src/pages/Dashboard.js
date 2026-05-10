@@ -29,6 +29,14 @@ const Dashboard = () => {
   const [userEvents, setUserEvents] = useState([]);
   const [broadcastMessages, setBroadcastMessages] = useState([]);
   const [broadcastUnreadCount, setBroadcastUnreadCount] = useState(0);
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [supportForm, setSupportForm] = useState({
+    type: 'general',
+    booking: '',
+    subject: '',
+    message: '',
+    priority: 'medium'
+  });
 
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -116,6 +124,16 @@ const Dashboard = () => {
     }
   };
 
+  const fetchSupportTickets = async () => {
+    try {
+      const res = await api.get('/support');
+      setSupportTickets(res.data.tickets || []);
+    } catch (error) {
+      console.error('Error fetching support tickets:', error);
+      setSupportTickets([]);
+    }
+  };
+
   // Initial data fetch on mount
   useEffect(() => {
     if (user) {
@@ -123,7 +141,8 @@ const Dashboard = () => {
         fetchBookings(),
         fetchUserEvents(),
         fetchNotifications(),
-        fetchBroadcasts()
+        fetchBroadcasts(),
+        fetchSupportTickets()
       ]).catch(err => {
         console.error('Initial data fetch error:', err);
         toast.error('Some data failed to load');
@@ -217,6 +236,33 @@ const Dashboard = () => {
       toast.success('All notifications marked as read');
     } catch (error) {
       console.error('Error marking all as read:', error);
+    }
+  };
+
+  const handleSupportSubmit = async (e) => {
+    e.preventDefault();
+    if (!supportForm.subject.trim() || !supportForm.message.trim()) {
+      toast.error('Please add a subject and message');
+      return;
+    }
+
+    try {
+      const payload = Object.fromEntries(
+        Object.entries(supportForm).filter(([, value]) => value !== '')
+      );
+      await api.post('/support', payload);
+      toast.success('Support ticket submitted');
+      setSupportForm({
+        type: 'general',
+        booking: '',
+        subject: '',
+        message: '',
+        priority: 'medium'
+      });
+      fetchSupportTickets();
+      fetchBookings();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to submit support ticket');
     }
   };
 
@@ -852,16 +898,115 @@ const Dashboard = () => {
               {activeTab === 'support' && (
                 <motion.div key="support" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <h3 className="text-lg font-semibold mb-4">Help & Support</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-primary-50 border border-primary-200 rounded-lg p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6">
+                    <div className="space-y-4">
+                      <div className="bg-primary-50 border border-primary-200 rounded-lg p-6">
                       <HelpCircle className="h-8 w-8 text-primary-600 mb-3" />
                       <h4 className="font-semibold">FAQs</h4>
                       <p className="text-sm text-gray-600 mt-2">Frequently asked questions</p>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                      </div>
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                       <MessageCircle className="h-8 w-8 text-blue-600 mb-3" />
-                      <h4 className="font-semibold">Contact Us</h4>
-                      <p className="text-sm text-gray-600 mt-2">Get in touch with our support team</p>
+                        <h4 className="font-semibold">Contact Us</h4>
+                        <p className="text-sm text-gray-600 mt-2">Get in touch with our support team</p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleSupportSubmit} className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="label">Issue Type</label>
+                          <select
+                            value={supportForm.type}
+                            onChange={(e) => setSupportForm({ ...supportForm, type: e.target.value })}
+                            className="input-field"
+                          >
+                            <option value="general">General support</option>
+                            <option value="complaint">User complaint</option>
+                            <option value="refund_issue">Refund issue</option>
+                            <option value="payment_dispute">Payment dispute</option>
+                            <option value="event_report">Report event</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="label">Related Booking</label>
+                          <select
+                            value={supportForm.booking}
+                            onChange={(e) => setSupportForm({ ...supportForm, booking: e.target.value })}
+                            className="input-field"
+                          >
+                            <option value="">No booking selected</option>
+                            {bookings.map((booking) => (
+                              <option key={booking._id} value={booking._id}>
+                                {booking.event?.title || 'Event'} / {booking.status}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="label">Subject</label>
+                        <input
+                          value={supportForm.subject}
+                          onChange={(e) => setSupportForm({ ...supportForm, subject: e.target.value })}
+                          className="input-field"
+                          placeholder="How can we help?"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="label">Message</label>
+                        <textarea
+                          value={supportForm.message}
+                          onChange={(e) => setSupportForm({ ...supportForm, message: e.target.value })}
+                          className="input-field"
+                          rows={4}
+                          placeholder="Tell us what happened"
+                          required
+                        />
+                      </div>
+                      <button className="btn-primary w-full">
+                        <MessageSquare className="h-4 w-4 inline mr-2" />
+                        Submit Ticket
+                      </button>
+                    </form>
+
+                    <div className="lg:col-span-2">
+                      <h4 className="font-semibold text-gray-900 mb-3">Your Support Tickets</h4>
+                      <div className="space-y-3">
+                        {supportTickets.length === 0 ? (
+                          <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                            <MessageCircle className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                            <p className="text-gray-600">No support tickets yet</p>
+                          </div>
+                        ) : supportTickets.map((ticket) => (
+                          <div key={ticket._id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <div>
+                                <p className="font-semibold text-gray-900">{ticket.subject}</p>
+                                <p className="text-sm text-gray-600 mt-1">{ticket.message}</p>
+                                <p className="text-xs text-gray-400 mt-2">
+                                  {ticket.event?.title || 'General'} / {new Date(ticket.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                ticket.status === 'resolved'
+                                  ? 'bg-green-100 text-green-700'
+                                  : ticket.status === 'rejected'
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-blue-100 text-blue-700'
+                              }`}>
+                                {ticket.status}
+                              </span>
+                            </div>
+                            {ticket.resolution && (
+                              <p className="mt-3 text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg p-3">
+                                {ticket.resolution}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </motion.div>

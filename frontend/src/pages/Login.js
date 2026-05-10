@@ -49,7 +49,7 @@ const Login = () => {
                 }
             } else {
                 toast.success('Login successful!');
-                navigate(response.user?.role === 'host' ? '/host' : '/dashboard');
+                navigate(response.user?.role === 'admin' ? '/admin' : response.user?.role === 'host' ? '/host' : '/dashboard');
             }
         } catch (error) {
             if (error.code === 'ECONNABORTED') {
@@ -117,7 +117,12 @@ const Login = () => {
 
                         {/* Password (always required) */}
                         <div>
-                            <label htmlFor="password" className="label">Password</label>
+                            <div className="flex items-center justify-between">
+                                <label htmlFor="password" className="label">Password</label>
+                                <Link to="/forgot-password" className="mb-2 text-sm font-semibold text-primary-600 hover:text-primary-700">
+                                    Forgot password?
+                                </Link>
+                            </div>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                                 <input

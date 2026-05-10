@@ -29,7 +29,7 @@ const eventSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, 'Event category is required'],
-    enum: ['Music', 'Sports', 'Technology', 'Business', 'Art', 'Food', 'Other']
+    trim: true
   },
   image: {
     type: String,
@@ -57,6 +57,27 @@ const eventSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  isFeatured: {
+    type: Boolean,
+    default: false
+  },
+  isTrending: {
+    type: Boolean,
+    default: false
+  },
+  moderationStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'approved'
+  },
+  moderationFlags: [{
+    type: String,
+    enum: ['fake_event', 'spam', 'copyright', 'inappropriate_content', 'fraud_organizer', 'other']
+  }],
+  moderationNotes: {
+    type: String,
+    trim: true
   },
   tags: [{
     type: String,

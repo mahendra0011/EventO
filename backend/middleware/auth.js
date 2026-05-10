@@ -17,6 +17,16 @@ const getUser = async (userId) => {
   return user;
 };
 
+const clearUserCache = (userId) => {
+  if (userId) userCache.delete(userId.toString());
+};
+
+const rejectBlockedUser = (user, res) => {
+  if (!user.isBlocked) return false;
+  res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
+  return true;
+};
+
 // Verify JWT token and check OTP verification (skip for OTP endpoints)
 const auth = async (req, res, next) => {
   try {
@@ -31,6 +41,10 @@ const auth = async (req, res, next) => {
     
     if (!user) {
       return res.status(401).json({ message: 'Token is not valid' });
+    }
+
+    if (rejectBlockedUser(user, res)) {
+      return;
     }
 
     req.user = user;
@@ -68,6 +82,10 @@ const hostAuth = async (req, res, next) => {
       return res.status(401).json({ message: 'Token is not valid' });
     }
 
+    if (rejectBlockedUser(user, res)) {
+      return;
+    }
+
     if (user.role !== 'host') {
       return res.status(403).json({ message: 'Access denied. Host only.' });
     }
@@ -87,4 +105,43 @@ const hostAuth = async (req, res, next) => {
   }
 };
 
-module.exports = { auth, hostAuth };
+// Check if user is admin
+const adminAuth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return res.status(401).json({ message: 'No token, authorization denied' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await getUser(decoded.userId);
+
+    if (!user) {
+      return res.status(401).json({ message: 'Token is not valid' });
+    }
+
+    if (rejectBlockedUser(user, res)) {
+      return;
+    }
+
+    if (user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({
+        message: 'Please verify your email via OTP',
+        requiresVerification: true,
+        requiresOTP: true
+      });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(403).json({ message: 'Access denied' });
+  }
+};
+
+module.exports = { auth, hostAuth, adminAuth, clearUserCache };

@@ -16,14 +16,17 @@ import EventDetail from './pages/EventDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail'; // Add this line
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminPanel from './pages/AdminPanel';
 import CreateEvent from './pages/CreateEvent';
 import BookingConfirmation from './pages/BookingConfirmation';
 import EventChatPage from './pages/EventChatPage';
 
 // Protected Route Component
-const ProtectedRoute = ({ children, adminOnly = false, allowHosts = false }) => {
+const ProtectedRoute = ({ children, adminOnly = false, hostOnly = false, allowHosts = false, allowAdmins = false }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -42,11 +45,19 @@ const ProtectedRoute = ({ children, adminOnly = false, allowHosts = false }) => 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (adminOnly && user.role !== 'host') {
-    return <Navigate to="/dashboard" replace />;
+  if (adminOnly && user.role !== 'admin') {
+    return <Navigate to={user.role === 'host' ? '/host' : '/dashboard'} replace />;
   }
 
-  if (user.role === 'host' && !adminOnly && !allowHosts) {
+  if (hostOnly && user.role !== 'host') {
+    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+  }
+
+  if (user.role === 'admin' && !adminOnly && !allowAdmins) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (user.role === 'host' && !hostOnly && !allowHosts) {
     return <Navigate to="/host" replace />;
   }
 
@@ -119,6 +130,22 @@ function AnimatedRoutes() {
           }
         />
         <Route
+          path="/forgot-password"
+          element={
+            <PageTransition>
+              <ForgotPassword />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/reset-password/:token"
+          element={
+            <PageTransition>
+              <ResetPassword />
+            </PageTransition>
+          }
+        />
+        <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
@@ -131,7 +158,7 @@ function AnimatedRoutes() {
         <Route
           path="/host"
           element={
-            <ProtectedRoute adminOnly>
+            <ProtectedRoute hostOnly>
               <PageTransition>
                 <AdminDashboard />
               </PageTransition>
@@ -139,9 +166,19 @@ function AnimatedRoutes() {
           }
         />
         <Route
-          path="/host/create-event"
+          path="/admin"
           element={
             <ProtectedRoute adminOnly>
+              <PageTransition>
+                <AdminPanel />
+              </PageTransition>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/host/create-event"
+          element={
+            <ProtectedRoute hostOnly>
               <PageTransition>
                 <CreateEvent />
               </PageTransition>

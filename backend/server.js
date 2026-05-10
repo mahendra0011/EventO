@@ -14,7 +14,10 @@ const wishlistRoutes = require('./routes/wishlist');
 const reviewRoutes = require('./routes/reviews');
 const notificationRoutes = require('./routes/notifications');
 const messageRoutes = require('./routes/messages');
+const adminRoutes = require('./routes/admin');
+const supportRoutes = require('./routes/support');
 const { getEmailDiagnostics, sendEmailDiagnostics } = require('./utils/email');
+const { seedAdminUser, seedDefaultCategories } = require('./utils/seed');
 
 const app = express();
 
@@ -38,6 +41,8 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/support', supportRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Evento API is running' });
@@ -121,6 +126,8 @@ async function startServer() {
     const mongoUri = getMongoUri();
     await mongoose.connect(mongoUri, getMongoOptions());
     console.log(`MongoDB connected successfully to database "${mongoose.connection.name}"`);
+    await seedDefaultCategories();
+    await seedAdminUser();
     
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);

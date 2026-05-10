@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
-import { Menu, X, Calendar, User, LogOut, Settings, Bell, Check } from 'lucide-react';
+import { Menu, X, Calendar, User, LogOut, Settings, Bell, Check, Shield } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -162,7 +162,7 @@ const Navbar = () => {
                  animate={{ opacity: 1, x: 0 }}
                  transition={{ delay: 0.3 }}
                >
-                 {user.role !== 'host' && (
+                 {user.role !== 'host' && user.role !== 'admin' && (
                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                      <Link
                        to="/dashboard"
@@ -190,6 +190,22 @@ const Navbar = () => {
                      >
                        <Settings className="h-4 w-4" />
                        <span>Host Panel</span>
+                     </Link>
+                   </motion.div>
+                 )}
+
+                 {user.role === 'admin' && (
+                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                     <Link
+                       to="/admin"
+                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+                         isActive('/admin')
+                           ? 'bg-primary-50 text-primary-600'
+                           : 'text-gray-700 hover:bg-gray-100'
+                       }`}
+                     >
+                       <Shield className="h-4 w-4" />
+                       <span>Admin Panel</span>
                      </Link>
                    </motion.div>
                  )}
@@ -353,7 +369,7 @@ const Navbar = () => {
 
                  {user ? (
                    <>
-                     {user.role !== 'host' && (
+                     {user.role !== 'host' && user.role !== 'admin' && (
                        <motion.div
                          initial={{ opacity: 0, x: -20 }}
                          animate={{ opacity: 1, x: 0 }}
@@ -395,6 +411,27 @@ const Navbar = () => {
                        </motion.div>
                      )}
 
+                     {user.role === 'admin' && (
+                       <motion.div
+                         initial={{ opacity: 0, x: -20 }}
+                         animate={{ opacity: 1, x: 0 }}
+                         transition={{ delay: 0.3 }}
+                       >
+                         <Link
+                           to="/admin"
+                           className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
+                             isActive('/admin')
+                               ? 'bg-primary-50 text-primary-600'
+                               : 'text-gray-700 hover:bg-gray-100'
+                           }`}
+                           onClick={() => setIsMenuOpen(false)}
+                         >
+                           <Shield className="h-4 w-4" />
+                           <span>Admin Panel</span>
+                         </Link>
+                       </motion.div>
+                     )}
+
                      <motion.div
                        initial={{ opacity: 0, x: -20 }}
                        animate={{ opacity: 1, x: 0 }}
@@ -402,7 +439,7 @@ const Navbar = () => {
                      >
                        <button
                          onClick={() => {
-                           navigate(user.role === 'host' ? '/host?tab=notifications' : '/dashboard?tab=notifications');
+                           navigate(user.role === 'admin' ? '/admin?tab=notifications' : user.role === 'host' ? '/host?tab=notifications' : '/dashboard?tab=notifications');
                            setIsMenuOpen(false);
                          }}
                          className="flex items-center space-x-2 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-all duration-300 w-full"

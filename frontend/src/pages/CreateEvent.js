@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
@@ -21,10 +21,29 @@ const CreateEvent = () => {
     tags: ''
   });
 
-  const categories = ['Music', 'Sports', 'Technology', 'Business', 'Art', 'Food', 'Other'];
+  const [categories, setCategories] = useState(['Music', 'Sports', 'Technology', 'Business', 'Art', 'Food', 'Other']);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get('/events/categories');
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setCategories(res.data);
+          setFormData((prev) => ({
+            ...prev,
+            category: res.data.includes(prev.category) ? prev.category : res.data[0]
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value

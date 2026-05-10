@@ -7,7 +7,8 @@ const {
   updateEvent,
   deleteEvent,
   getOrganizerEvents,
-  getFeaturedEvents
+  getFeaturedEvents,
+  getCategories
 } = require('../controllers/eventController');
 const { auth, hostAuth } = require('../middleware/auth');
 
@@ -15,6 +16,11 @@ const { auth, hostAuth } = require('../middleware/auth');
 // @desc    Get featured events
 // @access  Public
 router.get('/featured', getFeaturedEvents);
+
+// @route   GET /api/events/categories
+// @desc    Get event categories
+// @access  Public
+router.get('/categories', getCategories);
 
 // @route   GET /api/events/organizer
 // @desc    Get events by organizer

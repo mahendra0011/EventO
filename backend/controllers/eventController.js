@@ -1,4 +1,19 @@
 const Event = require('../models/Event');
+const Category = require('../models/Category');
+
+// Get active event categories
+exports.getCategories = async (req, res) => {
+  try {
+    const categories = await Category.find({ isActive: true })
+      .sort({ name: 1 })
+      .select('name description isActive');
+
+    res.json(categories.map((category) => category.name));
+  } catch (error) {
+    console.error('Get categories error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 // Get all events
 exports.getEvents = async (req, res) => {
@@ -174,12 +189,24 @@ exports.getOrganizerEvents = async (req, res) => {
 // Get featured events
 exports.getFeaturedEvents = async (req, res) => {
   try {
-    const events = await Event.find({ isActive: true })
+    const featuredEvents = await Event.find({ isActive: true, isFeatured: true })
       .sort({ date: 1 })
       .limit(6)
       .populate('organizer', 'name');
 
-    res.json(events);
+    if (featuredEvents.length >= 6) {
+      return res.json(featuredEvents);
+    }
+
+    const fallbackEvents = await Event.find({
+      isActive: true,
+      _id: { $nin: featuredEvents.map((event) => event._id) }
+    })
+      .sort({ isTrending: -1, date: 1 })
+      .limit(6 - featuredEvents.length)
+      .populate('organizer', 'name');
+
+    res.json([...featuredEvents, ...fallbackEvents]);
   } catch (error) {
     console.error('Get featured events error:', error);
     res.status(500).json({ message: 'Server error' });

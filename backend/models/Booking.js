@@ -30,6 +30,24 @@ const bookingSchema = new mongoose.Schema({
     enum: ['pending', 'completed', 'failed', 'refunded'],
     default: 'pending'
   },
+  paymentAttempts: {
+    type: Number,
+    default: 0
+  },
+  refundStatus: {
+    type: String,
+    enum: ['none', 'requested', 'approved', 'rejected', 'processed'],
+    default: 'none'
+  },
+  refundReason: {
+    type: String,
+    trim: true
+  },
+  disputeStatus: {
+    type: String,
+    enum: ['none', 'open', 'under_review', 'resolved', 'rejected'],
+    default: 'none'
+  },
   attendeeDetails: [{
     name: String,
     email: String,

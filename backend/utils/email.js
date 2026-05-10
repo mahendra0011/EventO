@@ -23,19 +23,47 @@ const createTextFromHtml = (html = '') => html
   .replace(/\s+/g, ' ')
   .trim();
 
+const createActionButton = (label, url) => `
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 8px 0;">
+    <tr>
+      <td style="border-radius:8px; background:#0369a1;">
+        <a href="${escapeHtml(url)}" style="display:inline-block; padding:12px 20px; font-family:Arial, sans-serif; font-size:14px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:8px;">${escapeHtml(label)}</a>
+      </td>
+    </tr>
+  </table>
+`;
+
 const createEmailShell = (title, bodyHtml) => {
   const safeTitle = escapeHtml(title);
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${safeTitle}</title></head>
-<body style="margin:0; padding:0; background:#ffffff; color:#111827;">
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#ffffff;"><tr><td align="center" style="padding:24px 12px;">
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:560px;"><tr><td style="font-family:Arial, sans-serif; font-size:16px; line-height:1.6; color:#111827;">
-      <h1 style="font-size:22px; line-height:1.3; margin:0 0 18px 0; color:#111827;">${safeTitle}</h1>
+<body style="margin:0; padding:0; background:#f3f6fb; color:#111827;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f3f6fb;">
+    <tr>
+      <td align="center" style="padding:32px 12px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;">
+          <tr>
+            <td style="padding:0 0 14px 0;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td width="42" height="42" align="center" style="width:42px; height:42px; border-radius:10px; background:#0369a1; color:#ffffff; font-family:Arial, sans-serif; font-size:22px; font-weight:800;">E</td>
+                  <td style="padding-left:10px; font-family:Arial, sans-serif; font-size:24px; line-height:1; font-weight:800; color:#0f172a;">Evento</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; padding:28px; font-family:Arial, sans-serif; font-size:16px; line-height:1.6; color:#111827;">
+      <h1 style="font-size:24px; line-height:1.3; margin:0 0 18px 0; color:#0f172a;">${safeTitle}</h1>
       ${bodyHtml}
-      <p style="margin:24px 0 0 0; font-size:13px; color:#6b7280;">Evento</p>
-    </td></tr></table>
-  </td></tr></table>
+      <p style="margin:24px 0 0 0; padding-top:18px; border-top:1px solid #e5e7eb; font-size:13px; color:#6b7280;">Evento keeps your events, tickets, and updates in one place.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`;
 };
@@ -64,7 +92,7 @@ const createOtpHtml = (title, body, otp, eventTitle = '', name = '') => {
     <p style="margin:0 0 16px 0;">Hello ${safeName},</p>
     <p style="margin:0 0 18px 0;">${safeBody}</p>
     ${safeOtp ? `<p style="margin:0 0 8px 0; font-size:14px; color:#374151;">Verification code:</p>
-    <p style="font-family:'Courier New', monospace; font-size:30px; line-height:1.2; letter-spacing:6px; font-weight:bold; margin:0 0 20px 0; color:#111827;">${safeOtp}</p>` : ''}
+    <div style="display:inline-block; background:#eef6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px 18px; font-family:'Courier New', monospace; font-size:30px; line-height:1.2; letter-spacing:6px; font-weight:bold; margin:0 0 20px 0; color:#075985;">${safeOtp}</div>` : ''}
     ${safeEventTitle ? `<p style="margin:0 0 16px 0; font-size:14px; color:#374151;"><strong>Event:</strong> ${safeEventTitle}</p>` : ''}
     <p style="margin:0 0 10px 0; font-size:14px; color:#374151;">This code is valid for ${exports.OTP_EXPIRY_MINUTES} minutes and can only be used once.</p>
   `);
@@ -211,13 +239,28 @@ exports.sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDe
   const subject = `Booking confirmed: ${eventTitle}`;
   const amount = Number(bookingDetails.totalPrice || 0).toLocaleString('en-IN');
   const html = createEmailShell(subject, `
-    <p>Hello ${escapeHtml(name)},</p>
-    <p>Your booking for <strong>${escapeHtml(eventTitle)}</strong> is confirmed.</p>
-    <p>Tickets: ${bookingDetails.numberOfTickets}</p>
-    <p>Total amount: INR ${amount}</p>
-    <p>Booking ID: ${bookingDetails.bookingId}</p>
+    <p style="margin:0 0 16px 0;">Hello ${escapeHtml(name)},</p>
+    <p style="margin:0 0 18px 0;">Your booking for <strong>${escapeHtml(eventTitle)}</strong> is confirmed.</p>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; margin:0 0 18px 0;">
+      <tr><td style="padding:14px 16px; color:#475569;">Tickets</td><td align="right" style="padding:14px 16px; font-weight:700; color:#0f172a;">${bookingDetails.numberOfTickets}</td></tr>
+      <tr><td style="padding:14px 16px; color:#475569; border-top:1px solid #e5e7eb;">Total amount</td><td align="right" style="padding:14px 16px; border-top:1px solid #e5e7eb; font-weight:700; color:#0f172a;">INR ${amount}</td></tr>
+      <tr><td style="padding:14px 16px; color:#475569; border-top:1px solid #e5e7eb;">Booking ID</td><td align="right" style="padding:14px 16px; border-top:1px solid #e5e7eb; font-weight:700; color:#0f172a;">${escapeHtml(bookingDetails.bookingId)}</td></tr>
+    </table>
   `);
   return sendEmail({ to: email, subject, html, tags: ['booking-confirmation'] });
+};
+
+exports.sendPasswordResetEmail = async (email, name, resetLink) => {
+  const subject = 'Reset your Evento password';
+  const html = createEmailShell(subject, `
+    <p style="margin:0 0 16px 0;">Hello ${escapeHtml(name || 'there')},</p>
+    <p style="margin:0 0 18px 0;">We received a request to reset your Evento password. Use the button below to create a new password.</p>
+    ${createActionButton('Reset password', resetLink)}
+    <p style="margin:16px 0 0 0; font-size:13px; color:#64748b;">This link expires in 15 minutes. If you did not request this, you can safely ignore this email.</p>
+    <p style="margin:12px 0 0 0; font-size:12px; color:#94a3b8; word-break:break-all;">${escapeHtml(resetLink)}</p>
+  `);
+
+  return sendEmail({ to: email, subject, html, tags: ['password-reset'] });
 };
 
 exports.sendImportantNotificationEmail = async (email, name, title, message, link = '') => {

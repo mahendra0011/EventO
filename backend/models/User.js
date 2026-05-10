@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema({
     enum: ['user', 'host', 'admin'],
     default: 'user'
   },
+  isBlocked: {
+    type: Boolean,
+    default: false
+  },
   phone: {
     type: String,
     trim: true
@@ -32,6 +36,25 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  organizerDocuments: [{
+    label: {
+      type: String,
+      trim: true
+    },
+    url: {
+      type: String,
+      trim: true
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   isVerified: {
     type: Boolean,
     default: false
@@ -67,6 +90,21 @@ const userSchema = new mongoose.Schema({
   },
   emailVerificationOtpExpires: {
     type: Date
+  },
+  passwordResetToken: {
+    type: String
+  },
+  passwordResetExpires: {
+    type: Date
+  },
+  lastPasswordResetSentAt: {
+    type: Date
+  },
+  lastLoginAt: {
+    type: Date
+  },
+  lastLoginIp: {
+    type: String
   }
 });
 

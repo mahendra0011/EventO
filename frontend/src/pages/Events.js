@@ -13,12 +13,27 @@ const Events = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const categories = ['Music', 'Sports', 'Technology', 'Business', 'Art', 'Food', 'Other'];
+  const [categories, setCategories] = useState(['Music', 'Sports', 'Technology', 'Business', 'Art', 'Food', 'Other']);
 
   useEffect(() => {
     fetchEvents();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedCategory, currentPage]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get('/events/categories');
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          setCategories(res.data);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const fetchEvents = async () => {
     setLoading(true);

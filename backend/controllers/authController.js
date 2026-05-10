@@ -1,15 +1,28 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const {
   sendEmailVerificationOTP,
+  sendLoginNotificationEmail,
+  sendPasswordResetEmail,
   generateSecureOTP,
   OTP_EXPIRY_MINUTES,
   OTP_RATE_LIMIT_SECONDS
 } = require('../utils/email');
+const { getClientIp, logActivity } = require('../utils/activity');
 
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
+
+const PASSWORD_RESET_EXPIRY_MINUTES = 15;
+const PASSWORD_RESET_RATE_LIMIT_SECONDS = 60;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+const hashResetToken = (token) => crypto
+  .createHash('sha256')
+  .update(token)
+  .digest('hex');
 
 const getEmailFailureMessage = (purpose) => (
   `Could not send ${purpose} email. Please check the Brevo API key, verified sender email, and Render environment variables.`
@@ -21,8 +34,32 @@ const buildAuthUser = (user) => ({
   email: user.email,
   role: user.role,
   phone: user.phone,
+  isBlocked: user.isBlocked,
   isVerified: user.isVerified
 });
+
+const recordSuccessfulLogin = async (req, user) => {
+  user.lastLoginAt = new Date();
+  user.lastLoginIp = getClientIp(req);
+  await user.save();
+
+  await logActivity({
+    req,
+    actor: user._id,
+    action: 'auth.login',
+    entity: 'User',
+    entityId: user._id,
+    message: `${user.email} logged in`
+  });
+
+  if (user.role === 'admin') {
+    sendLoginNotificationEmail(user.email, user.name, user.lastLoginIp)
+      .then(result => {
+        if (!result?.success) console.warn('Admin login notification failed:', result?.error || result?.message);
+      })
+      .catch(err => console.error('Admin login notification error:', err.message));
+  }
+};
 
 const setVerificationOtp = (user, otp, otpExpires) => {
   user.otp = otp;
@@ -208,6 +245,10 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
+    }
+
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
@@ -226,6 +267,7 @@ exports.login = async (req, res) => {
     }
 
     const token = generateToken(user._id);
+    await recordSuccessfulLogin(req, user);
 
     res.json({
       success: true,
@@ -374,6 +416,117 @@ exports.resendVerification = async (req, res) => {
   }
 };
 
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const genericMessage = 'If an Evento account exists for this email, a reset link has been sent.';
+
+    if (!user) {
+      return res.json({ message: genericMessage });
+    }
+
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
+    }
+
+    const oneMinuteAgo = new Date(Date.now() - PASSWORD_RESET_RATE_LIMIT_SECONDS * 1000);
+    if (user.lastPasswordResetSentAt && user.lastPasswordResetSentAt > oneMinuteAgo) {
+      return res.status(429).json({
+        message: `Please wait ${PASSWORD_RESET_RATE_LIMIT_SECONDS} seconds before requesting another reset link`
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetToken = hashResetToken(resetToken);
+    user.passwordResetExpires = new Date(Date.now() + PASSWORD_RESET_EXPIRY_MINUTES * 60 * 1000);
+    user.lastPasswordResetSentAt = new Date();
+    await user.save();
+
+    const resetLink = `${FRONTEND_URL.replace(/\/$/, '')}/reset-password/${resetToken}`;
+    const result = await sendPasswordResetEmail(user.email, user.name, resetLink);
+
+    if (!result?.success) {
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      user.lastPasswordResetSentAt = undefined;
+      await user.save();
+      console.warn('Password reset email failed:', result?.error || result?.message);
+      return res.status(502).json({
+        message: getEmailFailureMessage('password reset'),
+        emailSent: false
+      });
+    }
+
+    await logActivity({
+      req,
+      actor: user._id,
+      action: 'auth.password_reset_requested',
+      entity: 'User',
+      entityId: user._id,
+      message: `${user.email} requested a password reset`
+    });
+
+    res.json({ message: genericMessage, emailSent: true });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ message: 'Reset token and password are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const tokenHash = hashResetToken(token);
+    const user = await User.findOne({
+      passwordResetToken: tokenHash,
+      passwordResetExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Password reset link is invalid or expired' });
+    }
+
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
+    }
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    user.lastPasswordResetSentAt = undefined;
+    await user.save();
+
+    await logActivity({
+      req,
+      actor: user._id,
+      action: 'auth.password_reset_completed',
+      entity: 'User',
+      entityId: user._id,
+      message: `${user.email} reset their password`
+    });
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
@@ -391,6 +544,10 @@ exports.hostLogin = async (req, res) => {
     const user = await User.findOne({ email, role: 'host' });
     if (!user) {
       return res.status(400).json({ message: 'Host not found' });
+    }
+
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
     }
 
     if (user.secretKeyword !== secretKeyword) {
@@ -415,6 +572,7 @@ exports.hostLogin = async (req, res) => {
     }
 
     const token = generateToken(user._id);
+    await recordSuccessfulLogin(req, user);
 
     res.json({
       success: true,
@@ -463,6 +621,10 @@ exports.hostKeywordLogin = async (req, res) => {
       return res.status(400).json({ message: 'Host not found' });
     }
 
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
+    }
+
     if (user.secretKeyword !== hostKeyword) {
       return res.status(400).json({ message: 'Invalid host keyword' });
     }
@@ -485,6 +647,7 @@ exports.hostKeywordLogin = async (req, res) => {
     }
 
     const token = generateToken(user._id);
+    await recordSuccessfulLogin(req, user);
 
     res.json({
       success: true,

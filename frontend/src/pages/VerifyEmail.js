@@ -57,7 +57,9 @@ const VerifyEmail = () => {
   const displayEmail = recipientEmail || user?.email;
 
   const navigateAfterAuthVerification = (res) => {
-    if (res?.user?.role === 'host') {
+    if (res?.user?.role === 'admin') {
+      navigate('/admin');
+    } else if (res?.user?.role === 'host') {
       navigate('/host');
     } else {
       navigate('/dashboard');
