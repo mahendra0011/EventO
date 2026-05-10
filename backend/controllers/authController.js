@@ -12,7 +12,7 @@ const generateToken = (userId) => {
 };
 
 const getEmailFailureMessage = (purpose) => (
-  `Could not send ${purpose} email. If this is deployed on Render free, Gmail SMTP is blocked on ports 465/587. Upgrade Render or use an SMTP provider on port 2525.`
+  `Could not send ${purpose} email. Please check the Brevo API key, verified sender email, and Render environment variables.`
 );
 
 const buildAuthUser = (user) => ({
@@ -47,13 +47,22 @@ const sendVerificationOtp = async (user, save = true) => {
   setVerificationOtp(user, otp, otpExpires);
   if (save) await user.save();
 
-  sendEmailVerificationOTP(user.email, otp, user.name).then(result => {
-    if (!result?.success) {
-      console.warn('Email verification OTP failed:', result?.error || result?.message);
-    }
-  });
+  const result = await sendEmailVerificationOTP(user.email, otp, user.name);
+  const emailSent = Boolean(result?.success);
 
-  return { success: true, emailSent: true };
+  if (!emailSent) {
+    user.lastOtpSent = undefined;
+    user.lastLoginOtpSent = undefined;
+    if (save) await user.save();
+    console.warn('Email verification OTP failed:', result?.error || result?.message);
+  }
+
+  return {
+    success: emailSent,
+    emailSent,
+    error: result?.error || result?.message,
+    messageId: result?.messageId
+  };
 };
 
 const ensureVerificationOtpForLogin = async (user) => {
@@ -61,11 +70,10 @@ const ensureVerificationOtpForLogin = async (user) => {
   const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
 
   if (otp && otpExpires && otpExpires > new Date() && lastOtpSent && lastOtpSent > oneMinuteAgo) {
-    return { success: true, reused: true };
+    return { success: true, emailSent: true, reused: true };
   }
 
-  sendVerificationOtp(user);
-  return { success: true, emailSent: true };
+  return sendVerificationOtp(user);
 };
 
 const buildUnverifiedResponse = (user, message, emailSent = true) => ({
@@ -125,7 +133,14 @@ exports.hostRegister = async (req, res) => {
       secretKeyword
     });
 
-    sendVerificationOtp(user, false);
+    const otpResult = await sendVerificationOtp(user, false);
+    if (!otpResult.success) {
+      return res.status(502).json({
+        message: getEmailFailureMessage('host verification'),
+        emailSent: false
+      });
+    }
+
     await user.save();
 
     res.status(201).json(buildUnverifiedResponse(
@@ -159,7 +174,14 @@ exports.register = async (req, res) => {
       phone
     });
 
-    sendVerificationOtp(user, false);
+    const otpResult = await sendVerificationOtp(user, false);
+    if (!otpResult.success) {
+      return res.status(502).json({
+        message: getEmailFailureMessage('verification'),
+        emailSent: false
+      });
+    }
+
     await user.save();
 
     res.status(201).json(buildUnverifiedResponse(
@@ -192,12 +214,14 @@ exports.login = async (req, res) => {
     }
 
     if (!user.isVerified) {
-      ensureVerificationOtpForLogin(user);
+      const otpResult = await ensureVerificationOtpForLogin(user);
 
       return res.status(200).json(buildUnverifiedResponse(
         user,
-        'Account is not verified. A new OTP was sent to your email.',
-        true
+        otpResult.emailSent
+          ? 'Account is not verified. A new OTP was sent to your email.'
+          : getEmailFailureMessage('verification'),
+        otpResult.emailSent
       ));
     }
 
@@ -299,7 +323,14 @@ exports.resendLoginOtp = async (req, res) => {
       });
     }
 
-    sendVerificationOtp(user);
+    const otpResult = await sendVerificationOtp(user);
+    if (!otpResult.success) {
+      return res.status(502).json({
+        message: getEmailFailureMessage('verification'),
+        emailSent: false
+      });
+    }
+
     res.json({ message: 'Verification code resent successfully', emailSent: true });
   } catch (error) {
     console.error('Resend login OTP error:', error);
@@ -328,7 +359,14 @@ exports.resendVerification = async (req, res) => {
       });
     }
 
-    sendVerificationOtp(user);
+    const otpResult = await sendVerificationOtp(user);
+    if (!otpResult.success) {
+      return res.status(502).json({
+        message: getEmailFailureMessage('verification'),
+        emailSent: false
+      });
+    }
+
     res.json({ message: 'Verification code resent successfully', emailSent: true });
   } catch (error) {
     console.error('Resend verification error:', error);
@@ -365,12 +403,14 @@ exports.hostLogin = async (req, res) => {
     }
 
     if (!user.isVerified) {
-      ensureVerificationOtpForLogin(user);
+      const otpResult = await ensureVerificationOtpForLogin(user);
 
       return res.status(200).json(buildUnverifiedResponse(
         user,
-        'Account is not verified. A new OTP was sent to your email.',
-        true
+        otpResult.emailSent
+          ? 'Account is not verified. A new OTP was sent to your email.'
+          : getEmailFailureMessage('verification'),
+        otpResult.emailSent
       ));
     }
 
@@ -433,12 +473,14 @@ exports.hostKeywordLogin = async (req, res) => {
     }
 
     if (!user.isVerified) {
-      ensureVerificationOtpForLogin(user);
+      const otpResult = await ensureVerificationOtpForLogin(user);
 
       return res.status(200).json(buildUnverifiedResponse(
         user,
-        'Account is not verified. A new OTP was sent to your email.',
-        true
+        otpResult.emailSent
+          ? 'Account is not verified. A new OTP was sent to your email.'
+          : getEmailFailureMessage('verification'),
+        otpResult.emailSent
       ));
     }
 
@@ -479,7 +521,14 @@ exports.hostKeywordRegister = async (req, res) => {
       secretKeyword
     });
 
-    sendVerificationOtp(user, false);
+    const otpResult = await sendVerificationOtp(user, false);
+    if (!otpResult.success) {
+      return res.status(502).json({
+        message: getEmailFailureMessage('host verification'),
+        emailSent: false
+      });
+    }
+
     await user.save();
 
     res.status(201).json(buildUnverifiedResponse(

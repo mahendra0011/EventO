@@ -20,7 +20,7 @@ const app = express();
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const NODE_ENV = process.env.NODE_ENV || 'development';
-const REQUIRED_PRODUCTION_ENV_VARS = ['MONGODB_URI', 'JWT_SECRET'];
+const REQUIRED_PRODUCTION_ENV_VARS = ['MONGODB_URI', 'JWT_SECRET', 'BREVO_API_KEY', 'FROM_EMAIL'];
 
 const corsOptions = {
   origin: NODE_ENV === 'production' ? true : FRONTEND_URL,

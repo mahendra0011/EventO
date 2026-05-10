@@ -6,6 +6,8 @@ const FROM_NAME = process.env.FROM_NAME || 'Evento';
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || '';
+const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || FROM_EMAIL;
+const EMAIL_DIAGNOSTIC_TO = process.env.EMAIL_DIAGNOSTIC_TO || FROM_EMAIL;
 
 const escapeHtml = (value = '') => String(value)
   .replace(/&/g, '&amp;')
@@ -38,6 +40,20 @@ const createEmailShell = (title, bodyHtml) => {
 </html>`;
 };
 
+const createAbsoluteUrl = (link = '') => {
+  if (!link) return '';
+
+  try {
+    return new URL(link).toString();
+  } catch {
+    try {
+      return new URL(link, FRONTEND_URL).toString();
+    } catch {
+      return '';
+    }
+  }
+};
+
 const createOtpHtml = (title, body, otp, eventTitle = '', name = '') => {
   const safeName = escapeHtml(name || 'there');
   const safeBody = escapeHtml(body).replace(/\n/g, '<br>');
@@ -54,8 +70,66 @@ const createOtpHtml = (title, body, otp, eventTitle = '', name = '') => {
   `);
 };
 
-const sendEmail = async ({ to, subject, text, html }) => {
+const getEmailDiagnostics = () => {
+  const issues = [];
+
+  if (!BREVO_API_KEY) issues.push('BREVO_API_KEY is missing');
+  if (!FROM_EMAIL) issues.push('FROM_EMAIL is missing');
+
+  return {
+    provider: 'brevo',
+    configured: issues.length === 0,
+    issues,
+    apiKeyPresent: Boolean(BREVO_API_KEY),
+    fromEmail: FROM_EMAIL || null,
+    replyToEmail: REPLY_TO_EMAIL || null,
+    diagnosticTo: EMAIL_DIAGNOSTIC_TO || null,
+    frontendUrl: FRONTEND_URL
+  };
+};
+
+const formatBrevoError = async (response) => {
+  const errorText = await response.text();
+
   try {
+    const errorJson = JSON.parse(errorText);
+    return errorJson.message || errorJson.code || errorText;
+  } catch {
+    return errorText;
+  }
+};
+
+const sendEmail = async ({ to, subject, text, html, tags = [] }) => {
+  try {
+    const diagnostics = getEmailDiagnostics();
+
+    if (!diagnostics.configured) {
+      return {
+        success: false,
+        error: `Brevo email is not configured: ${diagnostics.issues.join(', ')}`
+      };
+    }
+
+    if (!to) {
+      return { success: false, error: 'Recipient email is required' };
+    }
+
+    const payload = {
+      sender: { name: FROM_NAME, email: FROM_EMAIL },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+      textContent: text || createTextFromHtml(html)
+    };
+
+    if (REPLY_TO_EMAIL) {
+      payload.replyTo = { email: REPLY_TO_EMAIL, name: FROM_NAME };
+    }
+
+    if (tags.length > 0) {
+      payload.tags = tags;
+    }
+
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
@@ -63,19 +137,13 @@ const sendEmail = async ({ to, subject, text, html }) => {
         'api-key': BREVO_API_KEY,
         'content-type': 'application/json'
       },
-      body: JSON.stringify({
-        sender: { name: FROM_NAME, email: FROM_EMAIL },
-        to: [{ email: to }],
-        subject: subject,
-        htmlContent: html,
-        textContent: text || createTextFromHtml(html)
-      })
+      body: JSON.stringify(payload)
     });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[Email] Brevo API Error:', errorText);
-      return { success: false, error: errorText };
+      const error = await formatBrevoError(response);
+      console.error('[Email] Brevo API Error:', error);
+      return { success: false, status: response.status, error };
     }
     
     const data = await response.json();
@@ -92,23 +160,51 @@ const generateSecureOTP = () => Math.floor(100000 + Math.random() * 900000).toSt
 exports.OTP_EXPIRY_MINUTES = 10;
 exports.OTP_RATE_LIMIT_SECONDS = 45;
 exports.generateSecureOTP = generateSecureOTP;
+exports.getEmailDiagnostics = getEmailDiagnostics;
+
+exports.sendEmailDiagnostics = async () => {
+  const diagnostics = getEmailDiagnostics();
+
+  if (!diagnostics.configured) {
+    return {
+      success: false,
+      error: `Brevo email is not configured: ${diagnostics.issues.join(', ')}`
+    };
+  }
+
+  const subject = 'Evento email diagnostics';
+  const sentAt = new Date().toISOString();
+  const html = createEmailShell(subject, `
+    <p style="margin:0 0 16px 0;">This is a test email from Evento.</p>
+    <p style="margin:0 0 8px 0;"><strong>Provider:</strong> Brevo API</p>
+    <p style="margin:0 0 8px 0;"><strong>Sent at:</strong> ${escapeHtml(sentAt)}</p>
+    <p style="margin:0 0 8px 0;"><strong>From:</strong> ${escapeHtml(FROM_EMAIL)}</p>
+  `);
+
+  return sendEmail({
+    to: EMAIL_DIAGNOSTIC_TO,
+    subject,
+    html,
+    tags: ['diagnostic']
+  });
+};
 
 exports.sendEmailVerificationOTP = async (email, otp, name) => {
   const subject = 'Your Evento verification code';
   const html = createOtpHtml(subject, `Use this verification code to finish creating your account:`, otp, '', name);
-  return sendEmail({ to: email, subject, html });
+  return sendEmail({ to: email, subject, html, tags: ['verification'] });
 };
 
 exports.sendLoginOTPEmail = async (email, otp, name) => {
   const subject = 'Your Evento login code';
   const html = createOtpHtml(subject, `Use this login code to access your Evento account:`, otp, '', name);
-  return sendEmail({ to: email, subject, html });
+  return sendEmail({ to: email, subject, html, tags: ['login'] });
 };
 
 exports.sendOTPEmail = async (email, otp, name, eventTitle = 'Event Booking') => {
   const subject = 'Your Evento booking code';
   const html = createOtpHtml(subject, `Use this code to verify your booking for "${eventTitle}":`, otp, eventTitle, name);
-  return sendEmail({ to: email, subject, html });
+  return sendEmail({ to: email, subject, html, tags: ['booking-otp'] });
 };
 
 exports.sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDetails) => {
@@ -121,22 +217,24 @@ exports.sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDe
     <p>Total amount: INR ${amount}</p>
     <p>Booking ID: ${bookingDetails.bookingId}</p>
   `);
-  return sendEmail({ to: email, subject, html });
+  return sendEmail({ to: email, subject, html, tags: ['booking-confirmation'] });
 };
 
 exports.sendImportantNotificationEmail = async (email, name, title, message, link = '') => {
   const subject = `Evento: ${title}`;
+  const actionUrl = createAbsoluteUrl(link);
   const html = createEmailShell(subject, `
     <p>Hello ${escapeHtml(name)},</p>
     <p>${escapeHtml(message)}</p>
+    ${actionUrl ? `<p style="margin:18px 0 0 0;"><a href="${escapeHtml(actionUrl)}" style="color:#2563eb; font-weight:bold;">Open in Evento</a></p>` : ''}
   `);
-  return sendEmail({ to: email, subject, html });
+  return sendEmail({ to: email, subject, html, tags: ['important-notification'] });
 };
 
 exports.sendHostMessageEmail = async (email, name, subject, content, eventTitle, hostName) => {
   const emailSubject = `Message from ${hostName}: ${subject}`;
   const html = createEmailShell(emailSubject, `<p>${escapeHtml(content)}</p>`);
-  return sendEmail({ to: email, subject: emailSubject, html });
+  return sendEmail({ to: email, subject: emailSubject, html, tags: ['host-message'] });
 };
 
 exports.sendLoginNotificationEmail = async (email, name, ipAddress = 'Unknown') => {

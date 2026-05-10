@@ -20,7 +20,7 @@ const sendImportantEmail = (user, title, message, link) => {
     .catch(err => console.error('Important notification email error:', err.message));
 };
 
-const getBookingEmailFailureMessage = () => 'Could not send booking OTP email. If this is deployed on Render free, Gmail SMTP is blocked on ports 465/587. Upgrade Render or use an SMTP provider on port 2525.';
+const getBookingEmailFailureMessage = () => 'Could not send booking OTP email. Please check the Brevo API key, verified sender email, and Render environment variables.';
 
 exports.createBooking = async (req, res) => {
    try {
