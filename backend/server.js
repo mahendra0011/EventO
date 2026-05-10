@@ -5,8 +5,6 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 mongoose.set('bufferCommands', false);
-mongoose.set('serverSelectionTimeoutMS', 5000);
-mongoose.set('socketTimeoutMS', 45000);
 
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
