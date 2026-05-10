@@ -1,224 +1,292 @@
-# EVENTO - World-Class Event Management Platform
+# Evento
 
-![React](https://img.shields.io/badge/React-18.2.0-blue.svg)
-![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)
-![Express](https://img.shields.io/badge/Express-4.18.2-lightgrey.svg)
-![MongoDB](https://img.shields.io/badge/MongoDB-7.6.3-green.svg)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.6-38bdf8.svg)
-![Framer Motion](https://img.shields.io/badge/Framer_Motion-12.38-blue.svg)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+Evento is a full-stack event booking platform built with React, Express, MongoDB, and Tailwind CSS. It supports public event discovery, ticket booking with OTP verification, host dashboards, attendee messaging, support tickets, admin controls, reports, and deployment-ready configuration for Render.
 
-A world-class event management and ticket booking platform. Discover extraordinary events, book tickets securely with OTP verification, and host unforgettable experiences with our premium platform.
+## Highlights
 
-## Features
-
-### User Features
-- Browse and search events by category, title, or venue
-- Book tickets with secure OTP email verification
-- Personal dashboard to track booking status
-- Profile management
-- Real-time booking status updates
-- Real-time community chat for event attendees
-- Direct messaging with event hosts
-- Reply to messages with threaded conversations
-- Edit and delete your own messages
-- React to messages with emojis
-- Seen/read receipts and typing indicators
-
-### Host Features
-- Analytics dashboard with revenue and booking statistics
-- Confirm or reject booking requests
-- Create, update, and delete events
-- Broadcast messages to all users who booked an event
-- Individual messaging with users
-- Community chat for event attendees
-- Event-specific analytics
-- View event attendees
-
-### Security Features
-- JWT-based authentication
-- Email OTP verification for bookings
-- Role-based access control (User/Host)
-- Password hashing with bcrypt
-- Protected routes and API endpoints
-
-## Quick Start
-
-### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (local or Atlas)
-- npm or yarn
-
-### Installation
-
-# Clone the repository
-git clone https://github.com/mahendra0011/evento.git
-cd evento
-
-# Install backend dependencies
-cd backend
-npm install
-
-# Configure environment variables
-# Create .env file with:
-# PORT=5000
-# MONGODB_URI=mongodb://localhost:27017/evento
-# JWT_SECRET=your_jwt_secret_key
-# FRONTEND_URL=http://localhost:3000
-# MAILGUN_API_KEY=your_mailgun_api_key
-# MAILGUN_DOMAIN=your_mailgun_domain
-# MAILGUN_BASE_URL=https://api.mailgun.net
-# AUTHORIZED_RECIPIENTS=your_email@example.com
-
-# Start backend server
-npm run dev
-
-# In a new terminal, install frontend dependencies
-cd ../frontend
-npm install
-
-# Start frontend server
-npm start
-
-## Project Structure
-
-evento/
-+-- backend/
-¦   +-- controllers/        # Route controllers
-¦   +-- models/             # MongoDB models
-¦   +-- routes/             # API routes
-¦   +-- middleware/        # Custom middleware
-¦   +-- utils/             # Utility functions
-¦   +-- server.js          # Express server
-¦   +-- seed.js           # Database seeder
-¦
-+-- frontend/
-¦   +-- public/            # Static files
-¦   +-- src/
-¦   ¦   +-- components/   # Reusable components
-¦   ¦   +-- pages/       # Page components
-¦   ¦   +-- context/     # React context
-¦   ¦   +-- utils/      # Utility functions
-¦   +-- package.json
-¦
-+-- README.md
+- Public event browsing with search, categories, featured events, trending flags, and wishlists.
+- User authentication with JWT, bcrypt password hashing, email OTP verification, login notifications, and password reset OTPs.
+- Host accounts with a dedicated dashboard for events, bookings, attendee communication, broadcasts, analytics, and community chat.
+- Ticket booking flow with email OTP verification before confirmation.
+- User dashboard for bookings, upcoming events, notifications, broadcasts, wishlist, payments, reviews, profile, and support.
+- Admin console for users, events, bookings, refunds, disputes, categories, locations, notifications, reviews, support tickets, fraud signals, security logs, analytics, and CSV exports.
+- Email delivery through Brevo with diagnostics endpoints.
+- Production deployment support through `render.yaml`.
 
 ## Tech Stack
 
-### Backend
-- Node.js - JavaScript runtime
-- Express.js - Web framework
-- MongoDB - NoSQL database
-- Mongoose - MongoDB ODM
-- JWT - Authentication
-- bcryptjs - Password hashing
-- Nodemailer - Email service
-- express-validator - Input validation
-
 ### Frontend
-- React.js - UI library
-- React Router - Client-side routing
-- Tailwind CSS - Utility-first CSS
-- Axios - HTTP client
-- Lucide React - Icon library
-- React Hot Toast - Toast notifications
 
-## API Endpoints
+- React 18
+- React Router
+- Tailwind CSS
+- Framer Motion
+- Axios
+- Lucide React
+- React Hot Toast
+- QR code ticket components
 
-### Authentication
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| POST | /api/auth/register | Register user | Public |
-| POST | /api/auth/login | Login user | Public |
-| POST | /api/auth/host-keyword-login | Host login | Public |
-| POST | /api/auth/host-keyword-register | Host register | Public |
-| GET | /api/auth/me | Get current user | Private |
-| PUT | /api/auth/profile | Update profile | Private |
+### Backend
+
+- Node.js 22
+- Express 4
+- MongoDB with Mongoose
+- JSON Web Tokens
+- bcryptjs
+- Nodemailer and Brevo email API
+- CSV exports for admin reports
+
+## Project Structure
+
+```text
+.
+|-- backend/
+|   |-- controllers/      API request handlers
+|   |-- middleware/       Auth and role guards
+|   |-- models/           Mongoose schemas
+|   |-- routes/           Express routers
+|   |-- utils/            Email, seed, and activity helpers
+|   |-- server.js         Express app and MongoDB bootstrap
+|   `-- package.json
+|-- frontend/
+|   |-- public/           Static assets and redirects
+|   |-- src/
+|   |   |-- components/   Shared UI and chat components
+|   |   |-- context/      Auth provider
+|   |   |-- pages/        Route screens
+|   |   `-- utils/        API client helpers
+|   `-- package.json
+|-- render.yaml           Render backend deployment config
+`-- package.json          Workspace metadata
+```
+
+## Prerequisites
+
+- Node.js 22 recommended
+- npm
+- MongoDB, either local or Atlas
+- Brevo account for production email delivery
+
+## Environment Variables
+
+Create `backend/.env` for local development:
+
+```env
+NODE_ENV=development
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/evento
+MONGODB_DB_NAME=
+JWT_SECRET=replace-with-a-long-random-secret
+FRONTEND_URL=http://localhost:3000
+
+BREVO_API_KEY=
+FROM_EMAIL=
+FROM_NAME=Evento
+REPLY_TO_EMAIL=
+EMAIL_DIAGNOSTIC_TO=
+
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=change-this-password
+ADMIN_NAME=Evento Admin
+ADMIN_RESET_PASSWORD=false
+
+PLATFORM_FEE_RATE=0.1
+```
+
+Frontend variables are optional because React uses the development proxy in `frontend/package.json`:
+
+```env
+REACT_APP_API_URL=
+REACT_APP_API_TIMEOUT_MS=20000
+```
+
+Set `REACT_APP_API_URL` only when the frontend should call a separate API origin.
+
+## Local Setup
+
+Install dependencies:
+
+```bash
+npm install
+npm install --prefix backend
+npm install --prefix frontend
+```
+
+Start MongoDB, then run the backend:
+
+```bash
+cd backend
+npm run dev
+```
+
+In another terminal, run the frontend:
+
+```bash
+cd frontend
+npm start
+```
+
+Open:
+
+- Frontend: `http://localhost:3000`
+- Backend health: `http://localhost:5000/api/health`
+- Email diagnostics: `http://localhost:5000/api/health/email`
+
+## Available Scripts
+
+Backend:
+
+```bash
+npm run dev
+npm run dev:local
+npm start
+```
+
+Frontend:
+
+```bash
+npm start
+npm run build
+npm test
+```
+
+## Core Workflows
+
+### User Booking
+
+1. User browses public events.
+2. User starts a booking.
+3. Backend creates a pending booking and sends a booking OTP by email.
+4. User verifies the OTP.
+5. Booking is confirmed, tickets are reduced, notifications are created, and a confirmation email is sent.
+6. User can view the e-ticket and QR code in the dashboard.
+
+### Host Management
+
+1. Host registers with email, password, phone, and host keyword.
+2. Host verifies email OTP before using protected host routes.
+3. Host creates and manages events.
+4. Host views bookings, analytics, attendees, notifications, messages, broadcasts, and community chat.
+
+### Admin Operations
+
+Admins can:
+
+- Manage users, roles, blocked status, and verification status.
+- Manage events, moderation flags, featured/trending status, reminders, categories, and locations.
+- Review bookings, payment status, refunds, disputes, and confirmation emails.
+- Send notifications to users or roles.
+- Manage support tickets and reviews.
+- Review fraud signals and security activity.
+- Export CSV reports for users, events, bookings, revenue, ticket sales, support, and fraud signals.
+
+## API Overview
+
+All backend routes are mounted under `/api`.
+
+### Auth
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| POST | `/auth/register` | Public | Register a user |
+| POST | `/auth/host-keyword-register` | Public | Register a host |
+| POST | `/auth/login` | Public | User/admin login |
+| POST | `/auth/host-keyword-login` | Public | Host login |
+| POST | `/auth/verify-email` | Public | Verify email OTP |
+| POST | `/auth/resend-verification` | Public | Resend email OTP |
+| POST | `/auth/forgot-password` | Public | Send password reset OTP |
+| POST | `/auth/reset-password` | Public | Reset password with OTP |
+| GET | `/auth/me` | Private | Current user profile |
+| PUT | `/auth/profile` | Private | Update profile |
 
 ### Events
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | /api/events | Get all events | Public |
-| GET | /api/events/featured | Get featured events | Public |
-| GET | /api/events/:id | Get single event | Public |
-| POST | /api/events | Create event | Host |
-| PUT | /api/events/:id | Update event | Host |
-| DELETE | /api/events/:id | Delete event | Host |
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| GET | `/events` | Public | List events |
+| GET | `/events/featured` | Public | Featured events |
+| GET | `/events/categories` | Public | Active category names |
+| GET | `/events/:id` | Public | Event details |
+| GET | `/events/organizer` | Host | Host events |
+| POST | `/events` | Host | Create event |
+| PUT | `/events/:id` | Host | Update owned event |
+| DELETE | `/events/:id` | Host | Delete owned event |
 
 ### Bookings
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| POST | /api/bookings | Create booking | Private |
-| POST | /api/bookings/verify-otp | Verify OTP | Private |
-| POST | /api/bookings/resend-otp | Resend OTP | Private |
-| GET | /api/bookings/user | Get user bookings | Private |
-| GET | /api/bookings/:id | Get single booking | Private |
-| PUT | /api/bookings/:id/cancel | Cancel booking | Private |
-| GET | /api/bookings/all | Get all bookings | Host |
-| PUT | /api/bookings/:id/confirm | Confirm booking | Host |
-| PUT | /api/bookings/:id/reject | Reject booking | Host |
 
-### Messages
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| POST | /api/messages | Send message | Private |
-| GET | /api/messages/inbox | Get inbox | Private |
-| GET | /api/messages/conversation/:userId | Get conversation | Private |
-| POST | /api/messages/broadcast | Broadcast to event bookers | Host |
-| GET | /api/host/events/:id/bookers | Get event bookers | Host |
-| PUT | /api/messages/:id | Edit message | Private |
-| DELETE | /api/messages/:id | Delete message | Private |
-| POST | /api/messages/:id/react | Add/remove reaction | Private |
-| GET | /api/messages/:id/reactions | Get reactions count | Private |
-| POST | /api/messages/community | Post community message | Attendee/Host |
-| GET | /api/messages/community/:eventId | Get community messages | Attendee/Host |
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| POST | `/bookings` | Private | Start booking and send OTP |
+| POST | `/bookings/verify-otp` | Private | Confirm booking with OTP |
+| POST | `/bookings/resend-otp` | Private | Resend booking OTP |
+| GET | `/bookings/user` | Private | User bookings |
+| GET | `/bookings/all` | Host | Bookings for host events |
+| GET | `/bookings/:id` | Private | Booking details |
+| PUT | `/bookings/:id/cancel` | Private | Cancel pending booking |
+| PUT | `/bookings/:id/confirm` | Host | Confirm OTP-verified booking |
+| PUT | `/bookings/:id/reject` | Host | Reject booking |
 
-### Host Dashboard
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| GET | /api/host/dashboard | Get dashboard stats | Host |
-| GET | /api/host/events/:id/analytics | Get event analytics | Host |
+### Admin
 
-## Booking Workflow
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| GET | `/admin/dashboard` | Platform dashboard stats |
+| GET | `/admin/users` | User management |
+| PUT | `/admin/users/:id` | Update user |
+| GET | `/admin/events` | Event management |
+| PUT | `/admin/events/:id` | Update event moderation and metadata |
+| GET | `/admin/bookings` | Booking management |
+| PUT | `/admin/bookings/:id` | Update booking/payment/refund/dispute state |
+| PUT | `/admin/bookings/:id/refund` | Mark booking refunded |
+| GET | `/admin/payments` | Payment summary |
+| GET | `/admin/fraud` | Fraud and moderation signals |
+| GET | `/admin/reports/:type` | CSV exports |
 
-User Browses Events ? Select Event ? Request Booking ? System Sends OTP ? User Verifies OTP ? Admin Reviews Booking ? Decision
-                                                                               ?
-                                                      Confirmed ? Booking Confirmed
-                                                      ?
-                                            User Receives Confirmation Email
+## Deployment
 
-## Contributing
+The included `render.yaml` deploys the backend from `backend/`.
 
-Contributions are welcome! Please follow these steps:
+Required production variables:
 
-1. Fork the repository
-2. Create your feature branch (git checkout -b feature/AmazingFeature)
-3. Commit your changes (git commit -m 'Add some AmazingFeature')
-4. Push to the branch (git push origin feature/AmazingFeature)
-5. Open a Pull Request
+- `MONGODB_URI`
+- `JWT_SECRET`
+- `BREVO_API_KEY`
+- `FROM_EMAIL`
+
+Recommended production variables:
+
+- `FRONTEND_URL`
+- `REPLY_TO_EMAIL`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `ADMIN_NAME`
+
+Build the frontend separately with:
+
+```bash
+cd frontend
+npm run build
+```
+
+In production mode, the backend can serve `frontend/build` if both projects are deployed together.
+
+## Security Notes
+
+- Change seeded admin credentials in every deployed environment.
+- Use a strong `JWT_SECRET`.
+- Keep Brevo sender email verified.
+- Do not commit `.env` files.
+- Configure CORS with the real frontend URL in production.
+- Use HTTPS for deployed frontend and backend URLs.
+
+## Troubleshooting
+
+- `401 Token is not valid`: log in again or check `JWT_SECRET`.
+- `403 Please verify your email via OTP`: complete email verification.
+- Booking OTP email failed: check `BREVO_API_KEY`, `FROM_EMAIL`, and sender verification.
+- MongoDB connection error: verify `MONGODB_URI`, network access, and database credentials.
+- Frontend API calls fail locally: confirm the backend is running on port `5000`.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Author
-
-EventO Team
-- GitHub: @mahendra0011
-
-## Acknowledgments
-
-- React - Frontend framework
-- Express - Backend framework
-- MongoDB - Database
-- Tailwind CSS - CSS framework
-- Lucide - Icons
-- Framer - Animations
-
-## Support
-
-If you have any questions or need help, please open an issue on GitHub.
-
----
-
-Made with by EventO Team
+No license file is currently included. Add one before publishing this project for reuse by others.
