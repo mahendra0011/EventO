@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "dev:local": "node --watch server.js",
+    "dev:local": "node --watch server.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
