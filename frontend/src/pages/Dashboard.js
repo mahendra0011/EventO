@@ -10,7 +10,23 @@ import {
 } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, GradientText } from '../components/animated';
 
-const dashboardTabs = ['bookings', 'upcoming', 'calendar', 'wishlist', 'community', 'broadcasts', 'notifications', 'payments', 'reviews', 'support', 'profile'];
+const primaryDashboardTabs = ['bookings', 'upcoming', 'calendar', 'community', 'broadcasts', 'notifications', 'payments', 'reviews', 'support'];
+const topDashboardTabs = ['wishlist', 'profile'];
+const dashboardTabs = [...primaryDashboardTabs, ...topDashboardTabs];
+
+const tabDefinitions = {
+  bookings: { icon: Ticket, label: 'My Bookings' },
+  upcoming: { icon: CalendarIcon, label: 'Upcoming' },
+  calendar: { icon: Calendar, label: 'Calendar' },
+  wishlist: { icon: Heart, label: 'Wishlist', description: 'Saved events' },
+  community: { icon: Users, label: 'Community' },
+  broadcasts: { icon: Megaphone, label: 'Broadcasts' },
+  notifications: { icon: Bell, label: 'Notifications' },
+  payments: { icon: CreditCard, label: 'Payment History' },
+  reviews: { icon: Star, label: 'Reviews' },
+  support: { icon: MessageCircle, label: 'Support' },
+  profile: { icon: User, label: 'Profile', description: 'Account details' }
+};
 
 const Dashboard = () => {
   const { user, updateProfile } = useAuth();
@@ -204,16 +220,14 @@ const Dashboard = () => {
     total: bookings.length,
     confirmed: bookings.filter(b => b.status === 'confirmed').length,
     pending: bookings.filter(b => b.status === 'pending').length,
-    cancelled: bookings.filter(b => b.status === 'cancelled').length,
-    rejected: bookings.filter(b => b.status === 'rejected').length
+    cancelled: bookings.filter(b => b.status === 'cancelled').length
   };
 
   const statCards = [
     { label: 'Total Bookings', value: stats.total, icon: Ticket, color: 'primary', bgColor: 'bg-primary-100' },
     { label: 'Confirmed', value: stats.confirmed, icon: CheckCircle, color: 'green', bgColor: 'bg-green-100' },
     { label: 'Pending', value: stats.pending, icon: Clock, color: 'yellow', bgColor: 'bg-yellow-100' },
-    { label: 'Cancelled', value: stats.cancelled, icon: XCircle, color: 'red', bgColor: 'bg-red-100' },
-    { label: 'Rejected', value: stats.rejected, icon: AlertCircle, color: 'gray', bgColor: 'bg-gray-100' }
+    { label: 'Cancelled', value: stats.cancelled, icon: XCircle, color: 'red', bgColor: 'bg-red-100' }
   ];
 
   const handleMarkAsRead = async (notificationId) => {
@@ -450,6 +464,44 @@ const Dashboard = () => {
           <p className="text-gray-600 text-lg">Welcome back, {user?.name}!</p>
         </div>
 
+        {/* Top Shortcuts */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          {topDashboardTabs.map((tabId) => {
+            const { icon: Icon, label, description } = tabDefinitions[tabId];
+            const isActiveTab = activeTab === tabId;
+
+            return (
+              <button
+                key={tabId}
+                type="button"
+                onClick={() => handleTabChange(tabId)}
+                className={`flex min-h-[88px] items-center justify-between rounded-xl border px-5 py-4 text-left transition-all ${
+                  isActiveTab
+                    ? 'border-primary-500 bg-primary-50 shadow-md shadow-primary-100'
+                    : 'border-gray-200 bg-white hover:border-primary-200 hover:bg-primary-50/40 hover:shadow-sm'
+                }`}
+              >
+                <span className="flex min-w-0 items-center gap-4">
+                  <span className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg ${
+                    isActiveTab ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-base font-semibold text-gray-900">{label}</span>
+                    <span className="block text-sm text-gray-500">{description}</span>
+                  </span>
+                </span>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  isActiveTab ? 'bg-white text-primary-700' : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {isActiveTab ? 'Selected' : 'Open'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {statCards.map((stat, index) => (
@@ -471,21 +523,8 @@ const Dashboard = () => {
         <AnimatedCard className="overflow-hidden">
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px overflow-x-auto">
-               {dashboardTabs.map((tabId) => {
-                 const tabDef = {
-                   bookings: { icon: Ticket, label: 'My Bookings' },
-                   upcoming: { icon: CalendarIcon, label: 'Upcoming' },
-                   calendar: { icon: Calendar, label: 'Calendar' },
-                   wishlist: { icon: Heart, label: 'Wishlist' },
-                   community: { icon: Users, label: 'Community' },
-                   broadcasts: { icon: Megaphone, label: 'Broadcasts' },
-                   notifications: { icon: Bell, label: 'Notifications' },
-                   payments: { icon: CreditCard, label: 'Payment History' },
-                   reviews: { icon: Star, label: 'Reviews' },
-                   support: { icon: MessageCircle, label: 'Support' },
-                   profile: { icon: User, label: 'Profile' }
-                 };
-                const { icon: Icon, label } = tabDef[tabId];
+               {primaryDashboardTabs.map((tabId) => {
+                const { icon: Icon, label } = tabDefinitions[tabId];
                 return (
                   <button
                     key={tabId}
