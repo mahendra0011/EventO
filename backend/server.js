@@ -75,6 +75,7 @@ if (NODE_ENV === 'production') {
 }
 
 const PORT = process.env.PORT || 5000;
+const MONGODB_DB_NAME = process.env.MONGODB_DB_NAME || '';
 
 function validateProductionConfig() {
   if (NODE_ENV !== 'production') {
@@ -99,17 +100,27 @@ function getMongoUri() {
   return 'mongodb://localhost:27017/evento';
 }
 
+function getMongoOptions() {
+  const options = {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 10
+  };
+
+  if (MONGODB_DB_NAME) {
+    options.dbName = MONGODB_DB_NAME;
+  }
+
+  return options;
+}
+
 async function startServer() {
   try {
     validateProductionConfig();
 
     const mongoUri = getMongoUri();
-    await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 10
-    });
-    console.log('MongoDB connected successfully');
+    await mongoose.connect(mongoUri, getMongoOptions());
+    console.log(`MongoDB connected successfully to database "${mongoose.connection.name}"`);
     
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT} in ${NODE_ENV} mode`);
