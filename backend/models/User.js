@@ -32,6 +32,25 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  phoneVerification: {
+    status: {
+      type: String,
+      enum: ['unverified', 'pending', 'verified'],
+      default: 'unverified'
+    },
+    otp: {
+      type: String
+    },
+    otpExpires: {
+      type: Date
+    },
+    lastOtpSent: {
+      type: Date
+    },
+    verifiedAt: {
+      type: Date
+    }
+  },
   secretKeyword: {
     type: String,
     trim: true
@@ -58,6 +77,124 @@ const userSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false
+  },
+  hostVerification: {
+    status: {
+      type: String,
+      enum: ['unsubmitted', 'pending', 'approved', 'rejected', 'suspended'],
+      default: 'unsubmitted'
+    },
+    governmentIdType: {
+      type: String,
+      enum: ['aadhaar', 'pan', 'passport', 'other', ''],
+      default: ''
+    },
+    governmentIdUrl: {
+      type: String,
+      trim: true
+    },
+    selfieWithIdUrl: {
+      type: String,
+      trim: true
+    },
+    isCompany: {
+      type: Boolean,
+      default: false
+    },
+    businessName: {
+      type: String,
+      trim: true
+    },
+    businessProofUrl: {
+      type: String,
+      trim: true
+    },
+    submittedAt: {
+      type: Date
+    },
+    reviewedAt: {
+      type: Date
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    notes: {
+      type: String,
+      trim: true
+    }
+  },
+  bankAccount: {
+    accountHolderName: {
+      type: String,
+      trim: true
+    },
+    bankName: {
+      type: String,
+      trim: true
+    },
+    accountNumberLast4: {
+      type: String,
+      trim: true
+    },
+    ifsc: {
+      type: String,
+      trim: true,
+      uppercase: true
+    },
+    upiId: {
+      type: String,
+      trim: true
+    },
+    proofUrl: {
+      type: String,
+      trim: true
+    },
+    verificationStatus: {
+      type: String,
+      enum: ['unsubmitted', 'pending', 'verified', 'rejected'],
+      default: 'unsubmitted'
+    },
+    verifiedAt: {
+      type: Date
+    },
+    reviewedAt: {
+      type: Date
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    notes: {
+      type: String,
+      trim: true
+    }
+  },
+  hostTrust: {
+    badge: {
+      type: String,
+      enum: ['new', 'verified', 'suspended'],
+      default: 'new'
+    },
+    eventPublishLimit: {
+      type: Number,
+      default: 3
+    },
+    ratingAverage: {
+      type: Number,
+      default: 0
+    },
+    ratingCount: {
+      type: Number,
+      default: 0
+    },
+    lowRatingSuspendedAt: {
+      type: Date
+    },
+    suspensionReason: {
+      type: String,
+      trim: true
+    }
   },
   otp: {
     type: String

@@ -66,6 +66,11 @@ const eventSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  publishStatus: {
+    type: String,
+    enum: ['draft', 'pending_verification', 'published', 'suspended', 'cancelled'],
+    default: 'published'
+  },
   moderationStatus: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
@@ -76,6 +81,27 @@ const eventSchema = new mongoose.Schema({
     enum: ['fake_event', 'spam', 'copyright', 'inappropriate_content', 'fraud_organizer', 'other']
   }],
   moderationNotes: {
+    type: String,
+    trim: true
+  },
+  reportCount: {
+    type: Number,
+    default: 0
+  },
+  reportSummary: [{
+    reason: {
+      type: String,
+      trim: true
+    },
+    count: {
+      type: Number,
+      default: 0
+    }
+  }],
+  suspendedAt: {
+    type: Date
+  },
+  suspensionReason: {
     type: String,
     trim: true
   },

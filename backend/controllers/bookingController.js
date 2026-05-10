@@ -1,6 +1,7 @@
 const Booking = require('../models/Booking');
 const Event = require('../models/Event');
 const Notification = require('../models/Notification');
+const { applyEscrowHold } = require('../utils/trustSafety');
 const {
   sendBookingConfirmationEmail,
   sendImportantNotificationEmail,
@@ -33,6 +34,13 @@ exports.createBooking = async (req, res) => {
      const event = await Event.findById(eventId).populate('organizer', 'name email');
      if (!event) {
        return res.status(404).json({ message: 'Event not found' });
+     }
+
+     const isBookable = event.isActive &&
+       event.moderationStatus === 'approved' &&
+       (!event.publishStatus || event.publishStatus === 'published');
+     if (!isBookable) {
+       return res.status(400).json({ message: 'This event is not available for booking' });
      }
 
      if (event.availableTickets < numberOfTickets) {
@@ -190,17 +198,25 @@ exports.verifyOTP = async (req, res) => {
        return res.status(400).json({ message: 'Invalid OTP' });
      }
 
+     const event = await Event.findById(booking.event).populate('organizer', 'name email');
+     if (!event || !event.isActive || event.moderationStatus !== 'approved' || (event.publishStatus && event.publishStatus !== 'published')) {
+       return res.status(400).json({ message: 'This event is no longer available for booking' });
+     }
+
+     if (event.availableTickets < booking.numberOfTickets) {
+       return res.status(400).json({ message: 'Not enough tickets available' });
+     }
+
      booking.usedOtps = [...(booking.usedOtps || []), otp];
      booking.isOtpVerified = true;
      booking.otp = undefined;
      booking.otpExpires = undefined;
      booking.status = 'confirmed';
-     booking.paymentStatus = 'completed';
      booking.confirmedAt = new Date();
+     applyEscrowHold(booking, event);
 
      await booking.save();
 
-     const event = await Event.findById(booking.event).populate('organizer', 'name email');
      event.availableTickets -= booking.numberOfTickets;
      await event.save();
 
@@ -443,12 +459,19 @@ exports.confirmBooking = async (req, res) => {
        return res.status(400).json({ message: 'OTP not verified' });
      }
 
+     const event = await Event.findById(booking.event._id);
+     if (!event || !event.isActive || event.moderationStatus !== 'approved' || (event.publishStatus && event.publishStatus !== 'published')) {
+       return res.status(400).json({ message: 'This event is no longer available for booking' });
+     }
+     if (event.availableTickets < booking.numberOfTickets) {
+       return res.status(400).json({ message: 'Not enough tickets available' });
+     }
+
      booking.status = 'confirmed';
-     booking.paymentStatus = 'completed';
      booking.confirmedAt = new Date();
+     applyEscrowHold(booking, event);
      await booking.save();
 
-     const event = await Event.findById(booking.event._id);
      event.availableTickets -= booking.numberOfTickets;
      await event.save();
 

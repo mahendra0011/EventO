@@ -11,6 +11,11 @@ const reviewSchema = new mongoose.Schema({
     ref: 'Event',
     required: true
   },
+  host: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   rating: {
     type: Number,
     required: [true, 'Rating is required'],
@@ -27,5 +32,6 @@ const reviewSchema = new mongoose.Schema({
 
 // Prevent duplicate reviews
 reviewSchema.index({ user: 1, event: 1 }, { unique: true });
+reviewSchema.index({ host: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Review', reviewSchema);

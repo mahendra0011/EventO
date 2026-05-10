@@ -379,6 +379,21 @@ const AdminPanel = () => {
     }
   };
 
+  const releasePayout = async (id) => {
+    if (!window.confirm('Release this escrow payout to the host?')) return;
+    try {
+      const res = await api.put(`/admin/bookings/${id}/release-payout`, { force: true });
+      setBookings((prev) => prev.map((item) => item._id === id ? res.data : item));
+      setPayments((prev) => prev ? {
+        ...prev,
+        releasableBookings: (prev.releasableBookings || []).filter((booking) => booking._id !== id)
+      } : prev);
+      toast.success('Payout released');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to release payout');
+    }
+  };
+
   const createCategory = async (e) => {
     e.preventDefault();
     if (!newCategory.trim()) return;
@@ -763,6 +778,22 @@ const AdminPanel = () => {
                         <div className="flex flex-wrap gap-2">
                           <StatusBadge tone={item.isBlocked ? 'red' : 'green'}>{item.isBlocked ? 'blocked' : 'active'}</StatusBadge>
                           <StatusBadge tone={item.isVerified ? 'blue' : 'amber'}>{item.isVerified ? 'verified' : 'unverified'}</StatusBadge>
+                          {item.role === 'host' && (
+                            <>
+                              <StatusBadge tone={item.hostTrust?.badge === 'verified' ? 'green' : item.hostTrust?.badge === 'suspended' ? 'red' : 'amber'}>
+                                {item.hostTrust?.badge || 'new'} host
+                              </StatusBadge>
+                              <StatusBadge tone={item.phoneVerification?.status === 'verified' ? 'green' : 'amber'}>
+                                phone {item.phoneVerification?.status || 'unverified'}
+                              </StatusBadge>
+                              <StatusBadge tone={item.hostVerification?.status === 'approved' ? 'green' : item.hostVerification?.status === 'suspended' || item.hostVerification?.status === 'rejected' ? 'red' : 'amber'}>
+                                KYC {item.hostVerification?.status || 'unsubmitted'}
+                              </StatusBadge>
+                              <StatusBadge tone={item.bankAccount?.verificationStatus === 'verified' ? 'green' : item.bankAccount?.verificationStatus === 'rejected' ? 'red' : 'amber'}>
+                                bank {item.bankAccount?.verificationStatus || 'unsubmitted'}
+                              </StatusBadge>
+                            </>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3">{formatDate(item.createdAt)}</td>
@@ -771,6 +802,12 @@ const AdminPanel = () => {
                           <button onClick={() => setEditingUser(item)} className="rounded-lg border border-gray-300 p-2 text-gray-600 hover:bg-gray-50" title="Edit user"><Edit className="h-4 w-4" /></button>
                           <button onClick={() => updateUser(item._id, { isBlocked: !item.isBlocked })} className="rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50" title={item.isBlocked ? 'Unblock user' : 'Block user'}><Lock className="h-4 w-4" /></button>
                           <button onClick={() => updateUser(item._id, { isVerified: !item.isVerified })} className="rounded-lg border border-blue-200 p-2 text-blue-700 hover:bg-blue-50" title="Toggle verification"><CheckCircle className="h-4 w-4" /></button>
+                          {item.role === 'host' && (
+                            <>
+                              <button onClick={() => updateUser(item._id, { phoneVerificationStatus: 'verified', hostVerificationStatus: 'approved', bankVerificationStatus: 'verified', isBlocked: false })} className="rounded-lg border border-green-200 px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50" title="Approve host">Approve Host</button>
+                              <button onClick={() => updateUser(item._id, { hostBadge: 'suspended', suspensionReason: 'Suspended by admin' })} className="rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50" title="Suspend host">Suspend</button>
+                            </>
+                          )}
                           <button onClick={() => deleteUser(item._id)} className="rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50" title="Delete user"><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </td>
@@ -817,6 +854,8 @@ const AdminPanel = () => {
                           {event.isFeatured && <StatusBadge tone="blue">featured</StatusBadge>}
                           {event.isTrending && <StatusBadge tone="amber">trending</StatusBadge>}
                           <StatusBadge tone={event.moderationStatus === 'approved' ? 'green' : event.moderationStatus === 'pending' ? 'amber' : 'red'}>{event.moderationStatus}</StatusBadge>
+                          <StatusBadge tone={event.publishStatus === 'published' ? 'green' : event.publishStatus === 'suspended' || event.publishStatus === 'cancelled' ? 'red' : 'amber'}>{event.publishStatus || 'published'}</StatusBadge>
+                          {(event.reportCount || 0) > 0 && <StatusBadge tone={event.reportCount >= 10 ? 'red' : 'amber'}>{event.reportCount} reports</StatusBadge>}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -824,8 +863,8 @@ const AdminPanel = () => {
                           <button onClick={() => updateEvent(event._id, { isFeatured: !event.isFeatured })} className="rounded-lg border border-blue-200 p-2 text-blue-700 hover:bg-blue-50" title="Featured"><Star className="h-4 w-4" /></button>
                           <button onClick={() => updateEvent(event._id, { isTrending: !event.isTrending })} className="rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50" title="Trending"><TrendingUp className="h-4 w-4" /></button>
                           <button onClick={() => sendEventReminder(event._id)} className="rounded-lg border border-green-200 p-2 text-green-700 hover:bg-green-50" title="Send reminder"><Bell className="h-4 w-4" /></button>
-                          <button onClick={() => updateEvent(event._id, { moderationStatus: 'approved', moderationFlags: [] })} className="rounded-lg border border-green-200 p-2 text-green-700 hover:bg-green-50" title="Approve event"><CheckCircle className="h-4 w-4" /></button>
-                          <button onClick={() => updateEvent(event._id, { moderationStatus: 'rejected', isActive: false, moderationFlags: ['other'] })} className="rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50" title="Reject event"><XCircle className="h-4 w-4" /></button>
+                          <button onClick={() => updateEvent(event._id, { moderationStatus: 'approved', publishStatus: 'published', isActive: true, moderationFlags: [] })} className="rounded-lg border border-green-200 p-2 text-green-700 hover:bg-green-50" title="Approve event"><CheckCircle className="h-4 w-4" /></button>
+                          <button onClick={() => updateEvent(event._id, { moderationStatus: 'rejected', publishStatus: 'suspended', isActive: false, moderationFlags: ['other'] })} className="rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50" title="Reject event"><XCircle className="h-4 w-4" /></button>
                           <button onClick={() => updateEvent(event._id, { isActive: !event.isActive })} className="rounded-lg border border-gray-300 p-2 text-gray-700 hover:bg-gray-50" title="Toggle active"><Flag className="h-4 w-4" /></button>
                           <button onClick={() => openEventEditor(event)} className="rounded-lg border border-gray-300 p-2 text-gray-600 hover:bg-gray-50" title="Edit event"><Edit className="h-4 w-4" /></button>
                           <button onClick={() => deleteEvent(event._id)} className="rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50" title="Delete event"><Trash2 className="h-4 w-4" /></button>
@@ -967,6 +1006,9 @@ const AdminPanel = () => {
                           <StatusBadge tone={(booking.paymentAttempts || 0) >= 3 ? 'red' : 'gray'}>{booking.paymentAttempts || 0} attempts</StatusBadge>
                           <StatusBadge tone={booking.refundStatus && booking.refundStatus !== 'none' ? 'amber' : 'gray'}>{booking.refundStatus || 'none'}</StatusBadge>
                           <StatusBadge tone={booking.disputeStatus && booking.disputeStatus !== 'none' ? 'red' : 'gray'}>{booking.disputeStatus || 'none'}</StatusBadge>
+                          <StatusBadge tone={booking.escrowStatus === 'released' ? 'green' : booking.escrowStatus === 'refunded' || booking.escrowStatus === 'disputed' ? 'red' : booking.escrowStatus === 'held' || booking.escrowStatus === 'eligible' ? 'amber' : 'gray'}>
+                            escrow {booking.escrowStatus || 'none'}
+                          </StatusBadge>
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -975,6 +1017,9 @@ const AdminPanel = () => {
                           <button onClick={() => updateBooking(booking._id, { refundStatus: 'approved' })} className="rounded-lg border border-green-200 px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50" title="Approve refund">Approve</button>
                           <button onClick={() => updateBooking(booking._id, { refundStatus: 'rejected' })} className="rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50" title="Reject refund">Reject</button>
                           <button onClick={() => updateBooking(booking._id, { disputeStatus: booking.disputeStatus === 'under_review' ? 'resolved' : 'under_review' })} className="rounded-lg border border-purple-200 px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-50" title="Review dispute">Dispute</button>
+                          {['held', 'eligible'].includes(booking.escrowStatus) && (
+                            <button onClick={() => releasePayout(booking._id)} className="rounded-lg border border-green-200 px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50" title="Release payout">Release</button>
+                          )}
                           <button onClick={() => updateBooking(booking._id, { status: 'cancelled' })} className="rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50" title="Cancel booking"><X className="h-4 w-4" /></button>
                           <button onClick={() => refundBooking(booking._id)} className="rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50" title="Refund booking"><IndianRupee className="h-4 w-4" /></button>
                         </div>
@@ -989,10 +1034,14 @@ const AdminPanel = () => {
 
         {activeTab === 'payments' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
               <StatCard icon={IndianRupee} label="Gross Revenue" value={money(payments?.totals?.grossRevenue)} />
               <StatCard icon={CreditCard} label="Platform Earnings" value={money(payments?.totals?.platformEarnings)} tone="green" />
               <StatCard icon={Users} label="Organizer Payouts" value={money(payments?.totals?.organizerPayouts)} tone="amber" />
+              <StatCard icon={Lock} label="Escrow Held" value={money(payments?.totals?.escrowHeld)} tone="slate" />
+              <StatCard icon={CheckCircle} label="Released Payouts" value={money(payments?.totals?.releasedPayouts)} tone="green" />
+              <StatCard icon={RefreshCw} label="Releasable" value={money(payments?.totals?.releasablePayouts)} tone="blue" />
+              <StatCard icon={XCircle} label="Refunded" value={money(payments?.totals?.refundedAmount)} tone="red" />
             </div>
             <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
               <h2 className="mb-4 text-lg font-semibold text-gray-900">Organizer Payouts</h2>
@@ -1017,6 +1066,24 @@ const AdminPanel = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </section>
+            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-gray-900">Escrow Ready for Release</h2>
+              <div className="space-y-3">
+                {(payments?.releasableBookings || []).length === 0 ? (
+                  <p className="text-sm text-gray-500">No payouts are eligible right now</p>
+                ) : payments.releasableBookings.map((booking) => (
+                  <div key={booking._id} className="flex flex-col gap-3 rounded-lg border border-green-100 bg-green-50 p-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="font-semibold text-gray-900">{booking.event?.title || 'Deleted event'}</p>
+                      <p className="text-sm text-gray-600">{booking.user?.email || 'Unknown user'} / payout {money(booking.hostPayoutAmount)}</p>
+                    </div>
+                    <button onClick={() => releasePayout(booking._id)} className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
+                      Release Payout
+                    </button>
+                  </div>
+                ))}
               </div>
             </section>
             <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">

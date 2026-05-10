@@ -1,6 +1,7 @@
 const Event = require('../models/Event');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
+const { getHostPublishReadiness } = require('../utils/trustSafety');
 
 // Get dashboard statistics
 exports.getDashboardStats = async (req, res) => {
@@ -30,6 +31,14 @@ exports.getDashboardStats = async (req, res) => {
     const totalRevenue = hostBookings
       .filter(b => b.status === 'confirmed' && b.paymentStatus === 'completed')
       .reduce((sum, b) => sum + b.totalPrice, 0);
+
+    const escrowHeld = hostBookings
+      .filter(b => b.paymentStatus === 'completed' && ['held', 'eligible'].includes(b.escrowStatus))
+      .reduce((sum, b) => sum + (b.hostPayoutAmount || 0), 0);
+
+    const releasedPayouts = hostBookings
+      .filter(b => b.escrowStatus === 'released')
+      .reduce((sum, b) => sum + (b.hostPayoutAmount || 0), 0);
 
     // Get recent bookings for host's events
     const recentBookings = await Booking.find({ event: { $in: hostEventIds } })
@@ -65,11 +74,17 @@ exports.getDashboardStats = async (req, res) => {
         totalBookings,
         confirmedBookings,
         pendingBookings,
-        totalRevenue
+        totalRevenue,
+        escrowHeld,
+        releasedPayouts,
+        hostRating: req.user.hostTrust?.ratingAverage || 0,
+        hostRatingCount: req.user.hostTrust?.ratingCount || 0,
+        hostBadge: req.user.hostTrust?.badge || 'new'
       },
       recentBookings,
       bookingsByStatus,
-      topEvents
+      topEvents,
+      publishReadiness: await getHostPublishReadiness(req.user)
     });
   } catch (error) {
     console.error('Get dashboard stats error:', error);

@@ -7,6 +7,7 @@ import { Calendar, Clock, MapPin, IndianRupee, Users, Image, Tag, ArrowLeft } fr
 const CreateEvent = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [readiness, setReadiness] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -40,6 +41,17 @@ const CreateEvent = () => {
     };
 
     fetchCategories();
+
+    const fetchReadiness = async () => {
+      try {
+        const res = await api.get('/auth/host-readiness');
+        setReadiness(res.data.publishReadiness);
+      } catch (error) {
+        console.error('Error fetching host readiness:', error);
+      }
+    };
+
+    fetchReadiness();
   }, []);
 
   const handleChange = (e) => {
@@ -73,8 +85,8 @@ const CreateEvent = () => {
         eventData.image = formData.image.trim();
       }
 
-      await api.post('/events', eventData);
-      toast.success('Event created successfully!');
+      const res = await api.post('/events', eventData);
+      toast.success(res.data?.message || 'Event created successfully!');
       navigate('/host');
     } catch (error) {
       console.error('Create event error:', error);
@@ -99,6 +111,21 @@ const CreateEvent = () => {
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Event</h1>
           <p className="text-gray-600 mb-8">Fill in the details to create a new event</p>
+
+          {readiness && !readiness.canPublish && (
+            <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <p className="font-semibold">Publishing locked for this host account</p>
+              <p className="mt-1">This event can be saved, but it will stay unpublished until verification is complete.</p>
+              {readiness.missing?.length > 0 && (
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  {readiness.missing.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              )}
+              {readiness.remainingDraftSlots !== null && (
+                <p className="mt-2">New-host draft slots remaining: {readiness.remainingDraftSlots}</p>
+              )}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
