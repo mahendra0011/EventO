@@ -3,8 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
-import { Menu, X, Calendar, User, LogOut, Settings, Shield, Bell, Check, Trash2, MessageSquare } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Menu, X, Calendar, User, LogOut, Settings, Bell, Check } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -19,7 +18,12 @@ const Navbar = () => {
   useEffect(() => {
     if (user) {
       fetchNotifications();
+      const intervalId = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(intervalId);
     }
+
+    setNotifications([]);
+    setUnreadCount(0);
   }, [user]);
 
   const fetchNotifications = async () => {
@@ -35,7 +39,7 @@ const Navbar = () => {
   const handleMarkAsRead = async (id) => {
     try {
       await api.put(`/notifications/${id}/read`);
-      setNotifications(notifications.map(n => n._id === id ? { ...n, isRead: true } : n));
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error marking as read:', error);
@@ -45,7 +49,7 @@ const Navbar = () => {
   const handleMarkAllAsRead = async () => {
     try {
       await api.put('/notifications/read-all');
-      setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (error) {
       console.error('Error marking all as read:', error);
@@ -71,6 +75,24 @@ const Navbar = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  const getNotificationLink = (notification) => {
+    const link = notification?.link || '';
+
+    if (link === '/dashboard/messages') return '/dashboard?tab=broadcasts';
+    if (link === '/host/bookings') return '/host?tab=bookings';
+    if (link.startsWith('/bookings/')) return '/dashboard?tab=bookings';
+
+    return link;
+  };
+
+  const openNotification = (notification) => {
+    const link = getNotificationLink(notification);
+
+    if (link) navigate(link);
+    if (!notification.isRead) handleMarkAsRead(notification._id);
+    setShowNotifications(false);
+  };
 
   return (
     <motion.nav
@@ -216,11 +238,7 @@ const Navbar = () => {
                                  className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${
                                    !notification.isRead ? 'bg-blue-50/50' : ''
                                  }`}
-                                 onClick={() => {
-                                   if (notification.link) navigate(notification.link);
-                                   if (!notification.isRead) handleMarkAsRead(notification._id);
-                                   setShowNotifications(false);
-                                 }}
+                                 onClick={() => openNotification(notification)}
                                >
                                  <div className="flex items-start gap-3">
                                    <div className={`p-2 rounded-full ${!notification.isRead ? 'bg-primary-100' : 'bg-gray-100'}`}>
@@ -384,7 +402,7 @@ const Navbar = () => {
                      >
                        <button
                          onClick={() => {
-                           setShowNotifications(!showNotifications);
+                           navigate(user.role === 'host' ? '/host?tab=notifications' : '/dashboard?tab=notifications');
                            setIsMenuOpen(false);
                          }}
                          className="flex items-center space-x-2 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-all duration-300 w-full"

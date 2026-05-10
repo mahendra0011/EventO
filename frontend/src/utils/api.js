@@ -155,6 +155,15 @@ export const broadcastToEventBookers = async (eventId, subject, content) => {
   return res.data;
 };
 
+export const getBroadcastMessages = async () => {
+  const res = await api.get('/messages/broadcasts');
+  return res.data;
+};
+
+export const markMessageAsRead = (messageId) => {
+  return api.put(`/messages/${messageId}/read`);
+};
+
 // Get users who booked a specific event (for host)
 export const getEventBookers = async (eventId) => {
   const res = await api.get(`/host/events/${eventId}/bookers`);

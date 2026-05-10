@@ -34,6 +34,10 @@ const messageSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isBroadcast: {
+    type: Boolean,
+    default: false
+  },
   subject: {
     type: String,
     required: [true, 'Subject is required'],
@@ -88,6 +92,7 @@ const messageSchema = new mongoose.Schema({
 // Index for querying user conversations
 messageSchema.index({ sender: 1, receiver: 1, createdAt: -1 });
 messageSchema.index({ receiver: 1, isRead: 1, createdAt: -1 });
+messageSchema.index({ receiver: 1, isBroadcast: 1, createdAt: -1 });
 messageSchema.index({ event: 1, isPublic: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Message', messageSchema);

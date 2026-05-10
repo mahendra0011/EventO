@@ -1,21 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import api, { getWishlist, getNotifications } from '../utils/api';
+import api, { getWishlist, getNotifications, getBroadcastMessages, markMessageAsRead } from '../utils/api';
 import toast from 'react-hot-toast';
 import {
   Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone,
-  Edit3, Heart, CreditCard, Star, MessageCircle, MessageSquare, Calendar as CalendarIcon, Bell, Eye, Users, MapPin, HelpCircle
+  Edit3, Heart, CreditCard, Star, MessageCircle, MessageSquare, Calendar as CalendarIcon, Bell, Eye, Users, MapPin, HelpCircle, Megaphone
 } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, GradientText } from '../components/animated';
 
+const dashboardTabs = ['bookings', 'upcoming', 'calendar', 'wishlist', 'community', 'broadcasts', 'notifications', 'payments', 'reviews', 'support', 'profile'];
+
 const Dashboard = () => {
   const { user, updateProfile } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
   const [bookings, setBookings] = useState([]);
   const [savedEvents, setSavedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('bookings');
+  const [activeTab, setActiveTab] = useState(dashboardTabs.includes(requestedTab) ? requestedTab : 'bookings');
   const [filterStatus, setFilterStatus] = useState('all');
   const [editMode, setEditMode] = useState(false);
 
@@ -23,6 +27,8 @@ const Dashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [userEvents, setUserEvents] = useState([]);
+  const [broadcastMessages, setBroadcastMessages] = useState([]);
+  const [broadcastUnreadCount, setBroadcastUnreadCount] = useState(0);
 
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
@@ -42,6 +48,13 @@ const Dashboard = () => {
       fetchWishlist();
     }
   }, [activeTab, user]);
+
+  useEffect(() => {
+    const nextTab = searchParams.get('tab');
+    if (dashboardTabs.includes(nextTab) && nextTab !== activeTab) {
+      setActiveTab(nextTab);
+    }
+  }, [searchParams, activeTab]);
 
   const fetchBookings = async () => {
     try {
@@ -91,13 +104,26 @@ const Dashboard = () => {
     }
   };
 
+  const fetchBroadcasts = async () => {
+    try {
+      const res = await getBroadcastMessages();
+      setBroadcastMessages(res.broadcasts || []);
+      setBroadcastUnreadCount(res.unreadCount || 0);
+    } catch (error) {
+      console.error('Error fetching broadcast messages:', error);
+      setBroadcastMessages([]);
+      setBroadcastUnreadCount(0);
+    }
+  };
+
   // Initial data fetch on mount
   useEffect(() => {
     if (user) {
       Promise.all([
         fetchBookings(),
         fetchUserEvents(),
-        fetchNotifications()
+        fetchNotifications(),
+        fetchBroadcasts()
       ]).catch(err => {
         console.error('Initial data fetch error:', err);
         toast.error('Some data failed to load');
@@ -194,6 +220,23 @@ const Dashboard = () => {
     }
   };
 
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setSearchParams(tabId === 'bookings' ? {} : { tab: tabId });
+  };
+
+  const handleBroadcastRead = async (messageId) => {
+    try {
+      await markMessageAsRead(messageId);
+      setBroadcastMessages(prev => prev.map(message =>
+        message._id === messageId ? { ...message, isRead: true } : message
+      ));
+      setBroadcastUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking broadcast as read:', error);
+    }
+  };
+
   const unreadNotifications = notifications.filter(n => !n.isRead);
   const readNotifications = notifications.filter(n => n.isRead);
 
@@ -286,6 +329,70 @@ const Dashboard = () => {
     </div>
   );
 
+  const BroadcastCenter = () => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Broadcast Messages</h3>
+          <p className="text-sm text-gray-500">
+            Updates from hosts for events you joined
+          </p>
+        </div>
+        {broadcastUnreadCount > 0 && (
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-sm font-medium">
+            {broadcastUnreadCount} unread
+          </span>
+        )}
+      </div>
+
+      {broadcastMessages.length === 0 ? (
+        <div className="text-center py-12">
+          <Megaphone className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-500">No broadcasts yet</h3>
+          <p className="text-gray-400">Event host announcements will appear here.</p>
+        </div>
+      ) : (
+        <div className="space-y-3 max-h-[640px] overflow-y-auto">
+          {broadcastMessages.map((message) => (
+            <div
+              key={message._id}
+              className={`border rounded-lg p-5 bg-white ${
+                message.isRead ? 'border-gray-200' : 'border-primary-200 bg-primary-50/40'
+              }`}
+            >
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Megaphone className="h-4 w-4 text-primary-600" />
+                    <span className="text-xs font-medium uppercase tracking-wide text-primary-700">
+                      {message.event?.title || 'Event broadcast'}
+                    </span>
+                    {!message.isRead && (
+                      <span className="w-2 h-2 rounded-full bg-primary-500" />
+                    )}
+                  </div>
+                  <h4 className="font-semibold text-gray-900">{message.subject}</h4>
+                  <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">{message.content}</p>
+                  <div className="mt-3 text-xs text-gray-400">
+                    From {message.sender?.name || 'Host'} · {new Date(message.createdAt).toLocaleString()}
+                  </div>
+                </div>
+                {!message.isRead && (
+                  <button
+                    onClick={() => handleBroadcastRead(message._id)}
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium whitespace-nowrap"
+                  >
+                    Mark as read
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -318,32 +425,43 @@ const Dashboard = () => {
         <AnimatedCard className="overflow-hidden">
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px overflow-x-auto">
-               {["bookings", "upcoming", "calendar", "wishlist", "community", "notifications", "payments", "reviews", "support", "profile"].map((tabId) => {
+               {dashboardTabs.map((tabId) => {
                  const tabDef = {
                    bookings: { icon: Ticket, label: 'My Bookings' },
                    upcoming: { icon: CalendarIcon, label: 'Upcoming' },
                    calendar: { icon: Calendar, label: 'Calendar' },
                    wishlist: { icon: Heart, label: 'Wishlist' },
                    community: { icon: Users, label: 'Community' },
+                   broadcasts: { icon: Megaphone, label: 'Broadcasts' },
                    notifications: { icon: Bell, label: 'Notifications' },
                    payments: { icon: CreditCard, label: 'Payment History' },
                    reviews: { icon: Star, label: 'Reviews' },
                    support: { icon: MessageCircle, label: 'Support' },
                    profile: { icon: User, label: 'Profile' }
                  };
-                const { icon, label } = tabDef[tabId];
+                const { icon: Icon, label } = tabDef[tabId];
                 return (
                   <button
                     key={tabId}
-                    onClick={() => setActiveTab(tabId)}
+                    onClick={() => handleTabChange(tabId)}
                     className={`py-4 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
                       activeTab === tabId
                         ? 'border-primary-500 text-primary-600 bg-primary-50'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
                     }`}
                   >
-                    <icon className="h-4 w-4 inline mr-2" />
+                    <Icon className="h-4 w-4 inline mr-2" />
                     {label}
+                    {tabId === 'broadcasts' && broadcastUnreadCount > 0 && (
+                      <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                        {broadcastUnreadCount}
+                      </span>
+                    )}
+                    {tabId === 'notifications' && unreadCount > 0 && (
+                      <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                        {unreadCount}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -525,6 +643,13 @@ const Dashboard = () => {
                    )}
                  </motion.div>
                )}
+
+               {/* Broadcasts Tab */}
+              {activeTab === 'broadcasts' && (
+                <motion.div key="broadcasts" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <BroadcastCenter />
+                </motion.div>
+              )}
 
                {/* Notifications Tab */}
               {activeTab === 'notifications' && (

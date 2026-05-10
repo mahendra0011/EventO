@@ -3,6 +3,7 @@ const Message = require('../models/Message');
 const Event = require('../models/Event');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 const { sendHostMessageEmail, sendImportantNotificationEmail } = require('../utils/email');
 
 // Send message from user or host
@@ -78,8 +79,6 @@ exports.sendMessage = async (req, res) => {
     await message.save();
     await message.populate('sender').populate('receiver').populate('event');
 
-    // Create notification for receiver
-    const Notification = require('../models/Notification');
     await Notification.create({
       user: receiverId,
       title: `New message from ${sender.name}`,
@@ -272,10 +271,18 @@ exports.getCommunityMessages = async (req, res) => {
 exports.broadcastMessage = async (req, res) => {
   try {
     const { eventId, subject, content } = req.body;
+    const trimmedSubject = subject?.trim();
+    const trimmedContent = content?.trim();
 
-    // Verify sender is a host
-    if (req.user.role !== 'host') {
-      return res.status(403).json({ message: 'Only hosts can broadcast messages' });
+    if (!eventId || !trimmedSubject || !trimmedContent) {
+      return res.status(400).json({ message: 'Event, subject, and message are required' });
+    }
+
+    // Verify sender can broadcast
+    const isHost = req.user.role === 'host';
+    const isAdmin = req.user.role === 'admin';
+    if (!isHost && !isAdmin) {
+      return res.status(403).json({ message: 'Only hosts or admins can broadcast messages' });
     }
 
     // Validate event exists and belongs to host
@@ -283,7 +290,7 @@ exports.broadcastMessage = async (req, res) => {
     if (!event) {
       return res.status(404).json({ message: 'Event not found' });
     }
-    if (event.organizer.toString() !== req.user.id) {
+    if (!isAdmin && event.organizer.toString() !== req.user.id) {
       return res.status(403).json({ message: 'You can only broadcast for your own events' });
     }
 
@@ -298,11 +305,22 @@ exports.broadcastMessage = async (req, res) => {
     }
 
     // Get unique users (in case same user booked multiple times)
-    const uniqueUsers = [...new Map(bookings.map(b => [b.user._id.toString(), b.user])).values()];
+    const uniqueUsers = [
+      ...new Map(
+        bookings
+          .filter((booking) => booking.user?._id && booking.user?.email)
+          .map((booking) => [booking.user._id.toString(), booking.user])
+      ).values()
+    ];
+
+    if (uniqueUsers.length === 0) {
+      return res.status(400).json({ message: 'No attendees with email addresses found for this event' });
+    }
 
     // Send message to each user
     const sentMessages = [];
     const failedEmails = [];
+    const failedMessages = [];
 
     for (const user of uniqueUsers) {
       try {
@@ -311,8 +329,9 @@ exports.broadcastMessage = async (req, res) => {
           receiver: user._id,
           event: eventId,
           booking: null, // No specific booking for broadcast
-          subject,
-          content
+          subject: trimmedSubject,
+          content: trimmedContent,
+          isBroadcast: true
         });
 
         await message.save();
@@ -320,7 +339,13 @@ exports.broadcastMessage = async (req, res) => {
 
         // Send email notification
         try {
-          const emailResult = await sendHostMessageEmail(user.email, user.name, subject, content, event.title, req.user.name);
+          const emailResult = await sendImportantNotificationEmail(
+            user.email,
+            user.name,
+            `Broadcast for ${event.title}`,
+            `${trimmedSubject}\n\n${trimmedContent}`,
+            '/dashboard?tab=broadcasts'
+          );
           if (!emailResult?.success) {
             failedEmails.push(user.email);
           }
@@ -330,16 +355,16 @@ exports.broadcastMessage = async (req, res) => {
         }
 
         // Create notification
-        const Notification = require('../models/Notification');
         await Notification.create({
           user: user._id,
-          title: `Broadcast from ${req.user.name} - ${event.title}`,
-          message: subject,
+          title: `Broadcast: ${event.title}`,
+          message: trimmedSubject,
           type: 'system',
-          link: '/dashboard/messages'
+          link: '/dashboard?tab=broadcasts'
         });
       } catch (err) {
         console.error(`Failed to send message to ${user.name}:`, err);
+        failedMessages.push(user.email || user._id.toString());
       }
     }
 
@@ -351,11 +376,59 @@ exports.broadcastMessage = async (req, res) => {
       data: {
         totalSent: sentMessages.length,
         failedEmails: failedEmails.length,
+        failedMessages: failedMessages.length,
         recipients: uniqueUsers.length
       }
     });
   } catch (error) {
     console.error('Broadcast message error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get broadcast messages received by the current user
+exports.getBroadcastMessages = async (req, res) => {
+  try {
+    const broadcasts = await Message.find({
+      receiver: req.user.id,
+      isBroadcast: true
+    })
+      .populate('sender', 'name email role')
+      .populate('event', 'title date time venue')
+      .sort({ createdAt: -1 });
+
+    const unreadCount = await Message.countDocuments({
+      receiver: req.user.id,
+      isBroadcast: true,
+      isRead: false
+    });
+
+    res.json({ broadcasts, unreadCount });
+  } catch (error) {
+    console.error('Get broadcast messages error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Mark one received message as read
+exports.markMessageAsRead = async (req, res) => {
+  try {
+    const message = await Message.findOne({
+      _id: req.params.id,
+      receiver: req.user.id
+    });
+
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    message.isRead = true;
+    message.readAt = new Date();
+    await message.save();
+
+    res.json({ message: 'Message marked as read', data: message });
+  } catch (error) {
+    console.error('Mark message as read error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

@@ -11,6 +11,8 @@ const {
   markConversationAsRead,
   deleteMessage,
   broadcastMessage,
+  getBroadcastMessages,
+  markMessageAsRead,
   postCommunityMessage,
   getCommunityMessages,
   editMessage,
@@ -28,6 +30,11 @@ router.post('/', auth, sendMessage);
 // @desc    Broadcast message to all confirmed attendees of an event
 // @access  Private (Host only)
 router.post('/broadcast', auth, broadcastMessage);
+
+// @route   GET /api/messages/broadcasts
+// @desc    Get broadcast messages received by current user
+// @access  Private
+router.get('/broadcasts', auth, getBroadcastMessages);
 
 // @route   POST /api/messages/community
 // @desc    Post public message for community chat
@@ -73,6 +80,11 @@ router.get('/attendees', auth, getEventAttendees);
 // @desc    Mark conversation as read
 // @access  Private
 router.put('/read/:userId', auth, markConversationAsRead);
+
+// @route   PUT /api/messages/:id/read
+// @desc    Mark a single received message as read
+// @access  Private
+router.put('/:id/read', auth, markMessageAsRead);
 
 // @route   DELETE /api/messages/:id
 // @desc    Delete a message (only sender can delete)

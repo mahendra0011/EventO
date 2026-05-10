@@ -225,7 +225,7 @@ exports.sendImportantNotificationEmail = async (email, name, title, message, lin
   const actionUrl = createAbsoluteUrl(link);
   const html = createEmailShell(subject, `
     <p>Hello ${escapeHtml(name)},</p>
-    <p>${escapeHtml(message)}</p>
+    <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
     ${actionUrl ? `<p style="margin:18px 0 0 0;"><a href="${escapeHtml(actionUrl)}" style="color:#2563eb; font-weight:bold;">Open in Evento</a></p>` : ''}
   `);
   return sendEmail({ to: email, subject, html, tags: ['important-notification'] });
@@ -233,7 +233,11 @@ exports.sendImportantNotificationEmail = async (email, name, title, message, lin
 
 exports.sendHostMessageEmail = async (email, name, subject, content, eventTitle, hostName) => {
   const emailSubject = `Message from ${hostName}: ${subject}`;
-  const html = createEmailShell(emailSubject, `<p>${escapeHtml(content)}</p>`);
+  const html = createEmailShell(emailSubject, `
+    <p>Hello ${escapeHtml(name || 'there')},</p>
+    ${eventTitle ? `<p><strong>Event:</strong> ${escapeHtml(eventTitle)}</p>` : ''}
+    <p>${escapeHtml(content).replace(/\n/g, '<br>')}</p>
+  `);
   return sendEmail({ to: email, subject: emailSubject, html, tags: ['host-message'] });
 };
 

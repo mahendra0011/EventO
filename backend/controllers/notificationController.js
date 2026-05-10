@@ -21,7 +21,7 @@ exports.getNotifications = async (req, res) => {
 // Mark notification as read
 exports.markAsRead = async (req, res) => {
   try {
-    const { notificationId } = req.params;
+    const notificationId = req.params.id || req.params.notificationId;
 
     const notification = await Notification.findOne({ _id: notificationId, user: req.user.id });
     if (!notification) {

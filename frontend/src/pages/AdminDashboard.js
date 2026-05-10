@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
-import api, { broadcastToEventBookers, getNotifications, markAllNotificationsAsRead } from '../utils/api';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import api, { broadcastToEventBookers, getNotifications } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -14,7 +14,6 @@ import {
     XCircle,
     Plus,
     Eye,
-    Check,
     X,
     TrendingUp,
     DollarSign,
@@ -22,20 +21,22 @@ import {
     Settings,
     Edit,
     Trash2,
-    QrCode,
     Mail,
     Bell,
     LogOut,
     User,
     Key,
     MessageSquare,
-    Search,
     Send,
     Megaphone,
     Users
   } from 'lucide-react';
 
+const hostDashboardTabs = ['overview', 'analytics', 'bookings', 'events', 'communications', 'notifications', 'community', 'settings'];
+
 const AdminDashboard = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
   const [stats, setStats] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [events, setEvents] = useState([]);
@@ -52,7 +53,7 @@ const AdminDashboard = () => {
   const [broadcastContent, setBroadcastContent] = useState('');
   const [broadcastSending, setBroadcastSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(hostDashboardTabs.includes(requestedTab) ? requestedTab : 'overview');
   const [bookingFilter, setBookingFilter] = useState('all');
   const { user, logout, updateProfile } = useAuth();
   const navigate = useNavigate();
@@ -88,6 +89,18 @@ const AdminDashboard = () => {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    const nextTab = searchParams.get('tab');
+    if (hostDashboardTabs.includes(nextTab) && nextTab !== activeTab) {
+      setActiveTab(nextTab);
+    }
+  }, [searchParams, activeTab]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setSearchParams(tabId === 'overview' ? {} : { tab: tabId });
+  };
 
   const handleDeleteEvent = async (eventId) => {
     if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
@@ -202,8 +215,10 @@ const AdminDashboard = () => {
 
     setBroadcastSending(true);
     try {
-      await broadcastToEventBookers(broadcastSelectedEvent, broadcastSubject, broadcastContent);
-      toast.success('Broadcast message sent successfully!');
+      const result = await broadcastToEventBookers(broadcastSelectedEvent, broadcastSubject, broadcastContent);
+      const data = result.data || {};
+      const failedEmailText = data.failedEmails ? ` (${data.failedEmails} email failed)` : '';
+      toast.success(`Broadcast sent to ${data.totalSent || data.recipients || 0} attendee(s)${failedEmailText}`);
       setBroadcastSubject('');
       setBroadcastContent('');
       setBroadcastSelectedEvent('');
@@ -343,7 +358,7 @@ const AdminDashboard = () => {
             <div className="border-b border-gray-200">
                 <nav className="flex -mb-px overflow-x-auto">
                  <button
-                   onClick={() => setActiveTab('overview')}
+                   onClick={() => handleTabChange('overview')}
                    className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
                      activeTab === 'overview'
                        ? 'border-primary-500 text-primary-600'
@@ -354,7 +369,7 @@ const AdminDashboard = () => {
                    Overview
                  </button>
                  <button
-                   onClick={() => setActiveTab('analytics')}
+                   onClick={() => handleTabChange('analytics')}
                    className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
                      activeTab === 'analytics'
                        ? 'border-primary-500 text-primary-600'
@@ -365,7 +380,7 @@ const AdminDashboard = () => {
                    Analytics
                  </button>
                  <button
-                   onClick={() => setActiveTab('bookings')}
+                   onClick={() => handleTabChange('bookings')}
                    className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
                      activeTab === 'bookings'
                        ? 'border-primary-500 text-primary-600'
@@ -376,7 +391,7 @@ const AdminDashboard = () => {
                    Bookings
                  </button>
                   <button
-                    onClick={() => setActiveTab('events')}
+                    onClick={() => handleTabChange('events')}
                     className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
                       activeTab === 'events'
                         ? 'border-primary-500 text-primary-600'
@@ -387,7 +402,7 @@ const AdminDashboard = () => {
                     Events
                   </button>
                   <button
-                    onClick={() => setActiveTab('communications')}
+                    onClick={() => handleTabChange('communications')}
                     className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
                       activeTab === 'communications'
                         ? 'border-primary-500 text-primary-600'
@@ -398,7 +413,7 @@ const AdminDashboard = () => {
                     Messages
                   </button>
                   <button
-                    onClick={() => setActiveTab('notifications')}
+                    onClick={() => handleTabChange('notifications')}
                     className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
                       activeTab === 'notifications'
                         ? 'border-primary-500 text-primary-600'
@@ -414,7 +429,7 @@ const AdminDashboard = () => {
                     )}
                   </button>
                   <button
-                    onClick={() => setActiveTab('community')}
+                    onClick={() => handleTabChange('community')}
                     className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
                       activeTab === 'community'
                         ? 'border-primary-500 text-primary-600'
@@ -425,7 +440,7 @@ const AdminDashboard = () => {
                     Community
                   </button>
                   <button
-                    onClick={() => setActiveTab('settings')}
+                    onClick={() => handleTabChange('settings')}
                     className={`py-4 px-6 text-sm font-medium border-b-2 whitespace-nowrap ${
                       activeTab === 'settings'
                         ? 'border-primary-500 text-primary-600'
@@ -1032,7 +1047,7 @@ const AdminDashboard = () => {
                       onClick={async () => {
                         try {
                           await api.put('/notifications/read-all');
-                          setNotifications([]);
+                          setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
                           setUnreadCount(0);
                           toast.success('All notifications marked as read');
                         } catch (error) {
