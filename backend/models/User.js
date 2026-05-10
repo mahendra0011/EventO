@@ -97,6 +97,10 @@ const userSchema = new mongoose.Schema({
   passwordResetExpires: {
     type: Date
   },
+  passwordResetAttempts: {
+    type: Number,
+    default: 0
+  },
   lastPasswordResetSentAt: {
     type: Date
   },

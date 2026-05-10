@@ -146,6 +146,14 @@ function AnimatedRoutes() {
           }
         />
         <Route
+          path="/reset-password"
+          element={
+            <PageTransition>
+              <ResetPassword />
+            </PageTransition>
+          }
+        />
+        <Route
           path="/dashboard"
           element={
             <ProtectedRoute>

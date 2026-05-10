@@ -82,7 +82,7 @@ const createAbsoluteUrl = (link = '') => {
   }
 };
 
-const createOtpHtml = (title, body, otp, eventTitle = '', name = '') => {
+const createOtpHtml = (title, body, otp, eventTitle = '', name = '', expiryMinutes = exports.OTP_EXPIRY_MINUTES) => {
   const safeName = escapeHtml(name || 'there');
   const safeBody = escapeHtml(body).replace(/\n/g, '<br>');
   const safeOtp = escapeHtml(otp || '');
@@ -94,7 +94,7 @@ const createOtpHtml = (title, body, otp, eventTitle = '', name = '') => {
     ${safeOtp ? `<p style="margin:0 0 8px 0; font-size:14px; color:#374151;">Verification code:</p>
     <div style="display:inline-block; background:#eef6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px 18px; font-family:'Courier New', monospace; font-size:30px; line-height:1.2; letter-spacing:6px; font-weight:bold; margin:0 0 20px 0; color:#075985;">${safeOtp}</div>` : ''}
     ${safeEventTitle ? `<p style="margin:0 0 16px 0; font-size:14px; color:#374151;"><strong>Event:</strong> ${safeEventTitle}</p>` : ''}
-    <p style="margin:0 0 10px 0; font-size:14px; color:#374151;">This code is valid for ${exports.OTP_EXPIRY_MINUTES} minutes and can only be used once.</p>
+    <p style="margin:0 0 10px 0; font-size:14px; color:#374151;">This code is valid for ${expiryMinutes} minutes and can only be used once.</p>
   `);
 };
 
@@ -250,15 +250,16 @@ exports.sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDe
   return sendEmail({ to: email, subject, html, tags: ['booking-confirmation'] });
 };
 
-exports.sendPasswordResetEmail = async (email, name, resetLink) => {
+exports.sendPasswordResetEmail = async (email, name, otp, expiryMinutes = 15) => {
   const subject = 'Reset your Evento password';
-  const html = createEmailShell(subject, `
-    <p style="margin:0 0 16px 0;">Hello ${escapeHtml(name || 'there')},</p>
-    <p style="margin:0 0 18px 0;">We received a request to reset your Evento password. Use the button below to create a new password.</p>
-    ${createActionButton('Reset password', resetLink)}
-    <p style="margin:16px 0 0 0; font-size:13px; color:#64748b;">This link expires in 15 minutes. If you did not request this, you can safely ignore this email.</p>
-    <p style="margin:12px 0 0 0; font-size:12px; color:#94a3b8; word-break:break-all;">${escapeHtml(resetLink)}</p>
-  `);
+  const html = createOtpHtml(
+    subject,
+    'Use this OTP to reset your Evento password:',
+    otp,
+    '',
+    name,
+    expiryMinutes
+  );
 
   return sendEmail({ to: email, subject, html, tags: ['password-reset'] });
 };
