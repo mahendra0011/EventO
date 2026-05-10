@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, MapPin, Clock, IndianRupee, Ticket, Sparkles, Heart, ShieldCheck, AlertTriangle, Ban } from 'lucide-react';
+import { Calendar, MapPin, Clock, IndianRupee, Ticket, Sparkles, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { addToWishlist, removeFromWishlist, checkWishlist } from '../utils/api';
@@ -54,13 +54,6 @@ const EventCard = ({ event, index = 0 }) => {
 
   const isSoldOut = event.availableTickets === 0;
   const isLowStock = event.availableTickets > 0 && event.availableTickets <= 10;
-  const hostBadge = event.organizer?.hostTrust?.badge || 'new';
-  const HostBadgeIcon = hostBadge === 'verified' ? ShieldCheck : hostBadge === 'suspended' ? Ban : AlertTriangle;
-  const hostBadgeClass = hostBadge === 'verified'
-    ? 'bg-green-50 text-green-700 border-green-200'
-    : hostBadge === 'suspended'
-      ? 'bg-red-50 text-red-700 border-red-200'
-      : 'bg-amber-50 text-amber-700 border-amber-200';
 
   return (
     <motion.div
@@ -192,11 +185,6 @@ const EventCard = ({ event, index = 0 }) => {
             </div>
             
             {/* Price and Tickets */}
-            <div className={`mb-3 inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-semibold ${hostBadgeClass}`}>
-              <HostBadgeIcon className="h-3 w-3" />
-              {hostBadge === 'verified' ? 'Verified Host' : hostBadge === 'suspended' ? 'Suspended Host' : 'New Host'}
-            </div>
-
             <div className="flex items-center justify-between pt-4 border-t border-gray-100">
               <motion.div 
                 className="flex items-center text-primary-600 font-bold"

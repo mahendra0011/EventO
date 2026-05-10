@@ -7,17 +7,9 @@ const Notification = require('../models/Notification');
 const ActivityLog = require('../models/ActivityLog');
 const SupportTicket = require('../models/SupportTicket');
 const Location = require('../models/Location');
-const EventReport = require('../models/EventReport');
 const { clearUserCache } = require('../middleware/auth');
 const { logActivity } = require('../utils/activity');
 const { sendBookingConfirmationEmail, sendImportantNotificationEmail } = require('../utils/email');
-const {
-  applyHostBadge,
-  notifyAdmins,
-  refundBookingsForEvent,
-  releaseEscrowForBooking,
-  syncHostRating
-} = require('../utils/trustSafety');
 
 const PLATFORM_FEE_RATE = Number(process.env.PLATFORM_FEE_RATE || 0.1);
 
@@ -82,7 +74,6 @@ const buildFraudSignals = async () => {
     $or: [
       { moderationStatus: { $ne: 'approved' } },
       { moderationFlags: { $exists: true, $ne: [] } },
-      { reportCount: { $gte: 3 } },
       { title: fakeEventPattern },
       { description: fakeEventPattern }
     ]
@@ -143,8 +134,7 @@ const buildFraudSignals = async () => {
       suspiciousBookings: suspiciousBookings.length,
       flaggedEvents: flaggedEvents.length,
       spamUsers: spamUsers.length,
-      fraudOrganizers: fraudOrganizers.length,
-      openReports: await EventReport.countDocuments({ status: 'open' })
+      fraudOrganizers: fraudOrganizers.length
     }
   };
 };
@@ -181,12 +171,7 @@ exports.getDashboardStats = async (req, res) => {
       recentSecurityLogs,
       openSupportTickets,
       activeLocations,
-      highRiskBookings,
-      reportedEvents,
-      suspendedEvents,
-      escrowHeldResult,
-      releasedPayoutResult,
-      refundedEscrowResult
+      highRiskBookings
     ] = await Promise.all([
       User.countDocuments({ role: 'user' }),
       User.countDocuments({ role: 'host' }),
@@ -237,7 +222,7 @@ exports.getDashboardStats = async (req, res) => {
         .populate('user', 'name email')
         .sort({ bookingDate: -1 })
         .limit(8),
-      User.find().select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken -phoneVerification.otp').sort({ createdAt: -1 }).limit(8),
+      User.find().select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken').sort({ createdAt: -1 }).limit(8),
       ActivityLog.find().populate('actor', 'name email role').sort({ createdAt: -1 }).limit(8),
       SupportTicket.countDocuments({ status: { $in: ['open', 'in_progress'] } }),
       Location.countDocuments({ isActive: true }),
@@ -247,21 +232,7 @@ exports.getDashboardStats = async (req, res) => {
           { paymentStatus: 'failed' },
           { disputeStatus: { $in: ['open', 'under_review'] } }
         ]
-      }),
-      Event.countDocuments({ reportCount: { $gte: 3 } }),
-      Event.countDocuments({ publishStatus: 'suspended' }),
-      Booking.aggregate([
-        { $match: { paymentStatus: 'completed', escrowStatus: { $in: ['held', 'eligible'] } } },
-        { $group: { _id: null, amount: { $sum: '$hostPayoutAmount' }, bookings: { $sum: 1 } } }
-      ]),
-      Booking.aggregate([
-        { $match: { escrowStatus: 'released' } },
-        { $group: { _id: null, amount: { $sum: '$hostPayoutAmount' }, bookings: { $sum: 1 } } }
-      ]),
-      Booking.aggregate([
-        { $match: { paymentStatus: 'refunded' } },
-        { $group: { _id: null, amount: { $sum: '$totalPrice' }, bookings: { $sum: 1 } } }
-      ])
+      })
     ]);
 
     const topEventsWithDetails = await Event.populate(topEvents, { path: '_id', select: 'title date venue category organizer' });
@@ -292,12 +263,7 @@ exports.getDashboardStats = async (req, res) => {
         todayBookings: todaySales.bookings || 0,
         openSupportTickets,
         activeLocations,
-        highRiskBookings,
-        reportedEvents,
-        suspendedEvents,
-        escrowHeld: escrowHeldResult[0]?.amount || 0,
-        releasedPayouts: releasedPayoutResult[0]?.amount || 0,
-        refundedAmount: refundedEscrowResult[0]?.amount || 0
+        highRiskBookings
       },
       charts: {
         revenueByMonth,
@@ -338,7 +304,7 @@ exports.getAllUsers = async (req, res) => {
     const pageSize = toInt(limit, 20);
     const [users, count] = await Promise.all([
       User.find(query)
-        .select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken -phoneVerification.otp')
+        .select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken')
         .sort({ createdAt: -1 })
         .limit(pageSize)
         .skip((pageNumber - 1) * pageSize),
@@ -359,21 +325,7 @@ exports.getAllUsers = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    const {
-      name,
-      phone,
-      role,
-      isVerified,
-      isBlocked,
-      hostVerificationStatus,
-      hostVerificationNotes,
-      bankVerificationStatus,
-      bankNotes,
-      phoneVerificationStatus,
-      eventPublishLimit,
-      hostBadge,
-      suspensionReason
-    } = req.body;
+    const { name, phone, role, isVerified, isBlocked } = req.body;
     const user = await User.findById(req.params.id);
 
     if (!user) {
@@ -398,69 +350,6 @@ exports.updateUser = async (req, res) => {
     }
     if (isVerified !== undefined) user.isVerified = Boolean(isVerified);
     if (isBlocked !== undefined) user.isBlocked = Boolean(isBlocked);
-    if (phoneVerificationStatus !== undefined) {
-      if (!['unverified', 'pending', 'verified'].includes(phoneVerificationStatus)) {
-        return res.status(400).json({ message: 'Invalid phone verification status' });
-      }
-      user.phoneVerification = {
-        ...(user.phoneVerification?.toObject?.() || user.phoneVerification || {}),
-        status: phoneVerificationStatus,
-        verifiedAt: phoneVerificationStatus === 'verified' ? (user.phoneVerification?.verifiedAt || new Date()) : undefined,
-        otp: undefined,
-        otpExpires: undefined
-      };
-    }
-    if (hostVerificationStatus !== undefined) {
-      if (!['unsubmitted', 'pending', 'approved', 'rejected', 'suspended'].includes(hostVerificationStatus)) {
-        return res.status(400).json({ message: 'Invalid host verification status' });
-      }
-      user.hostVerification = {
-        ...(user.hostVerification?.toObject?.() || user.hostVerification || {}),
-        status: hostVerificationStatus,
-        notes: hostVerificationNotes !== undefined ? hostVerificationNotes : user.hostVerification?.notes,
-        reviewedAt: new Date(),
-        reviewedBy: req.user.id
-      };
-      if (hostVerificationStatus === 'suspended') user.isBlocked = true;
-    }
-    if (bankVerificationStatus !== undefined) {
-      if (!['unsubmitted', 'pending', 'verified', 'rejected'].includes(bankVerificationStatus)) {
-        return res.status(400).json({ message: 'Invalid bank verification status' });
-      }
-      user.bankAccount = {
-        ...(user.bankAccount?.toObject?.() || user.bankAccount || {}),
-        verificationStatus: bankVerificationStatus,
-        notes: bankNotes !== undefined ? bankNotes : user.bankAccount?.notes,
-        verifiedAt: bankVerificationStatus === 'verified' ? (user.bankAccount?.verifiedAt || new Date()) : undefined,
-        reviewedAt: new Date(),
-        reviewedBy: req.user.id
-      };
-    }
-    if (eventPublishLimit !== undefined) {
-      user.hostTrust = user.hostTrust || {};
-      user.hostTrust.eventPublishLimit = Math.max(0, Number(eventPublishLimit) || 0);
-    }
-    if (hostBadge === 'suspended') {
-      user.hostTrust = user.hostTrust || {};
-      user.hostTrust.badge = 'suspended';
-      user.hostTrust.suspensionReason = suspensionReason || user.hostTrust.suspensionReason || 'Suspended by admin';
-      user.hostVerification = {
-        ...(user.hostVerification?.toObject?.() || user.hostVerification || {}),
-        status: 'suspended',
-        reviewedAt: new Date(),
-        reviewedBy: req.user.id
-      };
-      user.isBlocked = true;
-    }
-
-    if (user.role === 'host' && hostBadge !== 'suspended') {
-      if (user.isBlocked === false && user.hostVerification?.status !== 'suspended' && user.hostTrust?.badge === 'suspended') {
-        user.hostTrust.badge = 'new';
-        user.hostTrust.lowRatingSuspendedAt = undefined;
-        user.hostTrust.suspensionReason = suspensionReason !== undefined ? suspensionReason : user.hostTrust.suspensionReason;
-      }
-      await applyHostBadge(user, false);
-    }
 
     await user.save();
     clearUserCache(user._id);
@@ -474,7 +363,7 @@ exports.updateUser = async (req, res) => {
       metadata: { role: user.role, isBlocked: user.isBlocked, isVerified: user.isVerified }
     });
 
-    res.json(await User.findById(user._id).select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken -phoneVerification.otp'));
+    res.json(await User.findById(user._id).select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken'));
   } catch (error) {
     console.error('Update user error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -535,7 +424,7 @@ exports.getAllEvents = async (req, res) => {
     const pageSize = toInt(limit, 20);
     const [events, count] = await Promise.all([
       Event.find(query)
-        .populate('organizer', 'name email phone hostTrust hostVerification phoneVerification bankAccount')
+        .populate('organizer', 'name email phone')
         .sort({ createdAt: -1 })
         .limit(pageSize)
         .skip((pageNumber - 1) * pageSize),
@@ -571,7 +460,6 @@ exports.updateEvent = async (req, res) => {
       'isActive',
       'isFeatured',
       'isTrending',
-      'publishStatus',
       'moderationStatus',
       'moderationFlags',
       'moderationNotes',
@@ -586,22 +474,6 @@ exports.updateEvent = async (req, res) => {
     if (updates.date) updates.date = new Date(updates.date);
     if (updates.moderationStatus && !['pending', 'approved', 'rejected'].includes(updates.moderationStatus)) {
       return res.status(400).json({ message: 'Invalid moderation status' });
-    }
-    if (updates.publishStatus && !['draft', 'pending_verification', 'published', 'suspended', 'cancelled'].includes(updates.publishStatus)) {
-      return res.status(400).json({ message: 'Invalid publish status' });
-    }
-    if (updates.moderationStatus === 'approved' && updates.publishStatus === undefined) {
-      updates.publishStatus = 'published';
-      if (updates.isActive === undefined) updates.isActive = true;
-    }
-    if (updates.moderationStatus === 'rejected' && updates.publishStatus === undefined) {
-      updates.publishStatus = 'suspended';
-      updates.isActive = false;
-    }
-    if (updates.publishStatus === 'suspended') {
-      updates.isActive = false;
-      updates.suspendedAt = new Date();
-      updates.suspensionReason = updates.moderationNotes || 'Suspended by admin';
     }
 
     const event = await Event.findByIdAndUpdate(
@@ -622,20 +494,7 @@ exports.updateEvent = async (req, res) => {
       message: `Admin updated event ${event.title}`
     });
 
-    let refundResult = null;
-    if (
-      event.publishStatus === 'suspended' ||
-      event.publishStatus === 'cancelled' ||
-      event.moderationStatus === 'rejected' ||
-      event.isActive === false
-    ) {
-      refundResult = await refundBookingsForEvent(event._id, {
-        req,
-        reason: `Event "${event.title}" was ${event.publishStatus || event.moderationStatus} by admin`
-      });
-    }
-
-    res.json({ ...event.toObject(), refundResult });
+    res.json(event);
   } catch (error) {
     console.error('Update event error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -721,10 +580,6 @@ exports.updateBooking = async (req, res) => {
         return res.status(400).json({ message: 'Invalid payment status' });
       }
       booking.paymentStatus = paymentStatus;
-      if (paymentStatus === 'refunded') {
-        booking.escrowStatus = 'refunded';
-        booking.escrowRefundedAt = booking.escrowRefundedAt || new Date();
-      }
     }
     if (paymentAttempts !== undefined) booking.paymentAttempts = Number(paymentAttempts) || 0;
     if (refundStatus) {
@@ -732,11 +587,6 @@ exports.updateBooking = async (req, res) => {
         return res.status(400).json({ message: 'Invalid refund status' });
       }
       booking.refundStatus = refundStatus;
-      if (refundStatus === 'processed') {
-        booking.paymentStatus = 'refunded';
-        booking.escrowStatus = 'refunded';
-        booking.escrowRefundedAt = booking.escrowRefundedAt || new Date();
-      }
     }
     if (refundReason !== undefined) booking.refundReason = refundReason;
     if (disputeStatus) {
@@ -744,14 +594,6 @@ exports.updateBooking = async (req, res) => {
         return res.status(400).json({ message: 'Invalid dispute status' });
       }
       booking.disputeStatus = disputeStatus;
-      if (['open', 'under_review'].includes(disputeStatus) && booking.escrowStatus === 'held') {
-        booking.escrowStatus = 'disputed';
-      }
-      if (disputeStatus === 'resolved' && booking.escrowStatus === 'disputed') {
-        booking.escrowStatus = booking.escrowReleaseEligibleAt && booking.escrowReleaseEligibleAt <= new Date()
-          ? 'eligible'
-          : 'held';
-      }
     }
     if (notes !== undefined) booking.notes = notes;
 
@@ -806,29 +648,9 @@ exports.refundBooking = async (req, res) => {
   return exports.updateBooking(req, res);
 };
 
-exports.releaseBookingPayout = async (req, res) => {
-  try {
-    const booking = await Booking.findById(req.params.id);
-    if (!booking) {
-      return res.status(404).json({ message: 'Booking not found' });
-    }
-
-    await releaseEscrowForBooking(booking, {
-      req,
-      force: req.body.force === true,
-      notes: req.body.notes || ''
-    });
-
-    res.json(await Booking.findById(booking._id).populate('event', 'title date time venue price organizer').populate('user', 'name email phone'));
-  } catch (error) {
-    console.error('Release payout error:', error);
-    res.status(400).json({ message: error.message || 'Could not release payout' });
-  }
-};
-
 exports.getPaymentsSummary = async (req, res) => {
   try {
-    const [summary, byOrganizer, pendingTransactions, escrowSummary, releasableBookings] = await Promise.all([
+    const [summary, byOrganizer, pendingTransactions] = await Promise.all([
       Booking.aggregate([
         { $match: { paymentStatus: { $in: ['completed', 'refunded', 'pending'] } } },
         {
@@ -864,26 +686,6 @@ exports.getPaymentsSummary = async (req, res) => {
         .populate('event', 'title')
         .populate('user', 'name email')
         .sort({ bookingDate: -1 })
-        .limit(20),
-      Booking.aggregate([
-        { $match: { paymentStatus: { $in: ['completed', 'refunded'] } } },
-        {
-          $group: {
-            _id: '$escrowStatus',
-            count: { $sum: 1 },
-            gross: { $sum: '$totalPrice' },
-            payout: { $sum: '$hostPayoutAmount' }
-          }
-        }
-      ]),
-      Booking.find({
-        paymentStatus: 'completed',
-        escrowStatus: { $in: ['held', 'eligible'] },
-        escrowReleaseEligibleAt: { $lte: new Date() }
-      })
-        .populate('event', 'title organizer')
-        .populate('user', 'name email')
-        .sort({ escrowReleaseEligibleAt: 1 })
         .limit(20)
     ]);
 
@@ -895,18 +697,10 @@ exports.getPaymentsSummary = async (req, res) => {
       totals: {
         grossRevenue: completed,
         platformEarnings: Math.round(completed * PLATFORM_FEE_RATE),
-        organizerPayouts: Math.round(completed * (1 - PLATFORM_FEE_RATE)),
-        escrowHeld: escrowSummary
-          .filter((item) => ['held', 'eligible', 'disputed'].includes(item._id))
-          .reduce((sum, item) => sum + item.payout, 0),
-        releasedPayouts: escrowSummary.find((item) => item._id === 'released')?.payout || 0,
-        refundedAmount: escrowSummary.find((item) => item._id === 'refunded')?.gross || 0,
-        releasablePayouts: releasableBookings.reduce((sum, booking) => sum + (booking.hostPayoutAmount || 0), 0)
+        organizerPayouts: Math.round(completed * (1 - PLATFORM_FEE_RATE))
       },
       byOrganizer: organizers,
-      pendingTransactions,
-      escrowSummary,
-      releasableBookings
+      pendingTransactions
     });
   } catch (error) {
     console.error('Get payment summary error:', error);
@@ -1069,7 +863,6 @@ exports.getReviews = async (req, res) => {
     const reviews = await Review.find()
       .populate('user', 'name email')
       .populate('event', 'title')
-      .populate('host', 'name email hostTrust')
       .sort({ createdAt: -1 })
       .limit(toInt(req.query.limit, 100));
 
@@ -1086,7 +879,6 @@ exports.deleteReview = async (req, res) => {
     if (!review) {
       return res.status(404).json({ message: 'Review not found' });
     }
-    if (review.host) await syncHostRating(review.host, { req });
 
     await logActivity({
       req,
@@ -1601,7 +1393,7 @@ exports.exportReport = async (req, res) => {
     const { type } = req.params;
 
     if (type === 'users') {
-      const users = await User.find().select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken -phoneVerification.otp').sort({ createdAt: -1 });
+      const users = await User.find().select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken').sort({ createdAt: -1 });
       return sendCsv(res, 'evento-users.csv', [
         ['Name', 'Email', 'Role', 'Verified', 'Blocked', 'Phone', 'Created At', 'Last Login'],
         ...users.map((user) => [

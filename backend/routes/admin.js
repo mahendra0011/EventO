@@ -12,7 +12,6 @@ const {
   getAllBookings,
   updateBooking,
   refundBooking,
-  releaseBookingPayout,
   getPaymentsSummary,
   getCategories,
   createCategory,
@@ -57,7 +56,6 @@ router.post('/events/:id/reminders', sendEventReminder);
 router.get('/bookings', getAllBookings);
 router.put('/bookings/:id', updateBooking);
 router.put('/bookings/:id/refund', refundBooking);
-router.put('/bookings/:id/release-payout', releaseBookingPayout);
 router.post('/bookings/:id/confirmation', resendBookingConfirmation);
 
 router.get('/payments', getPaymentsSummary);

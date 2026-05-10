@@ -1,31 +1,5 @@
 const Event = require('../models/Event');
 const Category = require('../models/Category');
-const {
-  getHostPublishReadiness,
-  refundBookingsForEvent
-} = require('../utils/trustSafety');
-const { logActivity } = require('../utils/activity');
-
-const organizerPublicFields = 'name email phone hostTrust hostVerification phoneVerification bankAccount';
-
-const addPublicEventFilters = (query, extraConditions = []) => {
-  const conditions = [
-    {
-      $or: [
-        { publishStatus: 'published' },
-        { publishStatus: { $exists: false } }
-      ]
-    },
-    ...extraConditions
-  ];
-
-  return {
-    ...query,
-    isActive: true,
-    moderationStatus: 'approved',
-    $and: conditions
-  };
-};
 
 // Get active event categories
 exports.getCategories = async (req, res) => {
@@ -46,25 +20,22 @@ exports.getEvents = async (req, res) => {
   try {
     const { category, search, page = 1, limit = 10 } = req.query;
     
-    const extraConditions = [];
-    let query = {};
+    let query = { isActive: true };
     
     if (category) {
       query.category = category;
     }
     
     if (search) {
-      extraConditions.push({ $or: [
+      query.$or = [
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { venue: { $regex: search, $options: 'i' } }
-      ] });
+      ];
     }
 
-    query = addPublicEventFilters(query, extraConditions);
-
     const events = await Event.find(query)
-      .populate('organizer', organizerPublicFields)
+      .populate('organizer', 'name email phone')
       .sort({ date: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -87,17 +58,9 @@ exports.getEvents = async (req, res) => {
 exports.getEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .populate('organizer', organizerPublicFields);
+      .populate('organizer', 'name email phone');
 
     if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
-    }
-
-    const isPublished = event.isActive &&
-      event.moderationStatus === 'approved' &&
-      (!event.publishStatus || event.publishStatus === 'published');
-
-    if (!isPublished) {
       return res.status(404).json({ message: 'Event not found' });
     }
 
@@ -136,15 +99,6 @@ exports.createEvent = async (req, res) => {
       return res.status(400).json({ message: 'Invalid date format' });
     }
 
-    const readiness = await getHostPublishReadiness(req.user);
-
-    if (!readiness.canCreate) {
-      return res.status(403).json({
-        message: `New hosts can create up to ${readiness.eventLimit} event(s) before verification. Complete KYC to continue.`,
-        publishReadiness: readiness
-      });
-    }
-
     const event = new Event({
       title,
       description,
@@ -157,29 +111,19 @@ exports.createEvent = async (req, res) => {
       price: price || 0,
       totalTickets: totalTickets || 100,
       organizer: req.user.id,
-      tags: tags || [],
-      isActive: readiness.canPublish,
-      moderationStatus: readiness.canPublish ? 'approved' : 'pending',
-      publishStatus: readiness.canPublish ? 'published' : 'pending_verification',
-      moderationNotes: readiness.canPublish ? '' : readiness.message
+      tags: tags || []
     });
 
     await event.save();
 
-    res.status(201).json({
-      event,
-      publishReadiness: readiness,
-      message: readiness.canPublish
-        ? 'Event created and published successfully'
-        : 'Event saved but not published. Complete host verification to publish.'
-    });
+    res.status(201).json(event);
   } catch (error) {
     console.error('Create event error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// Update event (Host only)
+// Update event (Admin only)
 exports.updateEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -188,52 +132,25 @@ exports.updateEvent = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    if (event.organizer.toString() !== req.user.id) {
+    // Check if user is organizer or host
+    if (event.organizer.toString() !== req.user.id && req.user.role !== 'host') {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    const allowedFields = [
-      'title',
-      'description',
-      'date',
-      'time',
-      'venue',
-      'location',
-      'category',
-      'image',
-      'price',
-      'totalTickets',
-      'tags'
-    ];
-    const updates = {};
-    allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) updates[field] = req.body[field];
-    });
-    if (updates.date) updates.date = new Date(updates.date);
-
-    const readiness = await getHostPublishReadiness(req.user);
-    const isSuspended = event.publishStatus === 'suspended';
-    updates.isActive = readiness.canPublish && !isSuspended;
-    updates.moderationStatus = isSuspended ? event.moderationStatus : (readiness.canPublish ? 'approved' : 'pending');
-    updates.publishStatus = isSuspended ? 'suspended' : (readiness.canPublish ? 'published' : 'pending_verification');
-    updates.moderationNotes = isSuspended
-      ? event.moderationNotes
-      : (readiness.canPublish ? event.moderationNotes : readiness.message);
-
     const updatedEvent = await Event.findByIdAndUpdate(
       req.params.id,
-      { $set: updates },
+      { $set: req.body },
       { new: true, runValidators: true }
     );
 
-    res.json({ event: updatedEvent, publishReadiness: readiness });
+    res.json(updatedEvent);
   } catch (error) {
     console.error('Update event error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// Delete event (Host only)
+// Delete event (Admin only)
 exports.deleteEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -242,31 +159,14 @@ exports.deleteEvent = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    if (event.organizer.toString() !== req.user.id) {
+    // Check if user is organizer or host
+    if (event.organizer.toString() !== req.user.id && req.user.role !== 'host') {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    event.isActive = false;
-    event.publishStatus = 'cancelled';
-    event.moderationStatus = 'rejected';
-    event.suspensionReason = 'Cancelled by host';
-    await event.save();
+    await Event.findByIdAndDelete(req.params.id);
 
-    const refundResult = await refundBookingsForEvent(event._id, {
-      req,
-      reason: `Event "${event.title}" was cancelled by the host`
-    });
-
-    await logActivity({
-      req,
-      action: 'event.cancelled_by_host',
-      entity: 'Event',
-      entityId: event._id,
-      message: `Host cancelled event ${event.title}`,
-      metadata: refundResult
-    });
-
-    res.json({ message: 'Event cancelled and eligible bookings refunded', refundResult });
+    res.json({ message: 'Event removed' });
   } catch (error) {
     console.error('Delete event error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -289,22 +189,22 @@ exports.getOrganizerEvents = async (req, res) => {
 // Get featured events
 exports.getFeaturedEvents = async (req, res) => {
   try {
-    const featuredEvents = await Event.find(addPublicEventFilters({ isFeatured: true }))
+    const featuredEvents = await Event.find({ isActive: true, isFeatured: true })
       .sort({ date: 1 })
       .limit(6)
-      .populate('organizer', 'name hostTrust hostVerification');
+      .populate('organizer', 'name');
 
     if (featuredEvents.length >= 6) {
       return res.json(featuredEvents);
     }
 
     const fallbackEvents = await Event.find({
-      ...addPublicEventFilters({}),
+      isActive: true,
       _id: { $nin: featuredEvents.map((event) => event._id) }
     })
       .sort({ isTrending: -1, date: 1 })
       .limit(6 - featuredEvents.length)
-      .populate('organizer', 'name hostTrust hostVerification');
+      .populate('organizer', 'name');
 
     res.json([...featuredEvents, ...fallbackEvents]);
   } catch (error) {

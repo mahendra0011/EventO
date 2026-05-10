@@ -101,42 +101,6 @@ export const getCategories = async () => {
   return res.data;
 };
 
-// Trust and safety
-export const reportEvent = async (eventId, reason, message) => {
-  const res = await api.post(`/events/${eventId}/report`, { reason, message });
-  return res.data;
-};
-
-export const getHostReadiness = async () => {
-  const res = await api.get('/auth/host-readiness');
-  return res.data;
-};
-
-export const submitHostVerification = async (payload) => {
-  const res = await api.put('/auth/host-verification', payload);
-  return res.data;
-};
-
-export const updateBankAccount = async (payload) => {
-  const res = await api.put('/auth/bank-account', payload);
-  return res.data;
-};
-
-export const sendPhoneOtp = async (phone) => {
-  const res = await api.post('/auth/phone/send-otp', { phone });
-  return res.data;
-};
-
-export const verifyPhoneOtp = async (otp) => {
-  const res = await api.post('/auth/phone/verify-otp', { otp });
-  return res.data;
-};
-
-export const releaseBookingPayout = async (bookingId, force = false) => {
-  const res = await api.put(`/admin/bookings/${bookingId}/release-payout`, { force });
-  return res.data;
-};
-
 // Notifications
 export const getNotifications = async () => {
   const res = await api.get('/notifications');

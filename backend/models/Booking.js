@@ -30,35 +30,6 @@ const bookingSchema = new mongoose.Schema({
     enum: ['pending', 'completed', 'failed', 'refunded'],
     default: 'pending'
   },
-  escrowStatus: {
-    type: String,
-    enum: ['none', 'held', 'eligible', 'released', 'refunded', 'disputed'],
-    default: 'none'
-  },
-  escrowHeldAt: {
-    type: Date
-  },
-  escrowReleaseEligibleAt: {
-    type: Date
-  },
-  escrowReleasedAt: {
-    type: Date
-  },
-  escrowRefundedAt: {
-    type: Date
-  },
-  platformFeeAmount: {
-    type: Number,
-    default: 0
-  },
-  hostPayoutAmount: {
-    type: Number,
-    default: 0
-  },
-  payoutNotes: {
-    type: String,
-    trim: true
-  },
   paymentAttempts: {
     type: Number,
     default: 0
@@ -115,6 +86,5 @@ const bookingSchema = new mongoose.Schema({
 
 bookingSchema.index({ user: 1, status: 1 });
 bookingSchema.index({ event: 1, status: 1 });
-bookingSchema.index({ escrowStatus: 1, escrowReleaseEligibleAt: 1 });
 
 module.exports = mongoose.model('Booking', bookingSchema);

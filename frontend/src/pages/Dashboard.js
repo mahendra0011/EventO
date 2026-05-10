@@ -888,10 +888,10 @@ const Dashboard = () => {
               {activeTab === 'payments' && (
                 <motion.div key="payments" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <h3 className="text-lg font-semibold mb-4">Payment History</h3>
-                  {bookings.filter(b => ['completed', 'refunded'].includes(b.paymentStatus)).length > 0 ? (
+                  {bookings.filter(b => b.paymentStatus === 'completed').length > 0 ? (
                     <div className="space-y-4">
                       {bookings
-                        .filter(b => ['completed', 'refunded'].includes(b.paymentStatus))
+                        .filter(b => b.paymentStatus === 'completed')
                         .map((booking) => (
                           <div key={booking._id} className="border border-gray-200 rounded-lg p-4 flex items-center bg-white">
                             <img src={booking.event?.image} alt={booking.event?.title} className="w-16 h-16 rounded-lg object-cover" />
@@ -902,11 +902,9 @@ const Dashboard = () => {
                             </div>
                             <div className="text-right">
                               <p className="text-xl font-bold text-green-600">₹{booking.totalPrice?.toLocaleString('en-IN')}</p>
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                booking.paymentStatus === 'refunded' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                              }`}>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 <CheckCircle className="h-3 w-3 mr-1" />
-                                {booking.paymentStatus === 'refunded' ? 'Refunded' : `Paid / escrow ${booking.escrowStatus || 'held'}`}
+                                Paid
                               </span>
                             </div>
                           </div>

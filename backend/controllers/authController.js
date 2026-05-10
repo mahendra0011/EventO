@@ -10,11 +10,6 @@ const {
   OTP_RATE_LIMIT_SECONDS
 } = require('../utils/email');
 const { getClientIp, logActivity } = require('../utils/activity');
-const { clearUserCache } = require('../middleware/auth');
-const {
-  applyHostBadge,
-  getHostPublishReadiness
-} = require('../utils/trustSafety');
 
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -38,87 +33,8 @@ const buildAuthUser = (user) => ({
   role: user.role,
   phone: user.phone,
   isBlocked: user.isBlocked,
-  isVerified: user.isVerified,
-  phoneVerification: user.phoneVerification ? { status: user.phoneVerification.status, verifiedAt: user.phoneVerification.verifiedAt } : undefined,
-  hostVerification: user.hostVerification,
-  bankAccount: user.bankAccount ? {
-    accountHolderName: user.bankAccount.accountHolderName,
-    bankName: user.bankAccount.bankName,
-    accountNumberLast4: user.bankAccount.accountNumberLast4,
-    ifsc: user.bankAccount.ifsc,
-    upiId: user.bankAccount.upiId,
-    proofUrl: user.bankAccount.proofUrl,
-    verificationStatus: user.bankAccount.verificationStatus,
-    verifiedAt: user.bankAccount.verifiedAt,
-    notes: user.bankAccount.notes
-  } : undefined,
-  hostTrust: user.hostTrust
+  isVerified: user.isVerified
 });
-
-const getAccountLast4 = (value) => {
-  const digits = String(value || '').replace(/\D/g, '');
-  return digits ? digits.slice(-4) : '';
-};
-
-const getHostRegistrationPayload = (body) => {
-  const {
-    phone,
-    governmentIdType = '',
-    governmentIdUrl = '',
-    selfieWithIdUrl = '',
-    isCompany = false,
-    businessName = '',
-    businessProofUrl = '',
-    accountHolderName = '',
-    bankName = '',
-    accountNumber = '',
-    accountNumberLast4 = '',
-    ifsc = '',
-    upiId = '',
-    bankProofUrl = ''
-  } = body;
-
-  const missing = [];
-  if (!phone) missing.push('phone number');
-  if (!governmentIdType) missing.push('government ID type');
-  if (!governmentIdUrl) missing.push('government ID upload URL');
-  if (!selfieWithIdUrl) missing.push('selfie with ID URL');
-  if (isCompany && !businessProofUrl) missing.push('business registration proof');
-  if (!accountHolderName) missing.push('bank account holder name');
-  if (!bankName && !upiId) missing.push('bank name or UPI ID');
-  if (!getAccountLast4(accountNumber || accountNumberLast4) && !upiId) missing.push('bank account last 4 digits or UPI ID');
-  if (!bankProofUrl && !upiId) missing.push('bank proof URL');
-
-  return {
-    missing,
-    phone,
-    hostVerification: {
-      status: 'pending',
-      governmentIdType,
-      governmentIdUrl,
-      selfieWithIdUrl,
-      isCompany: Boolean(isCompany),
-      businessName,
-      businessProofUrl,
-      submittedAt: new Date()
-    },
-    bankAccount: {
-      accountHolderName,
-      bankName,
-      accountNumberLast4: getAccountLast4(accountNumber || accountNumberLast4),
-      ifsc,
-      upiId,
-      proofUrl: bankProofUrl,
-      verificationStatus: 'pending'
-    },
-    organizerDocuments: [
-      { label: `Government ID (${governmentIdType || 'ID'})`, url: governmentIdUrl },
-      { label: 'Selfie with ID', url: selfieWithIdUrl },
-      ...(Boolean(isCompany) ? [{ label: 'Business registration proof', url: businessProofUrl }] : []),
-      ...(bankProofUrl ? [{ label: 'Bank account proof', url: bankProofUrl }] : [])
-    ].filter((doc) => doc.url)
-  };
-};
 
 const recordSuccessfulLogin = async (req, user) => {
   user.lastLoginAt = new Date();
@@ -238,13 +154,6 @@ exports.hostRegister = async (req, res) => {
       return res.status(400).json({ message: 'Name, email, password and secretKeyword are required' });
     }
 
-    const hostPayload = getHostRegistrationPayload(req.body);
-    if (hostPayload.missing.length > 0) {
-      return res.status(400).json({
-        message: `Host verification requires: ${hostPayload.missing.join(', ')}`
-      });
-    }
-
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
@@ -256,15 +165,7 @@ exports.hostRegister = async (req, res) => {
       password,
       phone,
       role: 'host',
-      secretKeyword,
-      phoneVerification: { status: 'unverified' },
-      hostVerification: hostPayload.hostVerification,
-      bankAccount: hostPayload.bankAccount,
-      organizerDocuments: hostPayload.organizerDocuments,
-      hostTrust: {
-        badge: 'new',
-        eventPublishLimit: Number(process.env.NEW_HOST_EVENT_LIMIT || 3)
-      }
+      secretKeyword
     });
 
     const otpResult = await sendVerificationOtp(user, false);
@@ -275,7 +176,6 @@ exports.hostRegister = async (req, res) => {
       });
     }
 
-    await applyHostBadge(user, false);
     await user.save();
 
     res.status(201).json(buildUnverifiedResponse(
@@ -645,7 +545,7 @@ exports.resetPassword = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken -phoneVerification.otp');
+    const user = await User.findById(req.user.id).select('-password');
     res.json(user);
   } catch (error) {
     console.error('Get me error:', error);
@@ -703,244 +603,24 @@ exports.hostLogin = async (req, res) => {
   }
 };
 
-exports.getHostReadiness = async (req, res) => {
-  try {
-    if (req.user.role !== 'host') {
-      return res.status(403).json({ message: 'Host account required' });
-    }
-
-    const user = await User.findById(req.user.id).select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken -phoneVerification.otp');
-    await applyHostBadge(user);
-    clearUserCache(user._id);
-
-    const publishReadiness = await getHostPublishReadiness(user);
-    res.json({
-      host: buildAuthUser(user),
-      publishReadiness
-    });
-  } catch (error) {
-    console.error('Get host readiness error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.submitHostVerification = async (req, res) => {
-  try {
-    if (req.user.role !== 'host') {
-      return res.status(403).json({ message: 'Host account required' });
-    }
-
-    const user = await User.findById(req.user.id);
-    const payload = getHostRegistrationPayload({ ...req.body, phone: req.body.phone || user.phone });
-    const bankMissingLabels = new Set([
-      'account holder name',
-      'bank name or UPI ID',
-      'bank account last 4 digits or UPI ID',
-      'bank proof URL'
-    ]);
-    const missingKyc = payload.missing.filter((item) => !bankMissingLabels.has(item));
-
-    if (missingKyc.length > 0) {
-      return res.status(400).json({ message: `Host KYC requires: ${missingKyc.join(', ')}` });
-    }
-
-    user.phone = payload.phone;
-    user.hostVerification = payload.hostVerification;
-    user.organizerDocuments = payload.organizerDocuments.filter((doc) => !doc.label.includes('Bank'));
-    await applyHostBadge(user, false);
-    await user.save();
-    clearUserCache(user._id);
-
-    await logActivity({
-      req,
-      action: 'host.kyc_submitted',
-      entity: 'User',
-      entityId: user._id,
-      message: `${user.email} submitted host KYC`
-    });
-
-    res.json({
-      message: 'Host KYC submitted for admin review',
-      user: buildAuthUser(user),
-      publishReadiness: await getHostPublishReadiness(user)
-    });
-  } catch (error) {
-    console.error('Submit host verification error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.updateBankAccount = async (req, res) => {
-  try {
-    if (req.user.role !== 'host') {
-      return res.status(403).json({ message: 'Host account required' });
-    }
-
-    const user = await User.findById(req.user.id);
-    const {
-      accountHolderName = '',
-      bankName = '',
-      accountNumber = '',
-      accountNumberLast4 = '',
-      ifsc = '',
-      upiId = '',
-      bankProofUrl = ''
-    } = req.body;
-
-    const last4 = getAccountLast4(accountNumber || accountNumberLast4);
-    const missing = [];
-    if (!accountHolderName) missing.push('account holder name');
-    if (!bankName && !upiId) missing.push('bank name or UPI ID');
-    if (!last4 && !upiId) missing.push('bank account last 4 digits or UPI ID');
-    if (!bankProofUrl && !upiId) missing.push('bank proof URL');
-
-    if (missing.length > 0) {
-      return res.status(400).json({ message: `Bank verification requires: ${missing.join(', ')}` });
-    }
-
-    user.bankAccount = {
-      accountHolderName,
-      bankName,
-      accountNumberLast4: last4,
-      ifsc,
-      upiId,
-      proofUrl: bankProofUrl,
-      verificationStatus: 'pending'
-    };
-    await applyHostBadge(user, false);
-    await user.save();
-    clearUserCache(user._id);
-
-    await logActivity({
-      req,
-      action: 'host.bank_submitted',
-      entity: 'User',
-      entityId: user._id,
-      message: `${user.email} submitted bank details`
-    });
-
-    res.json({
-      message: 'Bank account submitted for admin verification',
-      user: buildAuthUser(user),
-      publishReadiness: await getHostPublishReadiness(user)
-    });
-  } catch (error) {
-    console.error('Update bank account error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.sendPhoneOtp = async (req, res) => {
-  try {
-    const { phone } = req.body;
-    const user = await User.findById(req.user.id);
-
-    if (phone) user.phone = phone;
-    if (!user.phone) {
-      return res.status(400).json({ message: 'Phone number is required' });
-    }
-
-    const oneMinuteAgo = new Date(Date.now() - OTP_RATE_LIMIT_SECONDS * 1000);
-    if (user.phoneVerification?.lastOtpSent && user.phoneVerification.lastOtpSent > oneMinuteAgo) {
-      return res.status(429).json({
-        message: `Please wait ${OTP_RATE_LIMIT_SECONDS} seconds before requesting another phone OTP`
-      });
-    }
-
-    const otp = generateSecureOTP();
-    user.phoneVerification = {
-      status: 'pending',
-      otp,
-      otpExpires: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000),
-      lastOtpSent: new Date()
-    };
-    await user.save();
-    clearUserCache(user._id);
-
-    await logActivity({
-      req,
-      action: 'auth.phone_otp_requested',
-      entity: 'User',
-      entityId: user._id,
-      message: `${user.email} requested phone OTP`
-    });
-
-    res.json({
-      message: 'Phone OTP generated. Connect an SMS provider in production to deliver it.',
-      devOtp: process.env.NODE_ENV === 'production' ? undefined : otp
-    });
-  } catch (error) {
-    console.error('Send phone OTP error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.verifyPhoneOtp = async (req, res) => {
-  try {
-    const { otp } = req.body;
-    const user = await User.findById(req.user.id);
-
-    if (!user.phoneVerification?.otp) {
-      return res.status(400).json({ message: 'No phone OTP pending' });
-    }
-
-    if (!user.phoneVerification.otpExpires || user.phoneVerification.otpExpires < new Date()) {
-      return res.status(400).json({ message: 'Phone OTP has expired' });
-    }
-
-    if (user.phoneVerification.otp !== otp) {
-      return res.status(400).json({ message: 'Invalid phone OTP' });
-    }
-
-    user.phoneVerification = {
-      status: 'verified',
-      verifiedAt: new Date()
-    };
-    await applyHostBadge(user, false);
-    await user.save();
-    clearUserCache(user._id);
-
-    await logActivity({
-      req,
-      action: 'auth.phone_verified',
-      entity: 'User',
-      entityId: user._id,
-      message: `${user.email} verified phone`
-    });
-
-    res.json({
-      message: 'Phone verified successfully',
-      user: buildAuthUser(user),
-      publishReadiness: user.role === 'host' ? await getHostPublishReadiness(user) : undefined
-    });
-  } catch (error) {
-    console.error('Verify phone OTP error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
 exports.updateProfile = async (req, res) => {
   try {
     const { name, phone } = req.body;
     const user = await User.findById(req.user.id);
 
     if (name) user.name = name;
-    if (phone && phone !== user.phone) {
-      user.phone = phone;
-      user.phoneVerification = {
-        ...(user.phoneVerification?.toObject?.() || user.phoneVerification || {}),
-        status: 'unverified',
-        otp: undefined,
-        otpExpires: undefined,
-        verifiedAt: undefined
-      };
-    }
+    if (phone) user.phone = phone;
 
     await user.save();
-    clearUserCache(user._id);
 
     res.json({
-      user: buildAuthUser(user)
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone
+      }
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -1006,13 +686,6 @@ exports.hostKeywordRegister = async (req, res) => {
       return res.status(400).json({ message: 'Name, email, password and secretKeyword are required' });
     }
 
-    const hostPayload = getHostRegistrationPayload(req.body);
-    if (hostPayload.missing.length > 0) {
-      return res.status(400).json({
-        message: `Host verification requires: ${hostPayload.missing.join(', ')}`
-      });
-    }
-
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
@@ -1024,15 +697,7 @@ exports.hostKeywordRegister = async (req, res) => {
       password,
       phone,
       role: 'host',
-      secretKeyword,
-      phoneVerification: { status: 'unverified' },
-      hostVerification: hostPayload.hostVerification,
-      bankAccount: hostPayload.bankAccount,
-      organizerDocuments: hostPayload.organizerDocuments,
-      hostTrust: {
-        badge: 'new',
-        eventPublishLimit: Number(process.env.NEW_HOST_EVENT_LIMIT || 3)
-      }
+      secretKeyword
     });
 
     const otpResult = await sendVerificationOtp(user, false);
@@ -1043,7 +708,6 @@ exports.hostKeywordRegister = async (req, res) => {
       });
     }
 
-    await applyHostBadge(user, false);
     await user.save();
 
     res.status(201).json(buildUnverifiedResponse(

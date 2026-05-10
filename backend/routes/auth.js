@@ -14,12 +14,7 @@ const {
   verifyLoginOtp,
   resendLoginOtp,
   forgotPassword,
-  resetPassword,
-  getHostReadiness,
-  submitHostVerification,
-  updateBankAccount,
-  sendPhoneOtp,
-  verifyPhoneOtp
+  resetPassword
 } = require('../controllers/authController');
 const { auth } = require('../middleware/auth');
 
@@ -50,15 +45,5 @@ router.post('/host-keyword-register', hostKeywordRegister);
 router.get('/me', auth, getMe);
 
 router.put('/profile', auth, updateProfile);
-
-router.get('/host-readiness', auth, getHostReadiness);
-
-router.put('/host-verification', auth, submitHostVerification);
-
-router.put('/bank-account', auth, updateBankAccount);
-
-router.post('/phone/send-otp', auth, sendPhoneOtp);
-
-router.post('/phone/verify-otp', auth, verifyPhoneOtp);
 
 module.exports = router;

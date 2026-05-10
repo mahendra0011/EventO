@@ -12,19 +12,7 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     secretKeyword: '',
-    isHost: false,
-    governmentIdType: 'aadhaar',
-    governmentIdUrl: '',
-    selfieWithIdUrl: '',
-    isCompany: false,
-    businessName: '',
-    businessProofUrl: '',
-    accountHolderName: '',
-    bankName: '',
-    accountNumberLast4: '',
-    ifsc: '',
-    upiId: '',
-    bankProofUrl: ''
+    isHost: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -81,25 +69,7 @@ const Register = () => {
 
     try {
       if (formData.isHost) {
-        const res = await hostRegister({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          phone: formData.phone,
-          secretKeyword: formData.secretKeyword,
-          governmentIdType: formData.governmentIdType,
-          governmentIdUrl: formData.governmentIdUrl,
-          selfieWithIdUrl: formData.selfieWithIdUrl,
-          isCompany: formData.isCompany,
-          businessName: formData.businessName,
-          businessProofUrl: formData.businessProofUrl,
-          accountHolderName: formData.accountHolderName,
-          bankName: formData.bankName,
-          accountNumberLast4: formData.accountNumberLast4,
-          ifsc: formData.ifsc,
-          upiId: formData.upiId,
-          bankProofUrl: formData.bankProofUrl
-        });
+        const res = await hostRegister(formData.name, formData.email, formData.password, formData.phone, formData.secretKeyword);
         if (res.requiresVerification || res.requiresOTP) {
           goToVerification(formData.email, res);
         } else {
@@ -187,7 +157,7 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="phone" className="label">Phone Number {formData.isHost ? '*' : '(Optional)'}</label>
+              <label htmlFor="phone" className="label">Phone Number (Optional)</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
@@ -196,9 +166,8 @@ const Register = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={handleChange}
-                  required={formData.isHost}
                   className="input-field pl-10"
-                  placeholder="+91 9876543210"
+                  placeholder="+1 (555) 123-4567"
                 />
               </div>
             </div>
@@ -247,124 +216,25 @@ const Register = () => {
             </div>
 
             {formData.isHost && (
-              <div className="space-y-5 rounded-lg border border-secondary-200 bg-secondary-50/40 p-4">
-                <div>
-                  <label htmlFor="secretKeyword" className="label">
-                    <span className="flex items-center text-secondary-700">
-                      <Key className="h-4 w-4 mr-2" />
-                      Host Secret Keyword *
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      id="secretKeyword"
-                      name="secretKeyword"
-                      type="password"
-                      value={formData.secretKeyword}
-                      onChange={handleChange}
-                      required={formData.isHost}
-                      className="input-field pl-10 border-2 border-secondary-300 focus:border-secondary-500"
-                      placeholder="Enter host keyword"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="governmentIdType" className="label">Government ID *</label>
-                    <select
-                      id="governmentIdType"
-                      name="governmentIdType"
-                      value={formData.governmentIdType}
-                      onChange={handleChange}
-                      className="input-field"
-                      required={formData.isHost}
-                    >
-                      <option value="aadhaar">Aadhaar</option>
-                      <option value="pan">PAN</option>
-                      <option value="passport">Passport</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="governmentIdUrl" className="label">ID Upload URL *</label>
-                    <input
-                      id="governmentIdUrl"
-                      name="governmentIdUrl"
-                      type="url"
-                      value={formData.governmentIdUrl}
-                      onChange={handleChange}
-                      className="input-field"
-                      placeholder="https://..."
-                      required={formData.isHost}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="selfieWithIdUrl" className="label">Selfie With ID URL *</label>
-                  <input
-                    id="selfieWithIdUrl"
-                    name="selfieWithIdUrl"
-                    type="url"
-                    value={formData.selfieWithIdUrl}
-                    onChange={handleChange}
-                    className="input-field"
-                    placeholder="https://..."
-                    required={formData.isHost}
-                  />
-                </div>
-
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <input
-                    type="checkbox"
-                    name="isCompany"
-                    checked={formData.isCompany}
-                    onChange={handleChange}
-                    className="h-4 w-4 rounded text-secondary-600 focus:ring-secondary-500"
-                  />
-                  Registering as a company
+              <div>
+                <label htmlFor="secretKeyword" className="label">
+                  <span className="flex items-center text-secondary-700">
+                    <Key className="h-4 w-4 mr-2" />
+                    Host Secret Keyword *
+                  </span>
                 </label>
-
-                {formData.isCompany && (
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="businessName" className="label">Business Name</label>
-                      <input id="businessName" name="businessName" value={formData.businessName} onChange={handleChange} className="input-field" />
-                    </div>
-                    <div>
-                      <label htmlFor="businessProofUrl" className="label">Business Proof URL *</label>
-                      <input id="businessProofUrl" name="businessProofUrl" type="url" value={formData.businessProofUrl} onChange={handleChange} className="input-field" placeholder="https://..." required={formData.isCompany} />
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="accountHolderName" className="label">Account Holder Name *</label>
-                    <input id="accountHolderName" name="accountHolderName" value={formData.accountHolderName} onChange={handleChange} className="input-field" required={formData.isHost} />
-                  </div>
-                  <div>
-                    <label htmlFor="bankName" className="label">Bank Name</label>
-                    <input id="bankName" name="bankName" value={formData.bankName} onChange={handleChange} className="input-field" placeholder="Required unless UPI is provided" />
-                  </div>
-                  <div>
-                    <label htmlFor="accountNumberLast4" className="label">Account Last 4</label>
-                    <input id="accountNumberLast4" name="accountNumberLast4" value={formData.accountNumberLast4} onChange={handleChange} className="input-field" maxLength={4} placeholder="1234" />
-                  </div>
-                  <div>
-                    <label htmlFor="ifsc" className="label">IFSC</label>
-                    <input id="ifsc" name="ifsc" value={formData.ifsc} onChange={handleChange} className="input-field" placeholder="HDFC0000001" />
-                  </div>
-                  <div>
-                    <label htmlFor="upiId" className="label">UPI ID</label>
-                    <input id="upiId" name="upiId" value={formData.upiId} onChange={handleChange} className="input-field" placeholder="name@upi" />
-                  </div>
-                  <div>
-                    <label htmlFor="bankProofUrl" className="label">Bank Proof URL</label>
-                    <input id="bankProofUrl" name="bankProofUrl" type="url" value={formData.bankProofUrl} onChange={handleChange} className="input-field" placeholder="https://..." />
-                  </div>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    id="secretKeyword"
+                    name="secretKeyword"
+                    type="password"
+                    value={formData.secretKeyword}
+                    onChange={handleChange}
+                    required={formData.isHost}
+                    className="input-field pl-10 border-2 border-secondary-300 focus:border-secondary-500"
+                    placeholder="Enter host keyword"
+                  />
                 </div>
               </div>
             )}
@@ -391,7 +261,7 @@ const Register = () => {
             <p className="text-xs text-gray-600">
               <strong className="text-primary-700">Users:</strong> Register with name, email, phone, and password.
               <br />
-              <strong className="text-secondary-700">Hosts:</strong> KYC, phone, and bank verification are required before events can be published.
+              <strong className="text-secondary-700">Hosts:</strong> Check "Register as Host" above and enter the secret keyword.
             </p>
           </div>
         </div>

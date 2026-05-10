@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import api, {
-  broadcastToEventBookers,
-  getHostReadiness,
-  getNotifications,
-  sendPhoneOtp,
-  submitHostVerification,
-  updateBankAccount,
-  verifyPhoneOtp
-} from '../utils/api';
+import api, { broadcastToEventBookers, getNotifications } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -37,29 +29,10 @@ import {
     MessageSquare,
     Send,
     Megaphone,
-    Users,
-    ShieldCheck,
-    AlertTriangle,
-    Ban,
-    CreditCard
+    Users
   } from 'lucide-react';
 
 const hostDashboardTabs = ['overview', 'analytics', 'bookings', 'events', 'communications', 'notifications', 'community', 'settings'];
-
-const HostBadge = ({ badge = 'new' }) => {
-  const Icon = badge === 'verified' ? ShieldCheck : badge === 'suspended' ? Ban : AlertTriangle;
-  const className = badge === 'verified'
-    ? 'bg-green-50 text-green-700 border-green-200'
-    : badge === 'suspended'
-      ? 'bg-red-50 text-red-700 border-red-200'
-      : 'bg-amber-50 text-amber-700 border-amber-200';
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-semibold ${className}`}>
-      <Icon className="h-4 w-4" />
-      {badge === 'verified' ? 'Verified Host' : badge === 'suspended' ? 'Suspended Host' : 'New Host'}
-    </span>
-  );
-};
 
 const AdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -89,24 +62,6 @@ const AdminDashboard = () => {
      name: user?.name || '',
      phone: user?.phone || ''
    });
-   const [hostReadiness, setHostReadiness] = useState(null);
-   const [phoneOtp, setPhoneOtp] = useState('');
-   const [kycForm, setKycForm] = useState({
-     governmentIdType: 'aadhaar',
-     governmentIdUrl: '',
-     selfieWithIdUrl: '',
-     isCompany: false,
-     businessName: '',
-     businessProofUrl: ''
-   });
-   const [bankForm, setBankForm] = useState({
-     accountHolderName: '',
-     bankName: '',
-     accountNumberLast4: '',
-     ifsc: '',
-     upiId: '',
-     bankProofUrl: ''
-   });
    const [updatingProfile, setUpdatingProfile] = useState(false);
     const [sendingNotification, setSendingNotification] = useState(false);
 
@@ -132,22 +87,6 @@ const AdminDashboard = () => {
         name: user.name,
         phone: user.phone || ''
       });
-      setKycForm({
-        governmentIdType: user.hostVerification?.governmentIdType || 'aadhaar',
-        governmentIdUrl: user.hostVerification?.governmentIdUrl || '',
-        selfieWithIdUrl: user.hostVerification?.selfieWithIdUrl || '',
-        isCompany: Boolean(user.hostVerification?.isCompany),
-        businessName: user.hostVerification?.businessName || '',
-        businessProofUrl: user.hostVerification?.businessProofUrl || ''
-      });
-      setBankForm({
-        accountHolderName: user.bankAccount?.accountHolderName || '',
-        bankName: user.bankAccount?.bankName || '',
-        accountNumberLast4: user.bankAccount?.accountNumberLast4 || '',
-        ifsc: user.bankAccount?.ifsc || '',
-        upiId: user.bankAccount?.upiId || '',
-        bankProofUrl: user.bankAccount?.proofUrl || ''
-      });
     }
   }, [user]);
 
@@ -161,57 +100,6 @@ const AdminDashboard = () => {
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setSearchParams(tabId === 'overview' ? {} : { tab: tabId });
-  };
-
-  const refreshHostReadiness = async () => {
-    try {
-      const res = await getHostReadiness();
-      setHostReadiness(res.publishReadiness);
-    } catch (error) {
-      console.error('Error refreshing host readiness:', error);
-    }
-  };
-
-  const handleSendPhoneOtp = async () => {
-    try {
-      const res = await sendPhoneOtp(profileData.phone);
-      toast.success(res.devOtp ? `Phone OTP generated: ${res.devOtp}` : 'Phone OTP sent');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to send phone OTP');
-    }
-  };
-
-  const handleVerifyPhoneOtp = async () => {
-    try {
-      await verifyPhoneOtp(phoneOtp);
-      setPhoneOtp('');
-      toast.success('Phone verified');
-      refreshHostReadiness();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to verify phone');
-    }
-  };
-
-  const handleSubmitKyc = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await submitHostVerification({ ...kycForm, phone: profileData.phone });
-      setHostReadiness(res.publishReadiness);
-      toast.success(res.message || 'KYC submitted');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to submit KYC');
-    }
-  };
-
-  const handleSubmitBank = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await updateBankAccount(bankForm);
-      setHostReadiness(res.publishReadiness);
-      toast.success(res.message || 'Bank details submitted');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to submit bank details');
-    }
   };
 
   const handleDeleteEvent = async (eventId) => {
@@ -244,7 +132,6 @@ const AdminDashboard = () => {
        fetchAttendees();
        fetchHostConversations();
        fetchNotifications();
-       fetchHostReadiness();
      }
    }, []);
 
@@ -293,15 +180,6 @@ const AdminDashboard = () => {
        } catch (error) {
          console.error('Error fetching notifications:', error);
        }
-      };
-
-      const fetchHostReadiness = async () => {
-        try {
-          const res = await getHostReadiness();
-          setHostReadiness(res.publishReadiness);
-        } catch (error) {
-          console.error('Error fetching host verification readiness:', error);
-        }
       };
 
    const handleConfirmBooking = async (bookingId) => {
@@ -415,38 +293,14 @@ const AdminDashboard = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-bold text-gray-900">Host Dashboard</h1>
-              <HostBadge badge={hostReadiness?.badge || user?.hostTrust?.badge || 'new'} />
-            </div>
-            <p className="text-gray-600">Manage events, bookings, analytics, and host verification</p>
+            <h1 className="text-3xl font-bold text-gray-900">Host Dashboard</h1>
+            <p className="text-gray-600">Manage events, bookings, and analytics</p>
           </div>
           <Link to="/host/create-event" className="mt-4 md:mt-0 btn-primary inline-flex items-center">
             <Plus className="h-5 w-5 mr-2" />
             Create Event
           </Link>
         </div>
-
-        {hostReadiness && !hostReadiness.canPublish && (
-          <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-5 text-amber-900">
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-              <div>
-                <h2 className="font-semibold">Publishing is locked until verification is complete</h2>
-                <p className="mt-1 text-sm">You can save up to {hostReadiness.eventLimit} new-host event drafts. Public publishing unlocks after KYC, phone, and bank approval.</p>
-                {hostReadiness.missing?.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {hostReadiness.missing.map((item) => (
-                      <span key={item} className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-800">{item}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button onClick={() => handleTabChange('settings')} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">
-                Complete Verification
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -494,30 +348,6 @@ const AdminDashboard = () => {
               <div className="ml-4">
                 <p className="text-sm text-gray-500">Total Revenue</p>
                 <p className="text-2xl font-bold text-gray-900">₹{(stats?.stats.totalRevenue || 0).toLocaleString('en-IN')}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-amber-100 rounded-lg">
-                <CreditCard className="h-6 w-6 text-amber-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Escrow Held</p>
-                <p className="text-2xl font-bold text-gray-900">INR {(stats?.stats.escrowHeld || 0).toLocaleString('en-IN')}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <ShieldCheck className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-500">Released Payouts</p>
-                <p className="text-2xl font-bold text-gray-900">INR {(stats?.stats.releasedPayouts || 0).toLocaleString('en-IN')}</p>
               </div>
             </div>
           </div>
@@ -756,14 +586,7 @@ const AdminDashboard = () => {
                             ₹{booking.totalPrice?.toLocaleString('en-IN')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="space-y-1">
-                              {getStatusBadge(booking.status)}
-                              {booking.escrowStatus && booking.escrowStatus !== 'none' && (
-                                <span className="inline-flex rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
-                                  escrow: {booking.escrowStatus}
-                                </span>
-                              )}
-                            </div>
+                            {getStatusBadge(booking.status)}
                           </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm">
                              {/* Manual confirmation removed - bookings auto-confirm */}
@@ -797,25 +620,6 @@ const AdminDashboard = () => {
                             {event.availableTickets} / {event.totalTickets} tickets
                           </span>
                           <span className="font-semibold text-primary-600">₹{event.price?.toLocaleString('en-IN')}</span>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <span className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                            event.publishStatus === 'published'
-                              ? 'bg-green-100 text-green-700'
-                              : event.publishStatus === 'suspended' || event.publishStatus === 'cancelled'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-amber-100 text-amber-700'
-                          }`}>
-                            {event.publishStatus || (event.isActive ? 'published' : 'draft')}
-                          </span>
-                          <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">
-                            {event.moderationStatus || 'pending'}
-                          </span>
-                          {event.reportCount > 0 && (
-                            <span className="rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-700">
-                              {event.reportCount} reports
-                            </span>
-                          )}
                         </div>
                         <div className="flex gap-2 mt-3">
                           <Link
@@ -1382,90 +1186,6 @@ const AdminDashboard = () => {
                          Update Profile
                        </button>
                     </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <ShieldCheck className="h-5 w-5 mr-2" />
-                    Host Verification
-                  </h3>
-                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    <div className="rounded-lg border border-gray-200 bg-white p-6">
-                      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-gray-900">Readiness</p>
-                          <p className="text-sm text-gray-500">Publishing unlocks after all checks pass.</p>
-                        </div>
-                        <HostBadge badge={hostReadiness?.badge || user?.hostTrust?.badge || 'new'} />
-                      </div>
-                      <div className="space-y-2">
-                        {[
-                          ['Email', user?.isVerified ? 'verified' : 'pending'],
-                          ['Phone', user?.phoneVerification?.status || 'unverified'],
-                          ['KYC', user?.hostVerification?.status || 'unsubmitted'],
-                          ['Bank', user?.bankAccount?.verificationStatus || 'unsubmitted']
-                        ].map(([label, status]) => (
-                          <div key={label} className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3 text-sm">
-                            <span className="font-medium text-gray-700">{label}</span>
-                            <span className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                              ['verified', 'approved'].includes(status)
-                                ? 'bg-green-100 text-green-700'
-                                : status === 'rejected' || status === 'suspended'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-amber-100 text-amber-700'
-                            }`}>{status}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="rounded-lg border border-gray-200 bg-white p-6">
-                      <p className="mb-3 font-semibold text-gray-900">Phone OTP</p>
-                      <div className="flex flex-col gap-3 sm:flex-row">
-                        <button onClick={handleSendPhoneOtp} className="btn-secondary whitespace-nowrap">Send OTP</button>
-                        <input value={phoneOtp} onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} className="input-field" placeholder="6-digit OTP" />
-                        <button onClick={handleVerifyPhoneOtp} className="btn-primary whitespace-nowrap">Verify</button>
-                      </div>
-                    </div>
-
-                    <form onSubmit={handleSubmitKyc} className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-                      <p className="font-semibold text-gray-900">KYC Documents</p>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <select value={kycForm.governmentIdType} onChange={(e) => setKycForm({ ...kycForm, governmentIdType: e.target.value })} className="input-field">
-                          <option value="aadhaar">Aadhaar</option>
-                          <option value="pan">PAN</option>
-                          <option value="passport">Passport</option>
-                          <option value="other">Other</option>
-                        </select>
-                        <input value={kycForm.governmentIdUrl} onChange={(e) => setKycForm({ ...kycForm, governmentIdUrl: e.target.value })} className="input-field" placeholder="Government ID URL" required />
-                        <input value={kycForm.selfieWithIdUrl} onChange={(e) => setKycForm({ ...kycForm, selfieWithIdUrl: e.target.value })} className="input-field sm:col-span-2" placeholder="Selfie with ID URL" required />
-                      </div>
-                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        <input type="checkbox" checked={kycForm.isCompany} onChange={(e) => setKycForm({ ...kycForm, isCompany: e.target.checked })} className="h-4 w-4 rounded text-primary-600" />
-                        Company account
-                      </label>
-                      {kycForm.isCompany && (
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          <input value={kycForm.businessName} onChange={(e) => setKycForm({ ...kycForm, businessName: e.target.value })} className="input-field" placeholder="Business name" />
-                          <input value={kycForm.businessProofUrl} onChange={(e) => setKycForm({ ...kycForm, businessProofUrl: e.target.value })} className="input-field" placeholder="Business proof URL" required={kycForm.isCompany} />
-                        </div>
-                      )}
-                      <button className="btn-primary w-full">Submit KYC</button>
-                    </form>
-
-                    <form onSubmit={handleSubmitBank} className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-                      <p className="font-semibold text-gray-900">Bank Account</p>
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <input value={bankForm.accountHolderName} onChange={(e) => setBankForm({ ...bankForm, accountHolderName: e.target.value })} className="input-field" placeholder="Account holder name" required />
-                        <input value={bankForm.bankName} onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })} className="input-field" placeholder="Bank name" />
-                        <input value={bankForm.accountNumberLast4} onChange={(e) => setBankForm({ ...bankForm, accountNumberLast4: e.target.value.replace(/\D/g, '').slice(0, 4) })} className="input-field" placeholder="Account last 4" />
-                        <input value={bankForm.ifsc} onChange={(e) => setBankForm({ ...bankForm, ifsc: e.target.value })} className="input-field" placeholder="IFSC" />
-                        <input value={bankForm.upiId} onChange={(e) => setBankForm({ ...bankForm, upiId: e.target.value })} className="input-field" placeholder="UPI ID" />
-                        <input value={bankForm.bankProofUrl} onChange={(e) => setBankForm({ ...bankForm, bankProofUrl: e.target.value })} className="input-field" placeholder="Bank proof URL" />
-                      </div>
-                      <button className="btn-primary w-full">Submit Bank Details</button>
-                    </form>
                   </div>
                 </div>
 

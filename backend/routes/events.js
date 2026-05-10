@@ -10,7 +10,6 @@ const {
   getFeaturedEvents,
   getCategories
 } = require('../controllers/eventController');
-const { reportEvent } = require('../controllers/reportController');
 const { auth, hostAuth } = require('../middleware/auth');
 
 // @route   GET /api/events/featured
@@ -37,11 +36,6 @@ router.get('/', getEvents);
 // @desc    Get single event
 // @access  Public
 router.get('/:id', getEvent);
-
-// @route   POST /api/events/:id/report
-// @desc    Report a fake/suspicious event
-// @access  Private
-router.post('/:id/report', auth, reportEvent);
 
 // @route   POST /api/events
 // @desc    Create event

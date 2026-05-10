@@ -1,7 +1,5 @@
 const Review = require('../models/Review');
 const Event = require('../models/Event');
-const Booking = require('../models/Booking');
-const { syncHostRating } = require('../utils/trustSafety');
 
 // Create a review
 exports.createReview = async (req, res) => {
@@ -18,20 +16,6 @@ exports.createReview = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
-    const hasConfirmedBooking = await Booking.exists({
-      user: req.user.id,
-      event: eventId,
-      status: 'confirmed'
-    });
-
-    if (!hasConfirmedBooking) {
-      return res.status(403).json({ message: 'Only confirmed attendees can review this host after the event' });
-    }
-
-    if (event.date && new Date(event.date) > new Date()) {
-      return res.status(400).json({ message: 'Reviews open after the event date' });
-    }
-
     // Check if user has already reviewed this event
     const existingReview = await Review.findOne({ user: req.user.id, event: eventId });
     if (existingReview) {
@@ -41,13 +25,11 @@ exports.createReview = async (req, res) => {
     const review = new Review({
       user: req.user.id,
       event: eventId,
-      host: event.organizer,
       rating,
       comment: comment || ''
     });
 
     await review.save();
-    await syncHostRating(event.organizer, { req });
 
     res.status(201).json({ message: 'Review submitted successfully', review });
   } catch (error) {
@@ -102,13 +84,8 @@ exports.updateReview = async (req, res) => {
 
     if (rating) review.rating = rating;
     if (comment !== undefined) review.comment = comment;
-    if (!review.host) {
-      const event = await Event.findById(review.event).select('organizer');
-      if (event?.organizer) review.host = event.organizer;
-    }
 
     await review.save();
-    await syncHostRating(review.host, { req });
     res.json({ message: 'Review updated successfully', review });
   } catch (error) {
     console.error('Update review error:', error);
@@ -124,9 +101,7 @@ exports.deleteReview = async (req, res) => {
       return res.status(404).json({ message: 'Review not found' });
     }
 
-    const hostId = review.host;
     await Review.findByIdAndDelete(req.params.id);
-    await syncHostRating(hostId, { req });
     res.json({ message: 'Review deleted successfully' });
   } catch (error) {
     console.error('Delete review error:', error);
