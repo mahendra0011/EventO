@@ -215,7 +215,7 @@ function AppContent() {
   const hideFooter = location.pathname.includes('/chat');
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="flex min-h-screen flex-col bg-slate-50">
       <Navbar />
       <main className="flex-grow">
         <AnimatedRoutes />
@@ -226,10 +226,11 @@ function AppContent() {
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#363636',
+            background: '#0f172a',
             color: '#fff',
-            borderRadius: '10px',
+            borderRadius: '8px',
             padding: '16px',
+            boxShadow: '0 20px 45px rgba(15, 23, 42, 0.18)',
           },
           success: {
             duration: 3000,

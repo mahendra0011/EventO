@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
-import { Menu, X, Calendar, User, LogOut, Settings, Bell, Check, Shield } from 'lucide-react';
+import { Menu, X, CalendarDays, User, LogOut, Settings, Bell, Check, Shield, ArrowRight } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -58,11 +58,16 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 12);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+    setShowNotifications(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
@@ -94,410 +99,272 @@ const Navbar = () => {
     setShowNotifications(false);
   };
 
+  const accountLink = user?.role === 'admin'
+    ? { to: '/admin', label: 'Admin Panel', icon: Shield }
+    : user?.role === 'host'
+      ? { to: '/host', label: 'Host Panel', icon: Settings }
+      : { to: '/dashboard', label: 'Dashboard', icon: User };
+
+  const AccountIcon = accountLink.icon;
+
   return (
     <motion.nav
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/95 backdrop-blur-md shadow-lg' 
-          : 'bg-white shadow-sm'
+      className={`sticky top-0 z-50 border-b transition-all duration-300 ${
+        scrolled
+          ? 'border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-xl'
+          : 'border-transparent bg-white/95 backdrop-blur'
       }`}
-      initial={{ y: -100 }}
+      initial={{ y: -80 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo */}
-          <motion.div 
-            className="flex items-center"
-            whileHover={{ scale: 1.05 }}
-          >
-            <Link to="/" className="flex items-center space-x-2">
-              <motion.div
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.6 }}
-              >
-                <Calendar className="h-8 w-8 text-primary-600" />
-              </motion.div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-                Evento
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-20 items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-3" aria-label="Evento home">
+            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white shadow-lg shadow-slate-900/15">
+              <CalendarDays className="h-6 w-6" />
+            </span>
+            <span className="leading-none">
+              <span className="block text-xl font-extrabold tracking-tight text-slate-950">Evento</span>
+              <span className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 sm:block">
+                Events made easy
               </span>
-            </Link>
-          </motion.div>
+            </span>
+          </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navLinks.map((link, index) => (
-              <motion.div
+          <div className="hidden items-center gap-2 md:flex">
+            {navLinks.map((link) => (
+              <Link
                 key={link.to}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                to={link.to}
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                  isActive(link.to)
+                    ? 'bg-slate-950 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
+                }`}
               >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          <div className="hidden items-center gap-3 md:flex">
+            {user ? (
+              <>
                 <Link
-                  to={link.to}
-                  className={`relative px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                    isActive(link.to)
-                      ? 'text-primary-600'
-                      : 'text-gray-700 hover:text-primary-600'
+                  to={accountLink.to}
+                  className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                    isActive(accountLink.to)
+                      ? 'bg-primary-50 text-primary-700'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
                   }`}
                 >
-                  {link.label}
-                  {isActive(link.to) && (
-                    <motion.div
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary-600 to-secondary-600"
-                      layoutId="navbar-indicator"
-                      initial={false}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  )}
+                  <AccountIcon className="h-4 w-4" />
+                  {accountLink.label}
                 </Link>
-              </motion.div>
-            ))}
 
-             {user ? (
-               <motion.div 
-                 className="flex items-center space-x-2 ml-4"
-                 initial={{ opacity: 0, x: 20 }}
-                 animate={{ opacity: 1, x: 0 }}
-                 transition={{ delay: 0.3 }}
-               >
-                 {user.role !== 'host' && user.role !== 'admin' && (
-                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                     <Link
-                       to="/dashboard"
-                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                         isActive('/dashboard')
-                           ? 'bg-primary-50 text-primary-600'
-                           : 'text-gray-700 hover:bg-gray-100'
-                       }`}
-                     >
-                       <User className="h-4 w-4" />
-                       <span>Dashboard</span>
-                     </Link>
-                   </motion.div>
-                 )}
-                 
-                 {user.role === 'host' && (
-                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                     <Link
-                       to="/host"
-                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                         isActive('/host')
-                           ? 'bg-primary-50 text-primary-600'
-                           : 'text-gray-700 hover:bg-gray-100'
-                       }`}
-                     >
-                       <Settings className="h-4 w-4" />
-                       <span>Host Panel</span>
-                     </Link>
-                   </motion.div>
-                 )}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative rounded-lg border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm transition-all hover:border-primary-200 hover:text-primary-700"
+                    aria-label="Open notifications"
+                  >
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
 
-                 {user.role === 'admin' && (
-                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                     <Link
-                       to="/admin"
-                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
-                         isActive('/admin')
-                           ? 'bg-primary-50 text-primary-600'
-                           : 'text-gray-700 hover:bg-gray-100'
-                       }`}
-                     >
-                       <Shield className="h-4 w-4" />
-                       <span>Admin Panel</span>
-                     </Link>
-                   </motion.div>
-                 )}
+                  <AnimatePresence>
+                    {showNotifications && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        className="absolute right-0 mt-3 w-96 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl shadow-slate-900/15"
+                      >
+                        <div className="flex items-center justify-between border-b border-slate-100 p-4">
+                          <div>
+                            <h4 className="font-bold text-slate-950">Notifications</h4>
+                            <p className="text-xs text-slate-500">
+                              {unreadCount > 0 ? `${unreadCount} unread updates` : 'All caught up'}
+                            </p>
+                          </div>
+                          {unreadCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={handleMarkAllAsRead}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-primary-700 hover:text-primary-800"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                              Mark read
+                            </button>
+                          )}
+                        </div>
+                        <div className="max-h-96 overflow-y-auto">
+                          {notifications.length > 0 ? (
+                            notifications.map((notification) => (
+                              <button
+                                type="button"
+                                key={notification._id}
+                                className={`w-full border-b border-slate-100 p-4 text-left transition-colors hover:bg-slate-50 ${
+                                  !notification.isRead ? 'bg-primary-50/60' : ''
+                                }`}
+                                onClick={() => openNotification(notification)}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <span className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ${
+                                    !notification.isRead ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-500'
+                                  }`}>
+                                    <Bell className="h-4 w-4" />
+                                  </span>
+                                  <span className="min-w-0 flex-1">
+                                    <span className="block truncate text-sm font-bold text-slate-900">{notification.title}</span>
+                                    <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">{notification.message}</span>
+                                    <span className="mt-1 block text-xs text-slate-400">
+                                      {new Date(notification.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </span>
+                                  {!notification.isRead && (
+                                    <span className="mt-2 h-2 w-2 rounded-full bg-primary-500" />
+                                  )}
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-10 text-center text-slate-500">
+                              <Bell className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                              <p className="font-medium">No notifications</p>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-                 {/* Notifications */}
-                 <div className="relative">
-                   <motion.button
-                     onClick={() => setShowNotifications(!showNotifications)}
-                     className="relative p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-all"
-                     whileHover={{ scale: 1.05 }}
-                     whileTap={{ scale: 0.95 }}
-                   >
-                     <Bell className="h-5 w-5" />
-                     {unreadCount > 0 && (
-                       <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                         {unreadCount > 9 ? '9+' : unreadCount}
-                       </span>
-                     )}
-                   </motion.button>
-
-                   <AnimatePresence>
-                     {showNotifications && (
-                       <motion.div
-                         initial={{ opacity: 0, y: -10 }}
-                         animate={{ opacity: 1, y: 0 }}
-                         exit={{ opacity: 0, y: -10 }}
-                         className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50"
-                       >
-                         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                           <h4 className="font-semibold">Notifications</h4>
-                           {unreadCount > 0 && (
-                             <button
-                               onClick={handleMarkAllAsRead}
-                               className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
-                             >
-                               <Check className="h-3 w-3" />
-                               Mark all read
-                             </button>
-                           )}
-                         </div>
-                         <div className="max-h-80 overflow-y-auto">
-                           {notifications.length > 0 ? (
-                             notifications.map((notification) => (
-                               <div
-                                 key={notification._id}
-                                 className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${
-                                   !notification.isRead ? 'bg-blue-50/50' : ''
-                                 }`}
-                                 onClick={() => openNotification(notification)}
-                               >
-                                 <div className="flex items-start gap-3">
-                                   <div className={`p-2 rounded-full ${!notification.isRead ? 'bg-primary-100' : 'bg-gray-100'}`}>
-                                     <Bell className={`h-4 w-4 ${!notification.isRead ? 'text-primary-600' : 'text-gray-500'}`} />
-                                   </div>
-                                   <div className="flex-1 min-w-0">
-                                     <h5 className="font-medium text-sm line-clamp-1">{notification.title}</h5>
-                                     <p className="text-xs text-gray-500 line-clamp-2 mt-1">{notification.message}</p>
-                                     <p className="text-xs text-gray-400 mt-1">
-                                       {new Date(notification.createdAt).toLocaleDateString()}
-                                     </p>
-                                   </div>
-                                   {!notification.isRead && (
-                                     <div className="w-2 h-2 bg-primary-500 rounded-full mt-2 flex-shrink-0" />
-                                   )}
-                                 </div>
-                               </div>
-                             ))
-                           ) : (
-                             <div className="p-8 text-center text-gray-500">
-                               <Bell className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                               <p>No notifications</p>
-                             </div>
-                           )}
-                         </div>
-                       </motion.div>
-                     )}
-                   </AnimatePresence>
-                 </div>
-
-                 <motion.button
-                   onClick={handleLogout}
-                   className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 transition-all duration-300"
-                   whileHover={{ scale: 1.05 }}
-                   whileTap={{ scale: 0.95 }}
-                 >
-                   <LogOut className="h-4 w-4" />
-                   <span>Logout</span>
-                 </motion.button>
-               </motion.div>
-              ) : (
-                <motion.div
-                  className="flex items-center space-x-3 ml-4"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-red-50 hover:text-red-600"
                 >
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Link
-                      to="/login"
-                      className="px-4 py-2 rounded-lg font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all duration-300"
-                    >
-                      Login
-                    </Link>
-                  </motion.div>
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Link
-                      to="/register"
-                      className="px-6 py-2 rounded-lg font-semibold bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 shadow-lg hover:shadow-xl transition-all duration-300"
-                    >
-                      Sign Up
-                    </Link>
-                  </motion.div>
-                </motion.div>
-              )}
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-950"
+                >
+                  Login
+                </Link>
+                <Link to="/register" className="btn-primary px-5 py-2.5 text-sm">
+                  Sign Up
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </>
+            )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <motion.button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-700 hover:text-primary-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </motion.button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="rounded-lg border border-slate-200 bg-white p-2.5 text-slate-700 shadow-sm md:hidden"
+            aria-label="Toggle navigation menu"
+          >
+            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
 
-        {/* Mobile Navigation */}
         <AnimatePresence>
           {isMenuOpen && (
             <motion.div
-              className="md:hidden pb-4"
+              className="md:hidden"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              transition={{ duration: 0.25 }}
             >
-              <div className="flex flex-col space-y-2 pt-4 border-t border-gray-100">
-                {navLinks.map((link, index) => (
-                  <motion.div
+              <div className="space-y-2 border-t border-slate-100 py-4">
+                {navLinks.map((link) => (
+                  <Link
                     key={link.to}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    to={link.to}
+                    className={`block rounded-lg px-4 py-3 text-sm font-semibold ${
+                      isActive(link.to)
+                        ? 'bg-slate-950 text-white'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
                   >
-                    <Link
-                      to={link.to}
-                      className={`px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
-                        isActive(link.to)
-                          ? 'bg-primary-50 text-primary-600'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {link.label}
-                    </Link>
-                  </motion.div>
+                    {link.label}
+                  </Link>
                 ))}
 
-                 {user ? (
-                   <>
-                     {user.role !== 'host' && user.role !== 'admin' && (
-                       <motion.div
-                         initial={{ opacity: 0, x: -20 }}
-                         animate={{ opacity: 1, x: 0 }}
-                         transition={{ delay: 0.2 }}
-                       >
-                         <Link
-                           to="/dashboard"
-                           className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
-                             isActive('/dashboard')
-                               ? 'bg-primary-50 text-primary-600'
-                               : 'text-gray-700 hover:bg-gray-100'
-                           }`}
-                           onClick={() => setIsMenuOpen(false)}
-                         >
-                           <User className="h-4 w-4" />
-                           <span>Dashboard</span>
-                         </Link>
-                       </motion.div>
-                     )}
-                     
-                     {user.role === 'host' && (
-                       <motion.div
-                         initial={{ opacity: 0, x: -20 }}
-                         animate={{ opacity: 1, x: 0 }}
-                         transition={{ delay: 0.3 }}
-                       >
-                         <Link
-                           to="/host"
-                           className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
-                             isActive('/host')
-                               ? 'bg-primary-50 text-primary-600'
-                               : 'text-gray-700 hover:bg-gray-100'
-                           }`}
-                           onClick={() => setIsMenuOpen(false)}
-                         >
-                           <Settings className="h-4 w-4" />
-                           <span>Host Panel</span>
-                         </Link>
-                       </motion.div>
-                     )}
-
-                     {user.role === 'admin' && (
-                       <motion.div
-                         initial={{ opacity: 0, x: -20 }}
-                         animate={{ opacity: 1, x: 0 }}
-                         transition={{ delay: 0.3 }}
-                       >
-                         <Link
-                           to="/admin"
-                           className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
-                             isActive('/admin')
-                               ? 'bg-primary-50 text-primary-600'
-                               : 'text-gray-700 hover:bg-gray-100'
-                           }`}
-                           onClick={() => setIsMenuOpen(false)}
-                         >
-                           <Shield className="h-4 w-4" />
-                           <span>Admin Panel</span>
-                         </Link>
-                       </motion.div>
-                     )}
-
-                     <motion.div
-                       initial={{ opacity: 0, x: -20 }}
-                       animate={{ opacity: 1, x: 0 }}
-                       transition={{ delay: 0.35 }}
-                     >
-                       <button
-                         onClick={() => {
-                           navigate(user.role === 'admin' ? '/admin?tab=notifications' : user.role === 'host' ? '/host?tab=notifications' : '/dashboard?tab=notifications');
-                           setIsMenuOpen(false);
-                         }}
-                         className="flex items-center space-x-2 px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-all duration-300 w-full"
-                       >
-                         <Bell className="h-4 w-4" />
-                         <span>Notifications</span>
-                         {unreadCount > 0 && (
-                           <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                             {unreadCount}
-                           </span>
-                         )}
-                       </button>
-                     </motion.div>
-
-                    <motion.button
+                {user ? (
+                  <>
+                    <Link
+                      to={accountLink.to}
+                      className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold ${
+                        isActive(accountLink.to)
+                          ? 'bg-primary-50 text-primary-700'
+                          : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <AccountIcon className="h-4 w-4" />
+                      {accountLink.label}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigate(user.role === 'admin' ? '/admin?tab=notifications' : user.role === 'host' ? '/host?tab=notifications' : '/dashboard?tab=notifications');
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Bell className="h-4 w-4" />
+                        Notifications
+                      </span>
+                      {unreadCount > 0 && (
+                        <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => {
                         handleLogout();
                         setIsMenuOpen(false);
                       }}
-                      className="flex items-center space-x-2 px-4 py-3 rounded-lg font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 transition-all duration-300 text-left"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 }}
+                      className="flex w-full items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-red-50 hover:text-red-600"
                     >
                       <LogOut className="h-4 w-4" />
-                      <span>Logout</span>
-                    </motion.button>
-                   </>
-                  ) : (
-                    <>
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        <Link
-                          to="/login"
-                          className="px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-100 transition-all duration-300"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          Login
-                        </Link>
-                      </motion.div>
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 }}
-                      >
-                        <Link
-                          to="/register"
-                          className="px-4 py-3 rounded-lg font-semibold bg-gradient-to-r from-primary-600 to-primary-700 text-white text-center hover:from-primary-700 hover:to-primary-800 transition-all duration-300"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          Sign Up
-                        </Link>
-                      </motion.div>
-                    </>
-                  )}
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-3 text-sm font-bold text-white"
+                    >
+                      Sign Up
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </>
+                )}
               </div>
             </motion.div>
           )}

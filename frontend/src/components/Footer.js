@@ -1,113 +1,105 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { CalendarDays, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, ArrowRight } from 'lucide-react';
 
 const Footer = () => {
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="col-span-1">
-            <Link to="/" className="flex items-center space-x-2 mb-4">
-              <Calendar className="h-8 w-8 text-primary-400" />
-              <span className="text-2xl font-bold">Evento</span>
+    <footer className="bg-slate-950 text-white">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
+          <div>
+            <Link to="/" className="inline-flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-slate-950">
+                <CalendarDays className="h-6 w-6" />
+              </span>
+              <span>
+                <span className="block text-2xl font-extrabold tracking-tight">Evento</span>
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  Events made easy
+                </span>
+              </span>
             </Link>
-            <p className="text-gray-400 mb-4">
-              Your premier destination for discovering and booking amazing events.
+            <p className="mt-5 max-w-sm leading-7 text-slate-400">
+              Discover memorable experiences, book with confidence, and give hosts a cleaner way to manage attendees.
             </p>
-            <div className="flex space-x-4">
-              <button type="button" className="text-gray-400 hover:text-primary-400 transition-colors" aria-label="Facebook">
-                <Facebook className="h-5 w-5" />
-              </button>
-              <button type="button" className="text-gray-400 hover:text-primary-400 transition-colors" aria-label="Twitter">
-                <Twitter className="h-5 w-5" />
-              </button>
-              <button type="button" className="text-gray-400 hover:text-primary-400 transition-colors" aria-label="Instagram">
-                <Instagram className="h-5 w-5" />
-              </button>
-              <button type="button" className="text-gray-400 hover:text-primary-400 transition-colors" aria-label="LinkedIn">
-                <Linkedin className="h-5 w-5" />
-              </button>
+            <div className="mt-6 flex gap-3">
+              {[
+                { icon: Facebook, label: 'Facebook' },
+                { icon: Twitter, label: 'Twitter' },
+                { icon: Instagram, label: 'Instagram' },
+                { icon: Linkedin, label: 'LinkedIn' }
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition-colors hover:border-primary-400 hover:text-white"
+                  aria-label={item.label}
+                >
+                  <item.icon className="h-5 w-5" />
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/" className="text-gray-400 hover:text-white transition-colors">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link to="/events" className="text-gray-400 hover:text-white transition-colors">
-                  Events
-                </Link>
-              </li>
-              <li>
-                <Link to="/login" className="text-gray-400 hover:text-white transition-colors">
-                  Login
-                </Link>
-              </li>
-              <li>
-                <Link to="/register" className="text-gray-400 hover:text-white transition-colors">
-                  Sign Up
-                </Link>
-              </li>
+            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-300">Platform</h3>
+            <ul className="mt-5 space-y-3">
+              {[
+                { to: '/', label: 'Home' },
+                { to: '/events', label: 'Events' },
+                { to: '/login', label: 'Login' },
+                { to: '/register', label: 'Sign Up' }
+              ].map((link) => (
+                <li key={link.to}>
+                  <Link to={link.to} className="text-slate-400 transition-colors hover:text-white">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Categories */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Categories</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/events?category=Music" className="text-gray-400 hover:text-white transition-colors">
-                  Music
-                </Link>
-              </li>
-              <li>
-                <Link to="/events?category=Technology" className="text-gray-400 hover:text-white transition-colors">
-                  Technology
-                </Link>
-              </li>
-              <li>
-                <Link to="/events?category=Sports" className="text-gray-400 hover:text-white transition-colors">
-                  Sports
-                </Link>
-              </li>
-              <li>
-                <Link to="/events?category=Business" className="text-gray-400 hover:text-white transition-colors">
-                  Business
-                </Link>
-              </li>
+            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-300">Categories</h3>
+            <ul className="mt-5 space-y-3">
+              {['Music', 'Technology', 'Sports', 'Business'].map((category) => (
+                <li key={category}>
+                  <Link to={`/events?category=${category}`} className="text-slate-400 transition-colors hover:text-white">
+                    {category}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Contact */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
-            <ul className="space-y-3">
-              <li className="flex items-center space-x-3 text-gray-400">
-                <MapPin className="h-5 w-5" />
+            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-300">Contact</h3>
+            <ul className="mt-5 space-y-4">
+              <li className="flex gap-3 text-slate-400">
+                <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary-300" />
                 <span>123 Event Street, City, Country</span>
               </li>
-              <li className="flex items-center space-x-3 text-gray-400">
-                <Mail className="h-5 w-5" />
+              <li className="flex gap-3 text-slate-400">
+                <Mail className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary-300" />
                 <span>support@evento.com</span>
               </li>
-              <li className="flex items-center space-x-3 text-gray-400">
-                <Phone className="h-5 w-5" />
+              <li className="flex gap-3 text-slate-400">
+                <Phone className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary-300" />
                 <span>+1 (555) 123-4567</span>
               </li>
             </ul>
+            <Link to="/register?host=true" className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-primary-200 hover:text-white">
+              Become a host
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} Evento. All rights reserved.</p>
+        <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+          <p>&copy; {year} Evento. All rights reserved.</p>
+          <p>Designed for event discovery, ticketing, and host operations.</p>
         </div>
       </div>
     </footer>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { Mail, Lock, Eye, EyeOff, Calendar, Key, Shield } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, CalendarDays, Key, Shield, ArrowRight, CheckCircle } from 'lucide-react';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -33,7 +33,6 @@ const Login = () => {
             }
 
             if (response.requiresVerification || response.requiresOTP) {
-                // Redirect to verification page for OTP
                 navigate('/verify-email', {
                     state: {
                         from: 'login',
@@ -63,141 +62,154 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full">
-                <div className="bg-white rounded-xl shadow-2xl p-8">
-                    {/* Logo */}
-                    <div className="text-center mb-8">
-                        <Link to="/" className="inline-flex items-center space-x-2">
-                            <Calendar className="h-10 w-10 text-primary-600" />
-                            <span className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-                                Evento
+        <div className="min-h-screen bg-slate-50">
+            <div className="mx-auto grid min-h-screen max-w-7xl px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8">
+                <div className="relative hidden overflow-hidden rounded-lg bg-slate-950 lg:block">
+                    <img
+                        src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=1400&q=85"
+                        alt="Event audience in a professional venue"
+                        className="absolute inset-0 h-full w-full object-cover opacity-55"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/65 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-10 text-white">
+                        <Link to="/" className="mb-8 inline-flex items-center gap-3">
+                            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-slate-950">
+                                <CalendarDays className="h-6 w-6" />
                             </span>
+                            <span className="text-2xl font-extrabold">Evento</span>
                         </Link>
-                        <h2 className="mt-4 text-2xl font-bold text-gray-900">
-                            {isHost ? 'Host Access' : 'Welcome back!'}
-                        </h2>
-                        <p className="mt-2 text-gray-600">
-                            {isHost ? 'Enter secret keyword to access host panel' : 'Sign in to your account'}
-                        </p>
-                    </div>
-
-                    {/* Host Checkbox Toggle */}
-                    <div className="mb-6">
-                        <label className="flex items-center justify-center space-x-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={isHost}
-                                onChange={(e) => setIsHost(e.target.checked)}
-                                className="w-4 h-4 text-secondary-600 rounded focus:ring-secondary-500"
-                            />
-                            <span className="text-sm font-medium text-gray-700">Login as Host</span>
-                            <Shield className="h-4 w-4 text-secondary-600" />
-                        </label>
-                    </div>
-
-                    {/* Form */}
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Email (always required) */}
-                        <div>
-                            <label htmlFor="email" className="label">Email Address</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                <input
-                                    id="email"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                    className="input-field pl-10"
-                                    placeholder="you@example.com"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Password (always required) */}
-                        <div>
-                            <div className="flex items-center justify-between">
-                                <label htmlFor="password" className="label">Password</label>
-                                <Link to="/forgot-password" className="mb-2 text-sm font-semibold text-primary-600 hover:text-primary-700">
-                                    Forgot password?
-                                </Link>
-                            </div>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                <input
-                                    id="password"
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    className="input-field pl-10 pr-10"
-                                    placeholder="••••••••"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                >
-                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Host Keyword (only for host login) */}
-                        {isHost && (
-                            <div>
-                                <label htmlFor="hostKeyword" className="label">
-                                    <span className="flex items-center text-secondary-700">
-                                        <Key className="h-4 w-4 mr-2" />
-                                        Host Secret Keyword *
-                                    </span>
-                                </label>
-                                <div className="relative">
-                                    <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                    <input
-                                        id="hostKeyword"
-                                        type="password"
-                                        value={hostKeyword}
-                                        onChange={(e) => setHostKeyword(e.target.value)}
-                                        required={isHost}
-                                        className="input-field pl-10 border-2 border-secondary-300 focus:border-secondary-500"
-                                        placeholder="Enter host keyword"
-                                    />
+                        <h1 className="max-w-xl text-4xl font-extrabold tracking-tight">
+                            Welcome back to your event workspace.
+                        </h1>
+                        <div className="mt-6 grid gap-3 text-sm font-semibold text-slate-200">
+                            {['Track bookings and tickets', 'Join event communities', 'Manage host operations'].map((item) => (
+                                <div key={item} className="flex items-center gap-3">
+                                    <CheckCircle className="h-5 w-5 text-primary-200" />
+                                    {item}
                                 </div>
-                            </div>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full btn-primary"
-                        >
-                            {loading ? 'Signing in...' : (isHost ? 'Access Host Panel' : 'Sign In')}
-                        </button>
-                    </form>
-
-                    {/* Register Link */}
-                    <div className="mt-6 text-center">
-                        <p className="text-gray-600">
-                            Don't have an account?{' '}
-                            <Link to="/register" className="text-primary-600 hover:text-primary-700 font-semibold">
-                                Create Account
-                            </Link>
-                        </p>
+                            ))}
+                        </div>
                     </div>
+                </div>
 
-                    {/* Info Box */}
-                    <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                        <p className="text-xs text-gray-600">
-                            <strong className="text-primary-700">Users:</strong> Use email & password to login.
-                            <br />
-                            <strong className="text-secondary-700">Hosts:</strong> Check "Login as Host" and enter secret keyword.
-                            <br />
-                            <Link to="/register" className="text-secondary-600 hover:text-secondary-700 font-semibold">
-                                Register as Host
-                            </Link>
-                        </p>
+                <div className="flex items-center justify-center lg:px-10">
+                    <div className="w-full max-w-md">
+                        <div className="surface-panel p-8">
+                            <div className="mb-8 text-center">
+                                <Link to="/" className="inline-flex items-center gap-3 lg:hidden">
+                                    <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white">
+                                        <CalendarDays className="h-6 w-6" />
+                                    </span>
+                                    <span className="text-2xl font-extrabold text-slate-950">Evento</span>
+                                </Link>
+                                <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-slate-950">
+                                    {isHost ? 'Host access' : 'Sign in'}
+                                </h2>
+                                <p className="mt-2 text-slate-500">
+                                    {isHost ? 'Use your host credentials and secret keyword.' : 'Continue to your bookings, wishlist, and event updates.'}
+                                </p>
+                            </div>
+
+                            <label className="mb-6 flex cursor-pointer items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
+                                <span className="flex items-center gap-3">
+                                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-primary-700 shadow-sm">
+                                        <Shield className="h-5 w-5" />
+                                    </span>
+                                    <span>
+                                        <span className="block text-sm font-bold text-slate-900">Login as host</span>
+                                        <span className="text-xs text-slate-500">Enable host panel authentication</span>
+                                    </span>
+                                </span>
+                                <input
+                                    type="checkbox"
+                                    checked={isHost}
+                                    onChange={(e) => setIsHost(e.target.checked)}
+                                    className="h-5 w-5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                                />
+                            </label>
+
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                <div>
+                                    <label htmlFor="email" className="label">Email Address</label>
+                                    <div className="relative">
+                                        <Mail className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            id="email"
+                                            type="email"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            required
+                                            className="input-field pl-10"
+                                            placeholder="you@example.com"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div className="flex items-center justify-between">
+                                        <label htmlFor="password" className="label">Password</label>
+                                        <Link to="/forgot-password" className="mb-2 text-sm font-bold text-primary-700 hover:text-primary-800">
+                                            Forgot password?
+                                        </Link>
+                                    </div>
+                                    <div className="relative">
+                                        <Lock className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                                        <input
+                                            id="password"
+                                            type={showPassword ? 'text' : 'password'}
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            required
+                                            className="input-field pl-10 pr-10"
+                                            placeholder="Enter password"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        >
+                                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {isHost && (
+                                    <div>
+                                        <label htmlFor="hostKeyword" className="label">
+                                            <span className="flex items-center text-primary-700">
+                                                <Key className="mr-2 h-4 w-4" />
+                                                Host secret keyword
+                                            </span>
+                                        </label>
+                                        <div className="relative">
+                                            <Shield className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                id="hostKeyword"
+                                                type="password"
+                                                value={hostKeyword}
+                                                onChange={(e) => setHostKeyword(e.target.value)}
+                                                required={isHost}
+                                                className="input-field pl-10"
+                                                placeholder="Enter host keyword"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <button type="submit" disabled={loading} className="btn-primary w-full">
+                                    {loading ? 'Signing in...' : (isHost ? 'Access host panel' : 'Sign in')}
+                                    {!loading && <ArrowRight className="h-4 w-4" />}
+                                </button>
+                            </form>
+
+                            <p className="mt-6 text-center text-sm text-slate-600">
+                                Do not have an account?{' '}
+                                <Link to="/register" className="font-bold text-primary-700 hover:text-primary-800">
+                                    Create account
+                                </Link>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
