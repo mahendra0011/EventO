@@ -154,23 +154,15 @@ const Home = () => {
   };
 
   return (
-    <div className="overflow-x-hidden bg-slate-50">
-      <section className="relative min-h-[calc(100vh-7rem)] overflow-hidden bg-slate-950 text-white">
-        <img
-          src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1800&q=85"
-          alt="Audience enjoying a live event"
-          className="absolute inset-0 h-full w-full object-cover opacity-45"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/88 to-slate-950/35" aria-hidden="true" />
-        <div className="absolute inset-0 subtle-grid opacity-20" aria-hidden="true" />
-
-        <div className="relative mx-auto flex min-h-[calc(100vh-7rem)] max-w-7xl items-center px-4 py-14 sm:px-6 lg:px-8">
-          <div className="max-w-4xl">
+    <div className="overflow-x-hidden bg-[#fbf8f4]">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-[#fff8f2] to-[#fbf8f4]">
+        <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
+          <div>
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-primary-100 backdrop-blur"
+              className="mb-7 inline-flex items-center gap-2 rounded-full bg-primary-100 px-4 py-2 text-sm font-extrabold text-primary-600"
             >
               <CalendarDays className="h-4 w-4" />
               Book events. Host events. Keep every detail moving.
@@ -180,7 +172,7 @@ const Home = () => {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.65 }}
-              className="text-6xl font-extrabold tracking-tight sm:text-7xl lg:text-8xl"
+              className="max-w-3xl text-5xl font-black leading-[0.95] tracking-tight text-cocoa-900 sm:text-6xl lg:text-7xl"
             >
               Evento
             </motion.h1>
@@ -189,7 +181,7 @@ const Home = () => {
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.55 }}
-              className="mt-6 max-w-2xl text-lg leading-8 text-slate-200 sm:text-xl"
+              className="mt-7 max-w-2xl text-lg leading-8 text-cocoa-500 sm:text-xl"
             >
               A polished event booking and management platform for discovering live experiences, selling tickets, verifying bookings, and keeping attendees informed.
             </motion.p>
@@ -199,16 +191,16 @@ const Home = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.55 }}
               onSubmit={handleSearch}
-              className="mt-9 grid max-w-3xl gap-3 rounded-lg border border-white/15 bg-white p-2 shadow-2xl shadow-slate-950/30 sm:grid-cols-[1fr_auto]"
+              className="mt-9 grid max-w-2xl gap-3 rounded-lg bg-white p-2 shadow-2xl shadow-cocoa-900/10 sm:grid-cols-[1fr_auto]"
             >
               <div className="relative">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-cocoa-300" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search concerts, workshops, conferences..."
-                  className="h-12 w-full rounded-lg border-0 bg-white pl-12 pr-4 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-0"
+                  className="h-12 w-full rounded-lg border-0 bg-white pl-12 pr-4 text-cocoa-900 outline-none placeholder:text-cocoa-300 focus:ring-0"
                 />
               </div>
               <button type="submit" className="btn-primary h-12 px-6">
@@ -221,37 +213,61 @@ const Home = () => {
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.55 }}
-              className="mt-8 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4"
+              className="mt-9 grid max-w-2xl grid-cols-2 gap-5 sm:grid-cols-4"
             >
               {stats.map((stat) => (
-                <div key={stat.label} className="border-l border-white/20 pl-4">
-                  <div className="text-2xl font-extrabold text-white">
+                <div key={stat.label}>
+                  <div className="text-2xl font-black text-cocoa-900">
                     <AnimatedCounter value={stat.value} />
                   </div>
-                  <div className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
+                  <div className="mt-1 text-xs font-extrabold uppercase tracking-wide text-cocoa-400">
                     {stat.label}
                   </div>
                 </div>
               ))}
             </motion.div>
           </div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.65 }}
+            className="relative"
+          >
+            <div className="overflow-hidden rounded-lg bg-white shadow-2xl shadow-cocoa-900/15">
+              <img
+                src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1400&q=85"
+                alt="Audience enjoying a live event"
+                className="h-[320px] w-full object-cover sm:h-[430px]"
+              />
+            </div>
+            <div className="absolute -bottom-7 left-6 flex items-center gap-4 rounded-lg bg-white px-5 py-4 shadow-2xl shadow-cocoa-900/15">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <CalendarDays className="h-6 w-6" />
+              </span>
+              <div>
+                <p className="font-black text-cocoa-900">Next Event</p>
+                <p className="text-sm font-semibold text-cocoa-400">Summer Music Fest - 2 days</p>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      <section className="border-b border-slate-200 bg-white">
+      <section className="border-b border-cocoa-100 bg-white">
         <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
           {trustItems.map((item) => (
             <div key={item.label} className="flex items-center gap-3">
-              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
                 <item.icon className="h-5 w-5" />
               </span>
-              <span className="text-sm font-bold text-slate-700">{item.label}</span>
+              <span className="text-sm font-extrabold text-cocoa-700">{item.label}</span>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="bg-slate-50 py-20">
+      <section className="bg-[#fbf8f4] py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-10 flex flex-col justify-between gap-5 md:flex-row md:items-end">
             <div>
@@ -259,10 +275,10 @@ const Home = () => {
                 <Ticket className="h-3.5 w-3.5" />
                 Trending now
               </span>
-              <h2 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+              <h2 className="text-3xl font-black tracking-tight text-cocoa-900 sm:text-4xl">
                 Featured events
               </h2>
-              <p className="mt-3 max-w-2xl text-slate-600">
+              <p className="mt-3 max-w-2xl text-cocoa-500">
                 A quick look at the events guests are discovering first.
               </p>
             </div>
@@ -276,20 +292,20 @@ const Home = () => {
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
               {[...Array(3)].map((_, index) => (
                 <div key={index} className="surface-panel overflow-hidden">
-                  <div className="h-56 animate-pulse bg-slate-200" />
+                  <div className="h-56 animate-pulse bg-cocoa-100" />
                   <div className="space-y-4 p-5">
-                    <div className="h-5 w-2/3 animate-pulse rounded bg-slate-200" />
-                    <div className="h-4 w-full animate-pulse rounded bg-slate-100" />
-                    <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100" />
+                    <div className="h-5 w-2/3 animate-pulse rounded bg-cocoa-100" />
+                    <div className="h-4 w-full animate-pulse rounded bg-primary-50" />
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-primary-50" />
                   </div>
                 </div>
               ))}
             </div>
           ) : featuredEvents.length === 0 ? (
             <div className="surface-panel flex flex-col items-center justify-center px-6 py-16 text-center">
-              <CalendarDays className="mb-4 h-12 w-12 text-slate-300" />
-              <h3 className="text-xl font-extrabold text-slate-950">Featured events are coming soon</h3>
-              <p className="mt-2 max-w-md text-slate-500">
+              <CalendarDays className="mb-4 h-12 w-12 text-primary-300" />
+              <h3 className="text-xl font-black text-cocoa-900">Featured events are coming soon</h3>
+              <p className="mt-2 max-w-md text-cocoa-500">
                 Explore all events or create an account to start hosting your own.
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -319,10 +335,10 @@ const Home = () => {
                 <Users className="h-3.5 w-3.5" />
                 Built for both sides
               </span>
-              <h2 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+              <h2 className="text-3xl font-black tracking-tight text-cocoa-900 sm:text-4xl">
                 One platform for guests and event teams.
               </h2>
-              <p className="mt-4 text-lg leading-8 text-slate-600">
+              <p className="mt-4 text-lg leading-8 text-cocoa-500">
                 Evento keeps the public experience simple while giving hosts the operational tools they need after publishing.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -342,8 +358,8 @@ const Home = () => {
                   <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-lg ${feature.color}`}>
                     <feature.icon className="h-6 w-6" />
                   </div>
-                  <h3 className="text-lg font-extrabold text-slate-950">{feature.title}</h3>
-                  <p className="mt-2 leading-7 text-slate-600">{feature.description}</p>
+                  <h3 className="text-lg font-black text-cocoa-900">{feature.title}</h3>
+                  <p className="mt-2 leading-7 text-cocoa-500">{feature.description}</p>
                 </div>
               ))}
             </div>
@@ -351,14 +367,14 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="bg-slate-50 py-20">
+      <section className="bg-[#f7f3ee] py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-10 text-center">
             <span className="section-kicker">
               <Search className="h-3.5 w-3.5" />
               Explore by interest
             </span>
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+            <h2 className="text-3xl font-black tracking-tight text-cocoa-900 sm:text-4xl">
               Find the category that fits your calendar.
             </h2>
           </div>
@@ -368,7 +384,7 @@ const Home = () => {
               <Link
                 key={category.label}
                 to={`/events?category=${category.label.toLowerCase()}`}
-                className={`group rounded-lg border bg-white p-5 text-center transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/10 ${category.color}`}
+                className={`group rounded-lg border bg-white p-6 text-center shadow-xl shadow-cocoa-900/5 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-cocoa-900/10 ${category.color}`}
               >
                 <category.icon className="mx-auto h-8 w-8 transition-transform group-hover:scale-110" />
                 <span className="mt-4 block text-base font-extrabold">{category.label}</span>
@@ -385,7 +401,7 @@ const Home = () => {
               <CheckCircle className="h-3.5 w-3.5" />
               Simple process
             </span>
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+            <h2 className="text-3xl font-black tracking-tight text-cocoa-900 sm:text-4xl">
               From discovery to the door in three steps.
             </h2>
           </div>
@@ -394,44 +410,38 @@ const Home = () => {
             {steps.map((step, index) => (
               <div key={step.title} className="surface-panel p-6">
                 <div className="mb-6 flex items-center justify-between">
-                  <span className="text-sm font-extrabold uppercase tracking-[0.2em] text-slate-400">
+                  <span className="text-sm font-extrabold uppercase tracking-[0.2em] text-cocoa-300">
                     Step {index + 1}
                   </span>
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-500 text-white">
                     <step.icon className="h-5 w-5" />
                   </span>
                 </div>
-                <h3 className="text-xl font-extrabold text-slate-950">{step.title}</h3>
-                <p className="mt-3 leading-7 text-slate-600">{step.description}</p>
+                <h3 className="text-xl font-black text-cocoa-900">{step.title}</h3>
+                <p className="mt-3 leading-7 text-cocoa-500">{step.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-slate-950 py-20 text-white">
-        <img
-          src="https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=1800&q=85"
-          alt="Conference audience and stage lighting"
-          className="absolute inset-0 h-full w-full object-cover opacity-30"
-        />
-        <div className="absolute inset-0 bg-slate-950/75" aria-hidden="true" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary-50 to-[#fff8f2] py-20 text-cocoa-900">
         <div className="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
-          <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-primary-100 backdrop-blur">
+          <span className="section-kicker">
             Ready when you are
           </span>
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-5xl">
+          <h2 className="text-3xl font-black tracking-tight sm:text-5xl">
             Make the next event easier to find, book, and manage.
           </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-200">
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-cocoa-500">
             Start with a guest account, or register as a host and bring your audience into one organized workspace.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link to="/register" className="btn-primary bg-white text-slate-950 hover:bg-slate-100">
+            <Link to="/register" className="btn-primary">
               Get started
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link to="/events" className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/25 px-6 py-3 font-semibold text-white transition-all hover:bg-white/10">
+            <Link to="/events" className="btn-secondary">
               Browse events
             </Link>
           </div>

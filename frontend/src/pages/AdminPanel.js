@@ -114,7 +114,7 @@ const StatusBadge = ({ children, tone = 'gray' }) => {
     red: 'bg-red-50 text-red-700 border-red-200',
     amber: 'bg-amber-50 text-amber-700 border-amber-200',
     blue: 'bg-blue-50 text-blue-700 border-blue-200',
-    gray: 'bg-gray-50 text-gray-700 border-gray-200'
+    gray: 'bg-[#fbf8f4] text-cocoa-700 border-cocoa-100'
   };
 
   return (
@@ -130,18 +130,18 @@ const StatCard = ({ icon: Icon, label, value, tone = 'blue' }) => {
     green: 'bg-green-50 text-green-700',
     amber: 'bg-amber-50 text-amber-700',
     red: 'bg-red-50 text-red-700',
-    slate: 'bg-slate-100 text-slate-700'
+    slate: 'bg-[#f3eee9] text-cocoa-700'
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
       <div className="flex items-center gap-4">
         <div className={`flex h-11 w-11 items-center justify-center rounded-lg ${tones[tone]}`}>
           <Icon className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-sm text-gray-500">{label}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm text-cocoa-400">{label}</p>
+          <p className="text-2xl font-bold text-cocoa-900">{value}</p>
         </div>
       </div>
     </div>
@@ -154,16 +154,16 @@ const ChartBars = ({ rows, labelFor, valueFor, valueLabel }) => {
   return (
     <div className="space-y-3">
       {rows.length === 0 ? (
-        <p className="text-sm text-gray-500">No data available</p>
+        <p className="text-sm text-cocoa-400">No data available</p>
       ) : rows.map((row, index) => {
         const value = Number(valueFor(row) || 0);
         return (
           <div key={`${labelFor(row)}-${index}`}>
             <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-700">{labelFor(row)}</span>
-              <span className="text-gray-500">{valueLabel ? valueLabel(value, row) : value}</span>
+              <span className="font-medium text-cocoa-700">{labelFor(row)}</span>
+              <span className="text-cocoa-400">{valueLabel ? valueLabel(value, row) : value}</span>
             </div>
-            <div className="h-2 rounded-full bg-gray-100">
+            <div className="h-2 rounded-full bg-[#f3eee9]">
               <div
                 className="h-2 rounded-full bg-primary-600"
                 style={{ width: `${Math.max(6, (value / max) * 100)}%` }}
@@ -555,7 +555,7 @@ const AdminPanel = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-[#fbf8f4]">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary-100 border-t-primary-600" />
       </div>
     );
@@ -565,8 +565,8 @@ const AdminPanel = () => {
   const charts = dashboard?.charts || {};
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="border-b border-gray-200 bg-white">
+    <div className="min-h-screen bg-[#fbf8f4]">
+      <div className="border-b border-cocoa-100 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -576,12 +576,12 @@ const AdminPanel = () => {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-950">Admin Console</h1>
-                  <p className="text-sm text-gray-500">Evento platform control center</p>
+                  <p className="text-sm text-cocoa-400">Evento platform control center</p>
                 </div>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Link to="/events" className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+              <Link to="/events" className="inline-flex items-center gap-2 rounded-lg border border-cocoa-200 bg-white px-4 py-2 text-sm font-semibold text-cocoa-700 hover:bg-[#fbf8f4]">
                 <Eye className="h-4 w-4" />
                 View Site
               </Link>
@@ -608,7 +608,7 @@ const AdminPanel = () => {
                   className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-[#f3eee9] text-cocoa-700 hover:bg-gray-200'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -638,8 +638,8 @@ const AdminPanel = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-                <h2 className="mb-4 text-lg font-semibold text-gray-900">Monthly Revenue</h2>
+              <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+                <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Monthly Revenue</h2>
                 <ChartBars
                   rows={charts.revenueByMonth || []}
                   labelFor={monthLabel}
@@ -647,8 +647,8 @@ const AdminPanel = () => {
                   valueLabel={(value) => money(value)}
                 />
               </section>
-              <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-                <h2 className="mb-4 text-lg font-semibold text-gray-900">Top-selling Events</h2>
+              <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+                <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Top-selling Events</h2>
                 <ChartBars
                   rows={charts.topEvents || []}
                   labelFor={(row) => row._id?.title || 'Deleted event'}
@@ -658,23 +658,23 @@ const AdminPanel = () => {
               </section>
             </div>
 
-            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Recent Bookings</h2>
+            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Recent Bookings</h2>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-[#fbf8f4]">
                     <tr>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">User</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Event</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Tickets</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Amount</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">User</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Event</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Tickets</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Amount</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {(dashboard?.recentBookings || []).map((booking) => (
                       <tr key={booking._id}>
-                        <td className="px-4 py-3">{booking.user?.name || 'Unknown'}<div className="text-xs text-gray-500">{booking.user?.email}</div></td>
+                        <td className="px-4 py-3">{booking.user?.name || 'Unknown'}<div className="text-xs text-cocoa-400">{booking.user?.email}</div></td>
                         <td className="px-4 py-3">{booking.event?.title || 'Deleted event'}</td>
                         <td className="px-4 py-3">{booking.numberOfTickets}</td>
                         <td className="px-4 py-3">{money(booking.totalPrice)}</td>
@@ -689,12 +689,12 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 'users' && (
-          <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
-            <div className="flex flex-col gap-3 border-b border-gray-200 p-5 lg:flex-row lg:items-center lg:justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">User Management</h2>
+          <section className="rounded-lg border border-cocoa-100 bg-white shadow-sm">
+            <div className="flex flex-col gap-3 border-b border-cocoa-100 p-5 lg:flex-row lg:items-center lg:justify-between">
+              <h2 className="text-lg font-semibold text-cocoa-900">User Management</h2>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cocoa-300" />
                   <input value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="input-field py-2 pl-9" placeholder="Search users" />
                 </div>
                 <select value={userRoleFilter} onChange={(e) => setUserRoleFilter(e.target.value)} className="input-field py-2">
@@ -714,22 +714,22 @@ const AdminPanel = () => {
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#fbf8f4]">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">User</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Role</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Joined</th>
-                    <th className="px-4 py-3 text-right font-semibold text-gray-600">Actions</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">User</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Role</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Status</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Joined</th>
+                    <th className="px-4 py-3 text-right font-semibold text-cocoa-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filteredUsers.map((item) => (
                     <tr key={item._id}>
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-gray-900">{item.name}</div>
-                        <div className="text-xs text-gray-500">{item.email}</div>
-                        {item.phone && <div className="text-xs text-gray-500">{item.phone}</div>}
+                        <div className="font-semibold text-cocoa-900">{item.name}</div>
+                        <div className="text-xs text-cocoa-400">{item.email}</div>
+                        {item.phone && <div className="text-xs text-cocoa-400">{item.phone}</div>}
                         {item.role === 'host' && (
                           <div className="mt-2 flex flex-wrap gap-1">
                             {(item.organizerDocuments || []).length > 0 ? item.organizerDocuments.map((doc, index) => (
@@ -744,7 +744,7 @@ const AdminPanel = () => {
                                 {doc.label || `Document ${index + 1}`}
                               </a>
                             )) : (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-500">
+                              <span className="inline-flex items-center gap-1 rounded-full border border-cocoa-100 bg-[#fbf8f4] px-2 py-0.5 text-xs text-cocoa-400">
                                 <FileText className="h-3 w-3" />
                                 No organizer docs
                               </span>
@@ -753,7 +753,7 @@ const AdminPanel = () => {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <select value={item.role} onChange={(e) => updateUser(item._id, { role: e.target.value })} className="rounded-lg border border-gray-300 px-2 py-1">
+                        <select value={item.role} onChange={(e) => updateUser(item._id, { role: e.target.value })} className="rounded-lg border border-cocoa-200 px-2 py-1">
                           <option value="user">user</option>
                           <option value="host">host</option>
                           <option value="admin">admin</option>
@@ -768,7 +768,7 @@ const AdminPanel = () => {
                       <td className="px-4 py-3">{formatDate(item.createdAt)}</td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => setEditingUser(item)} className="rounded-lg border border-gray-300 p-2 text-gray-600 hover:bg-gray-50" title="Edit user"><Edit className="h-4 w-4" /></button>
+                          <button onClick={() => setEditingUser(item)} className="rounded-lg border border-cocoa-200 p-2 text-cocoa-500 hover:bg-[#fbf8f4]" title="Edit user"><Edit className="h-4 w-4" /></button>
                           <button onClick={() => updateUser(item._id, { isBlocked: !item.isBlocked })} className="rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50" title={item.isBlocked ? 'Unblock user' : 'Block user'}><Lock className="h-4 w-4" /></button>
                           <button onClick={() => updateUser(item._id, { isVerified: !item.isVerified })} className="rounded-lg border border-blue-200 p-2 text-blue-700 hover:bg-blue-50" title="Toggle verification"><CheckCircle className="h-4 w-4" /></button>
                           <button onClick={() => deleteUser(item._id)} className="rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50" title="Delete user"><Trash2 className="h-4 w-4" /></button>
@@ -783,33 +783,33 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 'events' && (
-          <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
-            <div className="flex flex-col gap-3 border-b border-gray-200 p-5 lg:flex-row lg:items-center lg:justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Event Control</h2>
+          <section className="rounded-lg border border-cocoa-100 bg-white shadow-sm">
+            <div className="flex flex-col gap-3 border-b border-cocoa-100 p-5 lg:flex-row lg:items-center lg:justify-between">
+              <h2 className="text-lg font-semibold text-cocoa-900">Event Control</h2>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cocoa-300" />
                 <input value={eventSearch} onChange={(e) => setEventSearch(e.target.value)} className="input-field py-2 pl-9" placeholder="Search events" />
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#fbf8f4]">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Event</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Organizer</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Tickets</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Flags</th>
-                    <th className="px-4 py-3 text-right font-semibold text-gray-600">Actions</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Event</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Organizer</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Tickets</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Flags</th>
+                    <th className="px-4 py-3 text-right font-semibold text-cocoa-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filteredEvents.map((event) => (
                     <tr key={event._id}>
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-gray-900">{event.title}</div>
-                        <div className="text-xs text-gray-500">{event.category} / {formatDate(event.date)} / {event.venue}</div>
+                        <div className="font-semibold text-cocoa-900">{event.title}</div>
+                        <div className="text-xs text-cocoa-400">{event.category} / {formatDate(event.date)} / {event.venue}</div>
                       </td>
-                      <td className="px-4 py-3">{event.organizer?.name || 'Unknown'}<div className="text-xs text-gray-500">{event.organizer?.email}</div></td>
+                      <td className="px-4 py-3">{event.organizer?.name || 'Unknown'}<div className="text-xs text-cocoa-400">{event.organizer?.email}</div></td>
                       <td className="px-4 py-3">{event.totalTickets - event.availableTickets} sold / {event.availableTickets} left</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
@@ -826,8 +826,8 @@ const AdminPanel = () => {
                           <button onClick={() => sendEventReminder(event._id)} className="rounded-lg border border-green-200 p-2 text-green-700 hover:bg-green-50" title="Send reminder"><Bell className="h-4 w-4" /></button>
                           <button onClick={() => updateEvent(event._id, { moderationStatus: 'approved', moderationFlags: [] })} className="rounded-lg border border-green-200 p-2 text-green-700 hover:bg-green-50" title="Approve event"><CheckCircle className="h-4 w-4" /></button>
                           <button onClick={() => updateEvent(event._id, { moderationStatus: 'rejected', isActive: false, moderationFlags: ['other'] })} className="rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50" title="Reject event"><XCircle className="h-4 w-4" /></button>
-                          <button onClick={() => updateEvent(event._id, { isActive: !event.isActive })} className="rounded-lg border border-gray-300 p-2 text-gray-700 hover:bg-gray-50" title="Toggle active"><Flag className="h-4 w-4" /></button>
-                          <button onClick={() => openEventEditor(event)} className="rounded-lg border border-gray-300 p-2 text-gray-600 hover:bg-gray-50" title="Edit event"><Edit className="h-4 w-4" /></button>
+                          <button onClick={() => updateEvent(event._id, { isActive: !event.isActive })} className="rounded-lg border border-cocoa-200 p-2 text-cocoa-700 hover:bg-[#fbf8f4]" title="Toggle active"><Flag className="h-4 w-4" /></button>
+                          <button onClick={() => openEventEditor(event)} className="rounded-lg border border-cocoa-200 p-2 text-cocoa-500 hover:bg-[#fbf8f4]" title="Edit event"><Edit className="h-4 w-4" /></button>
                           <button onClick={() => deleteEvent(event._id)} className="rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50" title="Delete event"><Trash2 className="h-4 w-4" /></button>
                         </div>
                       </td>
@@ -840,10 +840,10 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 'categories' && (
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
               <Folder className="h-5 w-5 text-primary-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Event Categories</h2>
+              <h2 className="text-lg font-semibold text-cocoa-900">Event Categories</h2>
             </div>
             <form onSubmit={createCategory} className="mb-5 flex flex-col gap-2 sm:flex-row">
               <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="input-field" placeholder="Category name" />
@@ -851,7 +851,7 @@ const AdminPanel = () => {
             </form>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               {categories.map((category) => (
-                <div key={category._id} className="rounded-lg border border-gray-200 p-4">
+                <div key={category._id} className="rounded-lg border border-cocoa-100 p-4">
                   {editingCategoryId === category._id ? (
                     <div className="flex gap-2">
                       <input value={editingCategoryName} onChange={(e) => setEditingCategoryName(e.target.value)} className="input-field py-2" />
@@ -860,11 +860,11 @@ const AdminPanel = () => {
                   ) : (
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-gray-900">{category.name}</p>
+                        <p className="font-semibold text-cocoa-900">{category.name}</p>
                         <StatusBadge tone={category.isActive ? 'green' : 'red'}>{category.isActive ? 'active' : 'inactive'}</StatusBadge>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => { setEditingCategoryId(category._id); setEditingCategoryName(category.name); }} className="rounded-lg border border-gray-300 p-2 text-gray-600 hover:bg-gray-50"><Edit className="h-4 w-4" /></button>
+                        <button onClick={() => { setEditingCategoryId(category._id); setEditingCategoryName(category.name); }} className="rounded-lg border border-cocoa-200 p-2 text-cocoa-500 hover:bg-[#fbf8f4]"><Edit className="h-4 w-4" /></button>
                         <button onClick={() => updateCategory(category._id, { isActive: !category.isActive })} className="rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50"><XCircle className="h-4 w-4" /></button>
                         <button onClick={() => deleteCategory(category._id)} className="rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
                       </div>
@@ -877,10 +877,10 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 'locations' && (
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Location Management</h2>
+              <h2 className="text-lg font-semibold text-cocoa-900">Location Management</h2>
             </div>
             <form onSubmit={createLocation} className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-4">
               <input value={newLocation.city} onChange={(e) => setNewLocation({ ...newLocation, city: e.target.value })} className="input-field" placeholder="City" required />
@@ -891,12 +891,12 @@ const AdminPanel = () => {
             </form>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               {locations.map((location) => (
-                <div key={location._id} className="rounded-lg border border-gray-200 p-4">
+                <div key={location._id} className="rounded-lg border border-cocoa-100 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-gray-900">{location.city}</p>
-                      <p className="text-sm text-gray-500">{[location.region, location.country].filter(Boolean).join(', ')}</p>
-                      {location.notes && <p className="mt-2 text-sm text-gray-600">{location.notes}</p>}
+                      <p className="font-semibold text-cocoa-900">{location.city}</p>
+                      <p className="text-sm text-cocoa-400">{[location.region, location.country].filter(Boolean).join(', ')}</p>
+                      {location.notes && <p className="mt-2 text-sm text-cocoa-500">{location.notes}</p>}
                       <div className="mt-3 flex flex-wrap gap-2">
                         <StatusBadge tone={location.isActive ? 'green' : 'red'}>{location.isActive ? 'active' : 'inactive'}</StatusBadge>
                         <StatusBadge tone="blue">{location.eventCount || 0} events</StatusBadge>
@@ -914,9 +914,9 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 'bookings' && (
-          <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
-            <div className="flex flex-col gap-3 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Ticket and Booking Management</h2>
+          <section className="rounded-lg border border-cocoa-100 bg-white shadow-sm">
+            <div className="flex flex-col gap-3 border-b border-cocoa-100 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-lg font-semibold text-cocoa-900">Ticket and Booking Management</h2>
               <select value={bookingStatusFilter} onChange={(e) => setBookingStatusFilter(e.target.value)} className="input-field py-2 sm:max-w-xs">
                 <option value="">All statuses</option>
                 <option value="pending">Pending</option>
@@ -927,27 +927,27 @@ const AdminPanel = () => {
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#fbf8f4]">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Booking</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Event</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Status</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Payment</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Risk</th>
-                    <th className="px-4 py-3 text-right font-semibold text-gray-600">Actions</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Booking</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Event</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Status</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Payment</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Risk</th>
+                    <th className="px-4 py-3 text-right font-semibold text-cocoa-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filteredBookings.map((booking) => (
                     <tr key={booking._id}>
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-gray-900">{booking.user?.name || 'Unknown'}</div>
-                        <div className="text-xs text-gray-500">{booking.user?.email}</div>
-                        <div className="text-xs text-gray-500">{booking.numberOfTickets} ticket(s) / {money(booking.totalPrice)}</div>
+                        <div className="font-semibold text-cocoa-900">{booking.user?.name || 'Unknown'}</div>
+                        <div className="text-xs text-cocoa-400">{booking.user?.email}</div>
+                        <div className="text-xs text-cocoa-400">{booking.numberOfTickets} ticket(s) / {money(booking.totalPrice)}</div>
                       </td>
-                      <td className="px-4 py-3">{booking.event?.title || 'Deleted event'}<div className="text-xs text-gray-500">{formatDate(booking.bookingDate)}</div></td>
+                      <td className="px-4 py-3">{booking.event?.title || 'Deleted event'}<div className="text-xs text-cocoa-400">{formatDate(booking.bookingDate)}</div></td>
                       <td className="px-4 py-3">
-                        <select value={booking.status} onChange={(e) => updateBooking(booking._id, { status: e.target.value })} className="rounded-lg border border-gray-300 px-2 py-1">
+                        <select value={booking.status} onChange={(e) => updateBooking(booking._id, { status: e.target.value })} className="rounded-lg border border-cocoa-200 px-2 py-1">
                           <option value="pending">pending</option>
                           <option value="confirmed">confirmed</option>
                           <option value="cancelled">cancelled</option>
@@ -955,7 +955,7 @@ const AdminPanel = () => {
                         </select>
                       </td>
                       <td className="px-4 py-3">
-                        <select value={booking.paymentStatus} onChange={(e) => updateBooking(booking._id, { paymentStatus: e.target.value })} className="rounded-lg border border-gray-300 px-2 py-1">
+                        <select value={booking.paymentStatus} onChange={(e) => updateBooking(booking._id, { paymentStatus: e.target.value })} className="rounded-lg border border-cocoa-200 px-2 py-1">
                           <option value="pending">pending</option>
                           <option value="completed">completed</option>
                           <option value="failed">failed</option>
@@ -994,22 +994,22 @@ const AdminPanel = () => {
               <StatCard icon={CreditCard} label="Platform Earnings" value={money(payments?.totals?.platformEarnings)} tone="green" />
               <StatCard icon={Users} label="Organizer Payouts" value={money(payments?.totals?.organizerPayouts)} tone="amber" />
             </div>
-            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Organizer Payouts</h2>
+            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Organizer Payouts</h2>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-[#fbf8f4]">
                     <tr>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Organizer</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Bookings</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Revenue</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Payout</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Organizer</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Bookings</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Revenue</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Payout</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {(payments?.byOrganizer || []).map((row) => (
                       <tr key={row._id?._id || row._id}>
-                        <td className="px-4 py-3">{row._id?.name || 'Unknown'}<div className="text-xs text-gray-500">{row._id?.email}</div></td>
+                        <td className="px-4 py-3">{row._id?.name || 'Unknown'}<div className="text-xs text-cocoa-400">{row._id?.email}</div></td>
                         <td className="px-4 py-3">{row.bookings}</td>
                         <td className="px-4 py-3">{money(row.revenue)}</td>
                         <td className="px-4 py-3">{money(row.revenue * 0.9)}</td>
@@ -1019,22 +1019,22 @@ const AdminPanel = () => {
                 </table>
               </div>
             </section>
-            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Pending Transactions and Disputes</h2>
+            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Pending Transactions and Disputes</h2>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-[#fbf8f4]">
                     <tr>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">User</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Event</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Amount</th>
-                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Payment</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">User</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Event</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Amount</th>
+                      <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Payment</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {(payments?.pendingTransactions || []).map((booking) => (
                       <tr key={booking._id}>
-                        <td className="px-4 py-3">{booking.user?.name || 'Unknown'}<div className="text-xs text-gray-500">{booking.user?.email}</div></td>
+                        <td className="px-4 py-3">{booking.user?.name || 'Unknown'}<div className="text-xs text-cocoa-400">{booking.user?.email}</div></td>
                         <td className="px-4 py-3">{booking.event?.title || 'Deleted event'}</td>
                         <td className="px-4 py-3">{money(booking.totalPrice)}</td>
                         <td className="px-4 py-3"><StatusBadge tone="amber">{booking.paymentStatus}</StatusBadge></td>
@@ -1056,28 +1056,28 @@ const AdminPanel = () => {
               <StatCard icon={Clock} label="Peak Hour" value={`${advancedAnalytics?.peakBookingHours?.[0]?._id?.hour ?? 'N/A'}:00`} tone="slate" />
             </div>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Ticket Sales Trend</h2>
+            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Ticket Sales Trend</h2>
               <ChartBars rows={charts.ticketSalesTrend || []} labelFor={monthLabel} valueFor={(row) => row.tickets} />
             </section>
-            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Category-wise Events</h2>
+            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Category-wise Events</h2>
               <ChartBars rows={charts.categoryWiseEvents || []} labelFor={(row) => row._id || 'Uncategorized'} valueFor={(row) => row.count} />
             </section>
-            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">User Growth</h2>
+            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">User Growth</h2>
               <ChartBars rows={charts.userGrowth || []} labelFor={monthLabel} valueFor={(row) => row.count} />
             </section>
-            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Highest Revenue Events</h2>
+            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Highest Revenue Events</h2>
               <ChartBars rows={charts.topEvents || []} labelFor={(row) => row._id?.title || 'Deleted event'} valueFor={(row) => row.revenue} valueLabel={(value) => money(value)} />
             </section>
-            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Peak Booking Times</h2>
+            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Peak Booking Times</h2>
               <ChartBars rows={advancedAnalytics?.peakBookingHours || []} labelFor={(row) => `${row._id.hour}:00`} valueFor={(row) => row.bookings} />
             </section>
-            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Organizer Performance</h2>
+            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Organizer Performance</h2>
               <ChartBars rows={advancedAnalytics?.organizerPerformance || []} labelFor={(row) => row._id?.name || 'Unknown organizer'} valueFor={(row) => row.revenue} valueLabel={(value, row) => `${money(value)} / ${row.ticketsSold || 0} tickets`} />
             </section>
             </div>
@@ -1085,10 +1085,10 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 'notifications' && (
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+          <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Send Notification</h2>
+              <h2 className="text-lg font-semibold text-cocoa-900">Send Notification</h2>
             </div>
             <form onSubmit={sendNotification} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <input value={notificationForm.title} onChange={(e) => setNotificationForm({ ...notificationForm, title: e.target.value })} className="input-field" placeholder="Title" required />
@@ -1119,9 +1119,9 @@ const AdminPanel = () => {
                 </select>
               )}
               <input value={notificationForm.link} onChange={(e) => setNotificationForm({ ...notificationForm, link: e.target.value })} className="input-field" placeholder="Link, for example /events" />
-              <label className="flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-3">
+              <label className="flex items-center gap-3 rounded-lg border border-cocoa-100 px-4 py-3">
                 <input type="checkbox" checked={notificationForm.sendEmail} onChange={(e) => setNotificationForm({ ...notificationForm, sendEmail: e.target.checked })} className="h-4 w-4 text-primary-600" />
-                <span className="flex items-center gap-2 text-sm font-medium text-gray-700"><Mail className="h-4 w-4" /> Also send email</span>
+                <span className="flex items-center gap-2 text-sm font-medium text-cocoa-700"><Mail className="h-4 w-4" /> Also send email</span>
               </label>
               <button disabled={saving} className="btn-primary lg:col-span-2">{saving ? 'Sending...' : 'Send Notification'}</button>
             </form>
@@ -1129,22 +1129,22 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 'reviews' && (
-          <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 p-5">
-              <h2 className="text-lg font-semibold text-gray-900">Review and Rating Moderation</h2>
+          <section className="rounded-lg border border-cocoa-100 bg-white shadow-sm">
+            <div className="border-b border-cocoa-100 p-5">
+              <h2 className="text-lg font-semibold text-cocoa-900">Review and Rating Moderation</h2>
             </div>
             <div className="divide-y divide-gray-100">
               {reviews.length === 0 ? (
-                <p className="p-5 text-sm text-gray-500">No reviews yet</p>
+                <p className="p-5 text-sm text-cocoa-400">No reviews yet</p>
               ) : reviews.map((review) => (
                 <div key={review._id} className="flex flex-col gap-3 p-5 md:flex-row md:items-start md:justify-between">
                   <div>
                     <div className="flex items-center gap-2">
                       <StatusBadge tone="amber">{review.rating} star</StatusBadge>
-                      <p className="font-semibold text-gray-900">{review.event?.title || 'Deleted event'}</p>
+                      <p className="font-semibold text-cocoa-900">{review.event?.title || 'Deleted event'}</p>
                     </div>
-                    <p className="mt-2 text-sm text-gray-700">{review.comment || 'No comment'}</p>
-                    <p className="mt-1 text-xs text-gray-500">{review.user?.name} / {review.user?.email} / {formatDate(review.createdAt)}</p>
+                    <p className="mt-2 text-sm text-cocoa-700">{review.comment || 'No comment'}</p>
+                    <p className="mt-1 text-xs text-cocoa-400">{review.user?.name} / {review.user?.email} / {formatDate(review.createdAt)}</p>
                   </div>
                   <button onClick={() => deleteReview(review._id)} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50">
                     <Trash2 className="h-4 w-4" />
@@ -1157,11 +1157,11 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 'support' && (
-          <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 p-5">
-              <h2 className="text-lg font-semibold text-gray-900">Complaints, Refund Issues, and Organizer Support</h2>
+          <section className="rounded-lg border border-cocoa-100 bg-white shadow-sm">
+            <div className="border-b border-cocoa-100 p-5">
+              <h2 className="text-lg font-semibold text-cocoa-900">Complaints, Refund Issues, and Organizer Support</h2>
             </div>
-            <form onSubmit={createSupportTicket} className="grid grid-cols-1 gap-3 border-b border-gray-200 p-5 md:grid-cols-3">
+            <form onSubmit={createSupportTicket} className="grid grid-cols-1 gap-3 border-b border-cocoa-100 p-5 md:grid-cols-3">
               <input value={newSupportTicket.subject} onChange={(e) => setNewSupportTicket({ ...newSupportTicket, subject: e.target.value })} className="input-field" placeholder="Subject" required />
               <select value={newSupportTicket.type} onChange={(e) => setNewSupportTicket({ ...newSupportTicket, type: e.target.value })} className="input-field">
                 <option value="general">General</option>
@@ -1195,18 +1195,18 @@ const AdminPanel = () => {
             </form>
             <div className="divide-y divide-gray-100">
               {supportTickets.length === 0 ? (
-                <p className="p-5 text-sm text-gray-500">No support tickets yet</p>
+                <p className="p-5 text-sm text-cocoa-400">No support tickets yet</p>
               ) : supportTickets.map((ticket) => (
                 <div key={ticket._id} className="grid grid-cols-1 gap-4 p-5 lg:grid-cols-[1fr_auto]">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-gray-900">{ticket.subject}</p>
+                      <p className="font-semibold text-cocoa-900">{ticket.subject}</p>
                       <StatusBadge tone={ticket.priority === 'urgent' || ticket.priority === 'high' ? 'red' : 'amber'}>{ticket.priority}</StatusBadge>
                       <StatusBadge tone={ticket.status === 'resolved' ? 'green' : ticket.status === 'rejected' ? 'red' : 'blue'}>{ticket.status}</StatusBadge>
                       <StatusBadge>{ticket.type}</StatusBadge>
                     </div>
-                    <p className="mt-2 text-sm text-gray-700">{ticket.message}</p>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-2 text-sm text-cocoa-700">{ticket.message}</p>
+                    <p className="mt-1 text-xs text-cocoa-400">
                       {ticket.user?.email || 'No user'} {ticket.event?.title ? `/ ${ticket.event.title}` : ''} {ticket.booking?._id ? `/ booking ${ticket.booking._id}` : ''}
                     </p>
                     {ticket.resolution && <p className="mt-2 text-sm text-green-700">{ticket.resolution}</p>}
@@ -1231,17 +1231,17 @@ const AdminPanel = () => {
               <StatCard icon={Users} label="Spam Users" value={fraudSignals?.summary?.spamUsers || 0} tone="red" />
               <StatCard icon={Shield} label="Risk Organizers" value={fraudSignals?.summary?.fraudOrganizers || 0} tone="slate" />
             </div>
-            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Suspicious Bookings and Payment Attempts</h2>
+            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Suspicious Bookings and Payment Attempts</h2>
               <div className="space-y-3">
                 {(fraudSignals?.suspiciousBookings || []).length === 0 ? (
-                  <p className="text-sm text-gray-500">No suspicious bookings detected</p>
+                  <p className="text-sm text-cocoa-400">No suspicious bookings detected</p>
                 ) : fraudSignals.suspiciousBookings.map((booking) => (
                   <div key={booking._id} className="rounded-lg border border-red-100 bg-red-50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-gray-900">{booking.user?.email || 'Unknown user'}</p>
-                        <p className="text-sm text-gray-600">{booking.event?.title || 'Deleted event'} / {money(booking.totalPrice)}</p>
+                        <p className="font-semibold text-cocoa-900">{booking.user?.email || 'Unknown user'}</p>
+                        <p className="text-sm text-cocoa-500">{booking.event?.title || 'Deleted event'} / {money(booking.totalPrice)}</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <StatusBadge tone="red">{booking.paymentAttempts || 0} attempts</StatusBadge>
@@ -1253,17 +1253,17 @@ const AdminPanel = () => {
                 ))}
               </div>
             </section>
-            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-gray-900">Fake Events, Spam, Copyright, and Inappropriate Content</h2>
+            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Fake Events, Spam, Copyright, and Inappropriate Content</h2>
               <div className="space-y-3">
                 {(fraudSignals?.flaggedEvents || []).length === 0 ? (
-                  <p className="text-sm text-gray-500">No event moderation risks detected</p>
+                  <p className="text-sm text-cocoa-400">No event moderation risks detected</p>
                 ) : fraudSignals.flaggedEvents.map((event) => (
                   <div key={event._id} className="rounded-lg border border-amber-100 bg-amber-50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-gray-900">{event.title}</p>
-                        <p className="text-sm text-gray-600">{event.organizer?.email || 'Unknown organizer'} / {event.category}</p>
+                        <p className="font-semibold text-cocoa-900">{event.title}</p>
+                        <p className="text-sm text-cocoa-500">{event.organizer?.email || 'Unknown organizer'} / {event.category}</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <StatusBadge tone={event.moderationStatus === 'rejected' ? 'red' : 'amber'}>{event.moderationStatus}</StatusBadge>
@@ -1278,8 +1278,8 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 'reports' && (
-          <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 className="mb-5 text-lg font-semibold text-gray-900">Reports and Export</h2>
+          <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
+            <h2 className="mb-5 text-lg font-semibold text-cocoa-900">Reports and Export</h2>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
               {[
                 ['users', 'Users CSV', Users],
@@ -1293,8 +1293,8 @@ const AdminPanel = () => {
                 ['support', 'Support Tickets', MessageSquare],
                 ['fraud', 'Fraud Signals', AlertTriangle]
               ].map(([type, label, Icon]) => (
-                <button key={type} onClick={() => downloadReport(type)} className="flex items-center justify-between rounded-lg border border-gray-200 p-4 text-left hover:border-primary-300 hover:bg-primary-50">
-                  <span className="font-semibold text-gray-900">{label}</span>
+                <button key={type} onClick={() => downloadReport(type)} className="flex items-center justify-between rounded-lg border border-cocoa-100 p-4 text-left hover:border-primary-300 hover:bg-primary-50">
+                  <span className="font-semibold text-cocoa-900">{label}</span>
                   <Icon className="h-5 w-5 text-primary-600" />
                 </button>
               ))}
@@ -1303,25 +1303,25 @@ const AdminPanel = () => {
         )}
 
         {activeTab === 'security' && (
-          <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-200 p-5">
-              <h2 className="text-lg font-semibold text-gray-900">Security Activity</h2>
+          <section className="rounded-lg border border-cocoa-100 bg-white shadow-sm">
+            <div className="border-b border-cocoa-100 p-5">
+              <h2 className="text-lg font-semibold text-cocoa-900">Security Activity</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-[#fbf8f4]">
                   <tr>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Action</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Actor</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">IP</th>
-                    <th className="px-4 py-3 text-left font-semibold text-gray-600">Time</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Action</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Actor</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">IP</th>
+                    <th className="px-4 py-3 text-left font-semibold text-cocoa-500">Time</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {securityLogs.map((log) => (
                     <tr key={log._id}>
-                      <td className="px-4 py-3"><div className="font-semibold text-gray-900">{log.action}</div><div className="text-xs text-gray-500">{log.message}</div></td>
-                      <td className="px-4 py-3">{log.actor?.name || 'System'}<div className="text-xs text-gray-500">{log.actor?.email}</div></td>
+                      <td className="px-4 py-3"><div className="font-semibold text-cocoa-900">{log.action}</div><div className="text-xs text-cocoa-400">{log.message}</div></td>
+                      <td className="px-4 py-3">{log.actor?.name || 'System'}<div className="text-xs text-cocoa-400">{log.actor?.email}</div></td>
                       <td className="px-4 py-3">{log.ipAddress || 'N/A'}</td>
                       <td className="px-4 py-3">{formatDateTime(log.createdAt)}</td>
                     </tr>
@@ -1337,8 +1337,8 @@ const AdminPanel = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Edit User</h2>
-              <button onClick={() => setEditingUser(null)} className="rounded-lg p-2 hover:bg-gray-100"><X className="h-5 w-5" /></button>
+              <h2 className="text-lg font-semibold text-cocoa-900">Edit User</h2>
+              <button onClick={() => setEditingUser(null)} className="rounded-lg p-2 hover:bg-[#f3eee9]"><X className="h-5 w-5" /></button>
             </div>
             <form
               onSubmit={(e) => {
@@ -1352,7 +1352,7 @@ const AdminPanel = () => {
             >
               <input value={editingUser.name || ''} onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })} className="input-field" placeholder="Name" />
               <input value={editingUser.phone || ''} onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })} className="input-field" placeholder="Phone" />
-              <input value={editingUser.email || ''} disabled className="input-field bg-gray-50 text-gray-500" />
+              <input value={editingUser.email || ''} disabled className="input-field bg-[#fbf8f4] text-cocoa-400" />
               <button disabled={saving} className="btn-primary w-full">{saving ? 'Saving...' : 'Save User'}</button>
             </form>
           </div>
@@ -1363,8 +1363,8 @@ const AdminPanel = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Edit Event</h2>
-              <button onClick={() => setEditingEvent(null)} className="rounded-lg p-2 hover:bg-gray-100"><X className="h-5 w-5" /></button>
+              <h2 className="text-lg font-semibold text-cocoa-900">Edit Event</h2>
+              <button onClick={() => setEditingEvent(null)} className="rounded-lg p-2 hover:bg-[#f3eee9]"><X className="h-5 w-5" /></button>
             </div>
             <form
               onSubmit={(e) => {

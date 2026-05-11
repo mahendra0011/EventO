@@ -279,7 +279,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                            </div>
                          )}
                          <div className={`flex-1 min-w-0 max-w-[70%]`}>
-                           <div className={`relative px-4 py-2.5 shadow-sm group group-hover:shadow-md transition-all break-words ${isOwn ? 'bg-[#1f4068] text-[#cde3ff] rounded-xl rounded-br-sm' : 'bg-[#21262d] text-[#c9d1d9] border border-[#30363d] rounded-xl rounded-bl-sm'}`}
+                           <div className={`relative px-4 py-2.5 shadow-sm group group-hover:shadow-md transition-all break-words ${isOwn ? 'bg-[#1f4068] text-[#cde3ff] rounded-lg rounded-br-sm' : 'bg-[#21262d] text-[#c9d1d9] border border-[#30363d] rounded-lg rounded-bl-sm'}`}
                              onContextMenu={(e) => { e.preventDefault(); toggleActionMenu(msg._id); }}
                              onDoubleClick={() => toggleActionMenu(msg._id)}
                              style={{ overflow: 'visible' }}
@@ -473,7 +473,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
               onChange={(e) => { setNewMessage(e.target.value); handleTyping(); }}
               placeholder={replyTo ? 'Write a reply...' : 'Type your message...'}
               rows={1}
-              className='w-full bg-[#0d1117] border border-[#30363d] rounded-xl px-4 py-3 text-[#e6edf3] placeholder-[#484f58] outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent transition-all resize-none'
+              className='w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-3 text-[#e6edf3] placeholder-[#484f58] outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent transition-all resize-none'
               style={{ minHeight: '44px', maxHeight: '120px' }}
             />
           </div>
@@ -482,7 +482,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
           <button
             type='submit'
             disabled={!newMessage.trim() || sending}
-            className='px-5 py-2.5 bg-[#1f6feb] text-white rounded-xl font-medium text-sm hover:bg-[#388bfd] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 mt-8 sm:mt-0'
+            className='px-5 py-2.5 bg-[#1f6feb] text-white rounded-lg font-medium text-sm hover:bg-[#388bfd] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 mt-8 sm:mt-0'
           >
             <Send className='w-4 h-4' />
             <span className='hidden sm:inline'>Send</span>

@@ -10,7 +10,7 @@ const AnimatedCard = ({
 }) => {
   return (
     <motion.div
-      className={`bg-white rounded-xl shadow-lg overflow-hidden ${className}`}
+      className={`bg-white rounded-lg shadow-lg overflow-hidden ${className}`}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ 

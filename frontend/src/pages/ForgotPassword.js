@@ -94,9 +94,9 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-[#fff8f2] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
-        <div className="bg-white rounded-xl shadow-2xl p-8">
+        <div className="bg-white rounded-lg shadow-2xl p-8">
           <div className="text-center mb-8">
             <Link to="/" className="inline-flex items-center space-x-2">
               <Calendar className="h-10 w-10 text-primary-600" />
@@ -104,8 +104,8 @@ const ForgotPassword = () => {
                 Evento
               </span>
             </Link>
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">Forgot password</h2>
-            <p className="mt-2 text-gray-600">
+            <h2 className="mt-4 text-2xl font-bold text-cocoa-900">Forgot password</h2>
+            <p className="mt-2 text-cocoa-500">
               {otpSent ? 'Enter the OTP from your email and choose a new password.' : 'Enter your account email to receive a reset OTP.'}
             </p>
           </div>
@@ -115,7 +115,7 @@ const ForgotPassword = () => {
               <div>
                 <label htmlFor="email" className="label">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-cocoa-300" />
                   <input
                     id="email"
                     type="email"
@@ -139,7 +139,7 @@ const ForgotPassword = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">OTP sent to</p>
-                    <p className="truncate text-sm font-semibold text-gray-900">{normalizedEmail}</p>
+                    <p className="truncate text-sm font-semibold text-cocoa-900">{normalizedEmail}</p>
                   </div>
                   <button type="button" onClick={changeEmail} className="text-sm font-semibold text-primary-700 hover:text-primary-800">
                     Change
@@ -150,7 +150,7 @@ const ForgotPassword = () => {
               <div>
                 <label htmlFor="otp" className="label">Email OTP</label>
                 <div className="relative">
-                  <KeyRound className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <KeyRound className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-cocoa-300" />
                   <input
                     id="otp"
                     type="text"
@@ -169,7 +169,7 @@ const ForgotPassword = () => {
               <div>
                 <label htmlFor="password" className="label">New Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-cocoa-300" />
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
@@ -183,7 +183,7 @@ const ForgotPassword = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-cocoa-300 hover:text-cocoa-500"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -194,7 +194,7 @@ const ForgotPassword = () => {
               <div>
                 <label htmlFor="confirmPassword" className="label">Confirm Password</label>
                 <div className="relative">
-                  <ShieldCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <ShieldCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-cocoa-300" />
                   <input
                     id="confirmPassword"
                     type={showPassword ? 'text' : 'password'}

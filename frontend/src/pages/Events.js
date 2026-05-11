@@ -76,36 +76,35 @@ const Events = () => {
   const hasFilters = Boolean(searchTerm || selectedCategory);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <section className="relative overflow-hidden bg-slate-950 text-white">
+    <div className="min-h-screen bg-[#fbf8f4]">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-[#fff8f2] to-[#fbf8f4]">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-35"
+          className="absolute inset-y-0 right-0 hidden w-1/2 bg-cover bg-center opacity-20 lg:block"
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1600&q=80')" }}
           aria-hidden="true"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/90 to-slate-950/55" aria-hidden="true" />
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
           <div className="max-w-3xl">
-            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary-100 backdrop-blur">
+            <span className="section-kicker">
               <CalendarDays className="h-4 w-4" />
               Curated experiences
             </span>
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-black tracking-tight text-cocoa-900 sm:text-5xl lg:text-6xl">
               Browse events that feel worth showing up for.
             </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-200">
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-cocoa-500">
               Search concerts, conferences, workshops, sports, food events, and local meetups with clean filters and quick ticket access.
             </p>
           </div>
         </div>
       </section>
 
-      <section className="border-b border-slate-200 bg-white">
+      <section className="border-y border-cocoa-100 bg-white">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <form onSubmit={handleSearch} className="surface-panel p-4 md:p-5">
             <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-cocoa-300" />
                 <input
                   type="text"
                   placeholder="Search by title, venue, city, or description"
@@ -129,7 +128,7 @@ const Events = () => {
             </div>
 
             <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+              <div className="flex items-center gap-2 text-sm font-extrabold text-cocoa-700">
                 <SlidersHorizontal className="h-4 w-4 text-primary-600" />
                 Categories
               </div>
@@ -141,8 +140,8 @@ const Events = () => {
                     onClick={() => handleCategoryChange(category)}
                     className={`rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
                       selectedCategory === category
-                        ? 'border-slate-950 bg-slate-950 text-white shadow-sm'
-                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700'
+                        ? 'border-primary-500 bg-primary-500 text-white shadow-sm'
+                        : 'border-cocoa-100 bg-[#f7f3ee] text-cocoa-600 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600'
                     }`}
                   >
                     {category}
@@ -161,11 +160,11 @@ const Events = () => {
               <Filter className="h-3.5 w-3.5" />
               {hasFilters ? 'Filtered events' : 'All events'}
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-950">
+            <h2 className="text-3xl font-black tracking-tight text-cocoa-900">
               {selectedCategory ? `${selectedCategory} events` : 'Available events'}
             </h2>
           </div>
-          <p className="text-sm font-medium text-slate-500">
+          <p className="text-sm font-bold text-cocoa-400">
             {loading ? 'Loading events...' : `${events.length} result${events.length === 1 ? '' : 's'} on page ${currentPage}`}
           </p>
         </div>
@@ -174,12 +173,12 @@ const Events = () => {
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, index) => (
               <div key={index} className="surface-panel overflow-hidden">
-                <div className="h-56 animate-pulse bg-slate-200" />
+                <div className="h-56 animate-pulse bg-cocoa-100" />
                 <div className="space-y-4 p-5">
-                  <div className="h-5 w-2/3 animate-pulse rounded bg-slate-200" />
-                  <div className="h-4 w-full animate-pulse rounded bg-slate-100" />
-                  <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100" />
-                  <div className="h-10 w-full animate-pulse rounded bg-slate-100" />
+                  <div className="h-5 w-2/3 animate-pulse rounded bg-cocoa-100" />
+                  <div className="h-4 w-full animate-pulse rounded bg-primary-50" />
+                  <div className="h-4 w-3/4 animate-pulse rounded bg-primary-50" />
+                  <div className="h-10 w-full animate-pulse rounded bg-primary-50" />
                 </div>
               </div>
             ))}
@@ -210,8 +209,8 @@ const Events = () => {
                     onClick={() => setCurrentPage(i + 1)}
                     className={`h-11 min-w-11 rounded-lg border px-4 text-sm font-bold transition-all ${
                       currentPage === i + 1
-                        ? 'border-slate-950 bg-slate-950 text-white'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-primary-200 hover:text-primary-700'
+                        ? 'border-primary-500 bg-primary-500 text-white'
+                        : 'border-cocoa-100 bg-white text-cocoa-700 hover:border-primary-200 hover:text-primary-600'
                     }`}
                   >
                     {i + 1}
@@ -231,11 +230,11 @@ const Events = () => {
           </>
         ) : (
           <div className="surface-panel py-16 text-center">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-lg bg-primary-50 text-primary-400">
               <Search className="h-8 w-8" />
             </div>
-            <h3 className="text-xl font-extrabold text-slate-950">No events found</h3>
-            <p className="mx-auto mt-2 max-w-md text-slate-500">
+            <h3 className="text-xl font-black text-cocoa-900">No events found</h3>
+            <p className="mx-auto mt-2 max-w-md text-cocoa-500">
               Try a different search term, clear the category, or check back after hosts publish more events.
             </p>
             {hasFilters && (

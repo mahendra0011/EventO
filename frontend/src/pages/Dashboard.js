@@ -199,7 +199,7 @@ const Dashboard = () => {
       pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, text: 'Pending' },
       confirmed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: 'Confirmed' },
       cancelled: { color: 'bg-red-100 text-red-800', icon: XCircle, text: 'Cancelled' },
-      rejected: { color: 'bg-gray-100 text-gray-800', icon: AlertCircle, text: 'Rejected' }
+      rejected: { color: 'bg-[#f3eee9] text-cocoa-800', icon: AlertCircle, text: 'Rejected' }
     };
     const config = statusConfig[status] || statusConfig.pending;
     const Icon = config.icon;
@@ -305,7 +305,7 @@ const Dashboard = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bell className="h-5 w-5 text-primary-600" />
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-cocoa-400">
             {unreadCount > 0 ? `${unreadCount} unread` : 'All notifications read'}
           </span>
         </div>
@@ -321,9 +321,9 @@ const Dashboard = () => {
 
       {notifications.length === 0 ? (
         <div className="text-center py-12">
-          <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-500">No notifications</h3>
-          <p className="text-gray-400">You're all caught up!</p>
+          <Bell className="h-16 w-16 text-cocoa-200 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-cocoa-400">No notifications</h3>
+          <p className="text-cocoa-300">You're all caught up!</p>
         </div>
       ) : (
         <div className="space-y-2 max-h-[600px] overflow-y-auto">
@@ -344,9 +344,9 @@ const Dashboard = () => {
                       <Bell className="h-4 w-4 text-blue-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 text-sm">{notification.title}</p>
-                      <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                      <p className="text-xs text-gray-400 mt-2">
+                      <p className="font-medium text-cocoa-900 text-sm">{notification.title}</p>
+                      <p className="text-sm text-cocoa-500 mt-1">{notification.message}</p>
+                      <p className="text-xs text-cocoa-300 mt-2">
                         {new Date(notification.createdAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -366,16 +366,16 @@ const Dashboard = () => {
               {readNotifications.map((notification) => (
                 <div
                   key={notification._id}
-                  className="p-4 bg-gray-50 border border-gray-200 rounded-lg opacity-75"
+                  className="p-4 bg-[#fbf8f4] border border-cocoa-100 rounded-lg opacity-75"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                      <Bell className="h-4 w-4 text-gray-600" />
+                      <Bell className="h-4 w-4 text-cocoa-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 text-sm">{notification.title}</p>
-                      <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                      <p className="text-xs text-gray-400 mt-2">
+                      <p className="font-medium text-cocoa-900 text-sm">{notification.title}</p>
+                      <p className="text-sm text-cocoa-500 mt-1">{notification.message}</p>
+                      <p className="text-xs text-cocoa-300 mt-2">
                         {new Date(notification.createdAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -393,8 +393,8 @@ const Dashboard = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Broadcast Messages</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="text-lg font-semibold text-cocoa-900">Broadcast Messages</h3>
+          <p className="text-sm text-cocoa-400">
             Updates from hosts for events you joined
           </p>
         </div>
@@ -407,9 +407,9 @@ const Dashboard = () => {
 
       {broadcastMessages.length === 0 ? (
         <div className="text-center py-12">
-          <Megaphone className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-500">No broadcasts yet</h3>
-          <p className="text-gray-400">Event host announcements will appear here.</p>
+          <Megaphone className="h-16 w-16 text-cocoa-200 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-cocoa-400">No broadcasts yet</h3>
+          <p className="text-cocoa-300">Event host announcements will appear here.</p>
         </div>
       ) : (
         <div className="space-y-3 max-h-[640px] overflow-y-auto">
@@ -417,7 +417,7 @@ const Dashboard = () => {
             <div
               key={message._id}
               className={`border rounded-lg p-5 bg-white ${
-                message.isRead ? 'border-gray-200' : 'border-primary-200 bg-primary-50/40'
+                message.isRead ? 'border-cocoa-100' : 'border-primary-200 bg-primary-50/40'
               }`}
             >
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
@@ -431,9 +431,9 @@ const Dashboard = () => {
                       <span className="w-2 h-2 rounded-full bg-primary-500" />
                     )}
                   </div>
-                  <h4 className="font-semibold text-gray-900">{message.subject}</h4>
-                  <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">{message.content}</p>
-                  <div className="mt-3 text-xs text-gray-400">
+                  <h4 className="font-semibold text-cocoa-900">{message.subject}</h4>
+                  <p className="text-sm text-cocoa-500 mt-2 whitespace-pre-line">{message.content}</p>
+                  <div className="mt-3 text-xs text-cocoa-300">
                     From {message.sender?.name || 'Host'} · {new Date(message.createdAt).toLocaleString()}
                   </div>
                 </div>
@@ -454,14 +454,20 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div className="min-h-screen bg-[#fbf8f4] py-10 text-cocoa-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+        <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+          <h1 className="text-4xl font-black text-cocoa-900 mb-2">
             My <GradientText>Dashboard</GradientText>
           </h1>
-          <p className="text-gray-600 text-lg">Welcome back, {user?.name}!</p>
+          <p className="text-cocoa-500 text-lg font-semibold">Welcome back, {user?.name}!</p>
+          </div>
+          <div className="hidden items-center gap-5 text-cocoa-700 md:flex">
+            <Bell className="h-5 w-5" />
+            <MessageSquare className="h-5 w-5" />
+          </div>
         </div>
 
         {/* Top Shortcuts */}
@@ -475,25 +481,25 @@ const Dashboard = () => {
                 key={tabId}
                 type="button"
                 onClick={() => handleTabChange(tabId)}
-                className={`flex min-h-[88px] items-center justify-between rounded-xl border px-5 py-4 text-left transition-all ${
+                className={`flex min-h-[88px] items-center justify-between rounded-lg border px-5 py-4 text-left shadow-xl shadow-cocoa-900/5 transition-all ${
                   isActiveTab
-                    ? 'border-primary-500 bg-primary-50 shadow-md shadow-primary-100'
-                    : 'border-gray-200 bg-white hover:border-primary-200 hover:bg-primary-50/40 hover:shadow-sm'
+                    ? 'border-primary-100 bg-primary-50'
+                    : 'border-white bg-white hover:border-primary-100 hover:bg-primary-50/40'
                 }`}
               >
                 <span className="flex min-w-0 items-center gap-4">
                   <span className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg ${
-                    isActiveTab ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'
+                    isActiveTab ? 'bg-primary-500 text-white' : 'bg-[#f3eee9] text-cocoa-500'
                   }`}>
                     <Icon className="h-5 w-5" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-base font-semibold text-gray-900">{label}</span>
-                    <span className="block text-sm text-gray-500">{description}</span>
+                    <span className="block text-base font-black text-cocoa-900">{label}</span>
+                    <span className="block text-sm font-semibold text-cocoa-400">{description}</span>
                   </span>
                 </span>
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  isActiveTab ? 'bg-white text-primary-700' : 'bg-gray-100 text-gray-500'
+                  isActiveTab ? 'bg-white text-primary-600' : 'bg-[#f3eee9] text-cocoa-400'
                 }`}>
                   {isActiveTab ? 'Selected' : 'Open'}
                 </span>
@@ -511,8 +517,8 @@ const Dashboard = () => {
                   <stat.icon className={`h-6 w-6 text-${stat.color}-600`} />
                 </AnimatedIcon>
                 <div className="ml-4">
-                  <p className="text-sm text-gray-500">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-sm font-bold text-cocoa-400">{stat.label}</p>
+                  <p className="text-2xl font-black text-cocoa-900">{stat.value}</p>
                 </div>
               </div>
             </AnimatedCard>
@@ -521,18 +527,18 @@ const Dashboard = () => {
 
         {/* Tabs */}
         <AnimatedCard className="overflow-hidden">
-          <div className="border-b border-gray-200">
-            <nav className="flex -mb-px overflow-x-auto">
+          <div className="border-b border-cocoa-100 bg-white">
+            <nav className="flex gap-2 overflow-x-auto p-3">
                {primaryDashboardTabs.map((tabId) => {
                 const { icon: Icon, label } = tabDefinitions[tabId];
                 return (
                   <button
                     key={tabId}
                     onClick={() => handleTabChange(tabId)}
-                    className={`py-4 px-4 text-sm font-medium border-b-2 whitespace-nowrap ${
+                    className={`rounded-full px-4 py-2 text-sm font-extrabold whitespace-nowrap transition-all ${
                       activeTab === tabId
-                        ? 'border-primary-500 text-primary-600 bg-primary-50'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-[#f3eee9] text-cocoa-500 hover:bg-primary-50 hover:text-primary-600'
                     }`}
                   >
                     <Icon className="h-4 w-4 inline mr-2" />
@@ -564,7 +570,7 @@ const Dashboard = () => {
                         key={status}
                         onClick={() => setFilterStatus(status)}
                         className={`px-4 py-2 rounded-full text-sm font-medium capitalize ${
-                          filterStatus === status ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'
+                          filterStatus === status ? 'bg-primary-500 text-white' : 'bg-[#f3eee9] text-cocoa-600'
                         }`}
                       >
                         {status}
@@ -578,7 +584,7 @@ const Dashboard = () => {
                   ) : bookings.length > 0 ? (
                     <div className="space-y-4">
                       {bookings.filter(b => filterStatus === 'all' || b.status === filterStatus).map((booking) => (
-                        <div key={booking._id} className="border border-gray-200 rounded-lg p-6 bg-white">
+                        <div key={booking._id} className="border border-white rounded-lg p-6 bg-white shadow-xl shadow-cocoa-900/5">
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                             <div className="flex items-start space-x-4">
                               <img
@@ -587,9 +593,9 @@ const Dashboard = () => {
                                 className="w-24 h-24 object-cover rounded-lg"
                               />
                               <div>
-                                <h3 className="text-lg font-semibold">{booking.event?.title}</h3>
-                                <p className="text-gray-500 text-sm">{formatDate(booking.event?.date)} at {booking.event?.time}</p>
-                                <p className="text-gray-500 text-sm">{booking.numberOfTickets} ticket(s) - ₹{booking.totalPrice?.toLocaleString('en-IN')}</p>
+                                <h3 className="text-lg font-black text-cocoa-900">{booking.event?.title}</h3>
+                                <p className="text-cocoa-500 text-sm font-semibold">{formatDate(booking.event?.date)} at {booking.event?.time}</p>
+                                <p className="text-cocoa-500 text-sm font-semibold">{booking.numberOfTickets} ticket(s) - ₹{booking.totalPrice?.toLocaleString('en-IN')}</p>
                               </div>
                             </div>
                             <div className="mt-4 md:mt-0 flex flex-col items-end space-y-2">
@@ -609,7 +615,7 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <Ticket className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <Ticket className="h-16 w-16 text-cocoa-200 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold">No bookings</h3>
                       <Link to="/events" className="btn-primary mt-4">Browse Events</Link>
                     </div>
@@ -626,11 +632,11 @@ const Dashboard = () => {
                       {savedEvents.map((item) => {
                         if (!item || !item.event) return null;
                         return (
-                          <div key={item._id} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                          <div key={item._id} className="border border-cocoa-100 rounded-lg overflow-hidden bg-white">
                             <img src={item.event.image || 'https://via.placeholder.com/400x200?text=No+Image'} alt={item.event.title} className="w-full h-40 object-cover" />
                             <div className="p-4">
                               <h4 className="font-semibold">{item.event.title || 'Untitled Event'}</h4>
-                              <p className="text-sm text-gray-500">{item.event.date ? formatDate(item.event.date) : 'TBD'}</p>
+                              <p className="text-sm text-cocoa-400">{item.event.date ? formatDate(item.event.date) : 'TBD'}</p>
                               <p className="text-primary-600 font-bold">₹{(item.event.price || 0).toLocaleString('en-IN')}</p>
                             </div>
                           </div>
@@ -639,9 +645,9 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <Heart className="h-16 w-16 text-cocoa-200 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold">No saved events</h3>
-                      <p className="text-gray-600 mb-4">Events you save will appear here</p>
+                      <p className="text-cocoa-500 mb-4">Events you save will appear here</p>
                       <Link to="/events" className="btn-primary">Browse Events</Link>
                     </div>
                   )}
@@ -652,8 +658,8 @@ const Dashboard = () => {
                {activeTab === 'community' && (
                  <motion.div key="community" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                    <div className="mb-6">
-                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Event Communities</h3>
-                     <p className="text-sm text-gray-600">
+                     <h3 className="text-lg font-semibold text-cocoa-900 mb-2">Event Communities</h3>
+                     <p className="text-sm text-cocoa-500">
                        Join the conversation! Connect with other attendees and the event host.
                      </p>
                    </div>
@@ -663,7 +669,7 @@ const Dashboard = () => {
                        {userEvents.map((event) => (
                          <div
                            key={event._id}
-                           className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 group"
+                           className="bg-white border border-cocoa-100 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group"
                          >
                            {/* Event Image */}
                            <div className="relative h-40 overflow-hidden">
@@ -687,11 +693,11 @@ const Dashboard = () => {
                            </div>
 
                            {/* Event Actions */}
-                           <div className="p-4 bg-gray-50 border-t border-gray-100">
+                           <div className="p-4 bg-[#fbf8f4] border-t border-cocoa-100">
                              <div className="flex items-center justify-between mb-3">
                                <div className="flex items-center gap-2">
                                  <Users className="w-4 h-4 text-primary-600" />
-                                 <span className="text-sm text-gray-600">
+                                 <span className="text-sm text-cocoa-500">
                                    {event.bookings || 0} attending
                                  </span>
                                </div>
@@ -701,7 +707,7 @@ const Dashboard = () => {
                              </div>
                              <Link
                                to={`/events/${event._id}/chat`}
-                               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-lg font-medium text-sm hover:shadow-lg hover:shadow-amber-500/30 transition-all"
+                               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-cocoa-900 rounded-lg font-medium text-sm hover:shadow-lg hover:shadow-amber-500/30 transition-all"
                              >
                                <MessageSquare className="w-4 h-4" />
                                Open Community Chat
@@ -711,12 +717,12 @@ const Dashboard = () => {
                        ))}
                      </div>
                    ) : (
-                     <div className="text-center py-16 bg-gray-50 rounded-xl border border-gray-200">
+                     <div className="text-center py-16 bg-[#fbf8f4] rounded-lg border border-cocoa-100">
                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-100 to-amber-50 mx-auto mb-4 flex items-center justify-center">
                          <MessageCircle className="w-10 h-10 text-amber-600" />
                        </div>
-                       <h3 className="text-xl font-semibold text-gray-900 mb-2">No Community Access Yet</h3>
-                       <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                       <h3 className="text-xl font-semibold text-cocoa-900 mb-2">No Community Access Yet</h3>
+                       <p className="text-cocoa-500 mb-6 max-w-md mx-auto">
                          Book and confirm tickets for events to join their community chats.
                          Chat with other attendees, ask questions, and stay updated!
                        </p>
@@ -749,35 +755,35 @@ const Dashboard = () => {
                 <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <h3 className="text-lg font-semibold mb-4">Profile Information</h3>
                   {editMode ? (
-                    <form onSubmit={handleUpdateProfile} className="bg-white border border-gray-200 rounded-lg p-6 max-w-xl">
+                    <form onSubmit={handleUpdateProfile} className="bg-white border border-cocoa-100 rounded-lg p-6 max-w-xl">
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                          <label className="block text-sm font-medium text-cocoa-700 mb-1">Full Name</label>
                           <input
                             type="text"
                             value={profileData.name}
                             onChange={(e) => setProfileData({...profileData, name: e.target.value})}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            className="w-full px-4 py-2 border border-cocoa-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             required
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                          <label className="block text-sm font-medium text-cocoa-700 mb-1">Phone Number</label>
                           <input
                             type="tel"
                             value={profileData.phone}
                             onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            className="w-full px-4 py-2 border border-cocoa-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             placeholder="+91 9876543210"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                          <label className="block text-sm font-medium text-cocoa-700 mb-1">Email</label>
                           <input
                             type="email"
                             value={user?.email || ''}
                             disabled
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
+                            className="w-full px-4 py-2 border border-cocoa-100 rounded-lg bg-[#fbf8f4] text-cocoa-400"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -792,24 +798,24 @@ const Dashboard = () => {
                     </form>
                   ) : (
                     <div className="space-y-4">
-                      <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                        <User className="h-5 w-5 text-gray-400" />
+                      <div className="flex items-center space-x-4 p-4 bg-[#fbf8f4] rounded-lg">
+                        <User className="h-5 w-5 text-cocoa-300" />
                         <div>
-                          <p className="text-sm text-gray-500">Full Name</p>
+                          <p className="text-sm text-cocoa-400">Full Name</p>
                           <p className="font-medium">{user?.name}</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                        <Mail className="h-5 w-5 text-gray-400" />
+                      <div className="flex items-center space-x-4 p-4 bg-[#fbf8f4] rounded-lg">
+                        <Mail className="h-5 w-5 text-cocoa-300" />
                         <div>
-                          <p className="text-sm text-gray-500">Email</p>
+                          <p className="text-sm text-cocoa-400">Email</p>
                           <p className="font-medium">{user?.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                        <Phone className="h-5 w-5 text-gray-400" />
+                      <div className="flex items-center space-x-4 p-4 bg-[#fbf8f4] rounded-lg">
+                        <Phone className="h-5 w-5 text-cocoa-300" />
                         <div>
-                          <p className="text-sm text-gray-500">Phone</p>
+                          <p className="text-sm text-cocoa-400">Phone</p>
                           <p className="font-medium">{user?.phone || 'Not provided'}</p>
                         </div>
                       </div>
@@ -828,17 +834,17 @@ const Dashboard = () => {
                   {bookings.filter(b => b.status === 'confirmed').length > 0 ? (
                     <div className="space-y-4">
                       {bookings.filter(b => b.status === 'confirmed').map((booking) => (
-                        <div key={booking._id} className="border border-gray-200 rounded-lg p-4 flex items-center bg-green-50">
+                        <div key={booking._id} className="border border-cocoa-100 rounded-lg p-4 flex items-center bg-green-50">
                           <img src={booking.event?.image} alt={booking.event?.title} className="w-16 h-16 rounded-lg object-cover" />
                           <div className="ml-4 flex-1">
                             <h4 className="font-semibold">{booking.event?.title}</h4>
-                            <p className="text-sm text-gray-500">{formatDate(booking.event?.date)}</p>
+                            <p className="text-sm text-cocoa-400">{formatDate(booking.event?.date)}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">No upcoming events</div>
+                    <div className="text-center py-8 text-cocoa-400">No upcoming events</div>
                   )}
                 </motion.div>
               )}
@@ -853,21 +859,21 @@ const Dashboard = () => {
                         .filter(b => b.status === 'confirmed')
                         .sort((a, b) => new Date(a.event.date) - new Date(b.event.date))
                         .map((booking) => (
-                          <div key={booking._id} className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+                          <div key={booking._id} className="border border-cocoa-100 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
                             <div className="flex items-center gap-3 mb-2">
                               <div className="bg-primary-100 p-2 rounded-lg">
                                 <Calendar className="h-5 w-5 text-primary-600" />
                               </div>
                               <div>
                                 <h4 className="font-semibold text-sm line-clamp-1">{booking.event?.title}</h4>
-                                <p className="text-xs text-gray-500">{formatDate(booking.event?.date)}</p>
+                                <p className="text-xs text-cocoa-400">{formatDate(booking.event?.date)}</p>
                               </div>
                             </div>
-                            <div className="flex items-center text-sm text-gray-600">
+                            <div className="flex items-center text-sm text-cocoa-500">
                               <Clock className="h-4 w-4 mr-1" />
                               {booking.event?.time}
                             </div>
-                            <div className="flex items-center text-sm text-gray-600 mt-1">
+                            <div className="flex items-center text-sm text-cocoa-500 mt-1">
                               <MapPin className="h-4 w-4 mr-1" />
                               {booking.event?.venue}, {booking.event?.location}
                             </div>
@@ -876,9 +882,9 @@ const Dashboard = () => {
                       </div>
                   ) : (
                     <div className="text-center py-12">
-                      <Calendar className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <Calendar className="h-16 w-16 text-cocoa-200 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold">No upcoming events</h3>
-                      <p className="text-gray-600">Confirmed bookings will appear here</p>
+                      <p className="text-cocoa-500">Confirmed bookings will appear here</p>
                     </div>
                   )}
                 </motion.div>
@@ -893,12 +899,12 @@ const Dashboard = () => {
                       {bookings
                         .filter(b => b.paymentStatus === 'completed')
                         .map((booking) => (
-                          <div key={booking._id} className="border border-gray-200 rounded-lg p-4 flex items-center bg-white">
+                          <div key={booking._id} className="border border-cocoa-100 rounded-lg p-4 flex items-center bg-white">
                             <img src={booking.event?.image} alt={booking.event?.title} className="w-16 h-16 rounded-lg object-cover" />
                             <div className="ml-4 flex-1">
                               <h4 className="font-semibold">{booking.event?.title}</h4>
-                              <p className="text-sm text-gray-500">{formatDate(booking.event?.date)}</p>
-                              <p className="text-sm text-gray-500">{booking.numberOfTickets} ticket(s)</p>
+                              <p className="text-sm text-cocoa-400">{formatDate(booking.event?.date)}</p>
+                              <p className="text-sm text-cocoa-400">{booking.numberOfTickets} ticket(s)</p>
                             </div>
                             <div className="text-right">
                               <p className="text-xl font-bold text-green-600">₹{booking.totalPrice?.toLocaleString('en-IN')}</p>
@@ -913,9 +919,9 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     <div className="text-center py-12">
-                      <CreditCard className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <CreditCard className="h-16 w-16 text-cocoa-200 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold">No payments yet</h3>
-                      <p className="text-gray-600">Your payment history will appear here</p>
+                      <p className="text-cocoa-500">Your payment history will appear here</p>
                     </div>
                   )}
                 </motion.div>
@@ -926,9 +932,9 @@ const Dashboard = () => {
                 <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <h3 className="text-lg font-semibold mb-4">Reviews & Feedback</h3>
                   <div className="text-center py-12">
-                    <Star className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <Star className="h-16 w-16 text-cocoa-200 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold">Reviews Coming Soon</h3>
-                    <p className="text-gray-600">Share your event experiences here</p>
+                    <p className="text-cocoa-500">Share your event experiences here</p>
                   </div>
                 </motion.div>
               )}
@@ -942,16 +948,16 @@ const Dashboard = () => {
                       <div className="bg-primary-50 border border-primary-200 rounded-lg p-6">
                       <HelpCircle className="h-8 w-8 text-primary-600 mb-3" />
                       <h4 className="font-semibold">FAQs</h4>
-                      <p className="text-sm text-gray-600 mt-2">Frequently asked questions</p>
+                      <p className="text-sm text-cocoa-500 mt-2">Frequently asked questions</p>
                       </div>
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                       <MessageCircle className="h-8 w-8 text-blue-600 mb-3" />
                         <h4 className="font-semibold">Contact Us</h4>
-                        <p className="text-sm text-gray-600 mt-2">Get in touch with our support team</p>
+                        <p className="text-sm text-cocoa-500 mt-2">Get in touch with our support team</p>
                       </div>
                     </div>
 
-                    <form onSubmit={handleSupportSubmit} className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+                    <form onSubmit={handleSupportSubmit} className="bg-white border border-cocoa-100 rounded-lg p-6 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="label">Issue Type</label>
@@ -1011,20 +1017,20 @@ const Dashboard = () => {
                     </form>
 
                     <div className="lg:col-span-2">
-                      <h4 className="font-semibold text-gray-900 mb-3">Your Support Tickets</h4>
+                      <h4 className="font-semibold text-cocoa-900 mb-3">Your Support Tickets</h4>
                       <div className="space-y-3">
                         {supportTickets.length === 0 ? (
-                          <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-                            <MessageCircle className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                            <p className="text-gray-600">No support tickets yet</p>
+                          <div className="text-center py-8 bg-[#fbf8f4] rounded-lg border border-cocoa-100">
+                            <MessageCircle className="h-10 w-10 text-cocoa-200 mx-auto mb-2" />
+                            <p className="text-cocoa-500">No support tickets yet</p>
                           </div>
                         ) : supportTickets.map((ticket) => (
-                          <div key={ticket._id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                          <div key={ticket._id} className="border border-cocoa-100 rounded-lg p-4 bg-white">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                               <div>
-                                <p className="font-semibold text-gray-900">{ticket.subject}</p>
-                                <p className="text-sm text-gray-600 mt-1">{ticket.message}</p>
-                                <p className="text-xs text-gray-400 mt-2">
+                                <p className="font-semibold text-cocoa-900">{ticket.subject}</p>
+                                <p className="text-sm text-cocoa-500 mt-1">{ticket.message}</p>
+                                <p className="text-xs text-cocoa-300 mt-2">
                                   {ticket.event?.title || 'General'} / {new Date(ticket.createdAt).toLocaleDateString()}
                                 </p>
                               </div>

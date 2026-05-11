@@ -71,22 +71,22 @@ const EventCard = ({ event, index = 0 }) => {
       }}
       className="card group flex h-full flex-col"
     >
-      <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+      <div className="relative aspect-[16/10] overflow-hidden bg-cocoa-100">
         <Link to={`/events/${event._id}`} className="block h-full" aria-label={`View ${event.title}`}>
             <img
               src={image}
               alt={event.title}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-cocoa-900/35 via-transparent to-transparent" />
         </Link>
 
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-          <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-800 shadow-sm backdrop-blur">
+          <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-extrabold text-primary-600 shadow-sm backdrop-blur">
             {event.category}
           </span>
           {isLowStock && (
-            <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-950 shadow-sm">
+            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-700 shadow-sm">
               {availableTickets} left
             </span>
           )}
@@ -103,7 +103,7 @@ const EventCard = ({ event, index = 0 }) => {
           className={`absolute right-4 top-4 rounded-lg p-2.5 shadow-sm transition-all ${
             inWishlist
               ? 'bg-red-500 text-white'
-              : 'bg-white/95 text-slate-600 hover:text-red-500'
+              : 'bg-white/95 text-cocoa-500 hover:text-red-500'
           }`}
           aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
         >
@@ -115,17 +115,17 @@ const EventCard = ({ event, index = 0 }) => {
         <div className="mb-4 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <Link to={`/events/${event._id}`}>
-              <h3 className="line-clamp-1 text-lg font-extrabold tracking-tight text-slate-950 transition-colors group-hover:text-primary-700">
+              <h3 className="line-clamp-1 text-lg font-black tracking-tight text-cocoa-900 transition-colors group-hover:text-primary-600">
                 {event.title}
               </h3>
             </Link>
-            <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
+            <p className="mt-2 line-clamp-2 text-sm leading-6 text-cocoa-500">
               {event.description}
             </p>
           </div>
         </div>
 
-        <div className="space-y-3 text-sm text-slate-600">
+        <div className="space-y-3 text-sm font-semibold text-cocoa-500">
           <div className="flex items-center gap-3">
             <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-700">
               <Calendar className="h-4 w-4" />
@@ -146,10 +146,10 @@ const EventCard = ({ event, index = 0 }) => {
           </div>
         </div>
 
-        <div className="mt-auto flex items-center justify-between gap-4 border-t border-slate-100 pt-5">
+        <div className="mt-auto flex items-center justify-between gap-4 border-t border-cocoa-100 pt-5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">From</p>
-            <div className="mt-1 flex items-center text-xl font-extrabold text-slate-950">
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-cocoa-300">From</p>
+            <div className="mt-1 flex items-center text-xl font-black text-primary-500">
               <IndianRupee className="h-5 w-5" />
               <span>{Number(event.price || 0).toLocaleString('en-IN')}</span>
             </div>
@@ -165,7 +165,7 @@ const EventCard = ({ event, index = 0 }) => {
           </span>
         </div>
 
-        <Link to={`/events/${event._id}`} className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary-700">
+        <Link to={`/events/${event._id}`} className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-primary-600">
           View details
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </Link>

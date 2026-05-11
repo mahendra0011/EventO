@@ -85,20 +85,20 @@ const CreateEvent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[#fbf8f4] py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center text-gray-600 hover:text-primary-600 mb-6"
+          className="flex items-center text-cocoa-500 hover:text-primary-600 mb-6"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Dashboard
         </button>
 
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Event</h1>
-          <p className="text-gray-600 mb-8">Fill in the details to create a new event</p>
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-cocoa-900 mb-2">Create New Event</h1>
+          <p className="text-cocoa-500 mb-8">Fill in the details to create a new event</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
@@ -244,7 +244,7 @@ const CreateEvent = () => {
                 className="input-field"
                 placeholder="https://example.com/image.jpg"
               />
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-cocoa-400 mt-1">
                 Leave empty to use default image
               </p>
             </div>
@@ -304,7 +304,7 @@ const CreateEvent = () => {
                 className="input-field"
                 placeholder="tech, conference, networking (comma separated)"
               />
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-cocoa-400 mt-1">
                 Separate tags with commas
               </p>
             </div>

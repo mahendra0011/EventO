@@ -32,10 +32,10 @@ const ProtectedRoute = ({ children, adminOnly = false, hostOnly = false, allowHo
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-[#fbf8f4]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-200 border-t-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading...</p>
+          <p className="text-cocoa-500 font-medium">Loading...</p>
         </div>
       </div>
     );
@@ -215,7 +215,7 @@ function AppContent() {
   const hideFooter = location.pathname.includes('/chat');
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-[#fbf8f4] text-cocoa-900">
       <Navbar />
       <main className="flex-grow">
         <AnimatedRoutes />
@@ -226,11 +226,11 @@ function AppContent() {
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#0f172a',
+            background: '#3a271d',
             color: '#fff',
             borderRadius: '8px',
             padding: '16px',
-            boxShadow: '0 20px 45px rgba(15, 23, 42, 0.18)',
+            boxShadow: '0 20px 45px rgba(58, 39, 29, 0.18)',
           },
           success: {
             duration: 3000,

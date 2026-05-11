@@ -297,12 +297,12 @@ const EventDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[#fbf8f4] py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center text-gray-600 hover:text-primary-600 mb-6"
+          className="flex items-center text-cocoa-500 hover:text-primary-600 mb-6"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Events
@@ -311,7 +311,7 @@ const EventDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Event Details */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
               <img
                 src={event.image}
                 alt={event.title}
@@ -332,7 +332,7 @@ const EventDetail = () => {
                     className={`p-2 rounded-full ${
                       inWishlist 
                         ? 'bg-red-500 text-white' 
-                        : 'bg-gray-100 text-gray-600 hover:text-red-500 hover:bg-red-50'
+                        : 'bg-[#f3eee9] text-cocoa-500 hover:text-red-500 hover:bg-red-50'
                     }`}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -342,39 +342,39 @@ const EventDetail = () => {
                   </motion.button>
                 </div>
 
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">{event.title}</h1>
+                <h1 className="text-3xl font-bold text-cocoa-900 mb-4">{event.title}</h1>
 
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-cocoa-500">
                     <Calendar className="h-5 w-5 mr-3 text-primary-600" />
                     <span>{formatDate(event.date)}</span>
                   </div>
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-cocoa-500">
                     <Clock className="h-5 w-5 mr-3 text-primary-600" />
                     <span>{event.time}</span>
                   </div>
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-cocoa-500">
                     <MapPin className="h-5 w-5 mr-3 text-primary-600" />
                     <span>{event.venue}</span>
                   </div>
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-cocoa-500">
                     <Users className="h-5 w-5 mr-3 text-primary-600" />
                     <span>{event.location}</span>
                  </div>
 
                  {/* Host Contact Info */}
                  {event.organizer && (
-                   <div className="border-t border-gray-200 pt-6">
+                   <div className="border-t border-cocoa-100 pt-6">
                      <h2 className="text-xl font-semibold mb-4 flex items-center">
                        Contact Host
                      </h2>
-                     <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                       <div className="flex items-center text-gray-600">
+                     <div className="bg-[#fbf8f4] rounded-lg p-4 space-y-2">
+                       <div className="flex items-center text-cocoa-500">
                          <User className="h-5 w-5 mr-3 text-primary-600" />
                          <span className="font-medium">{event.organizer.name}</span>
                        </div>
                        {event.organizer.email && (
-                         <div className="flex items-center text-gray-600">
+                         <div className="flex items-center text-cocoa-500">
                            <Mail className="h-5 w-5 mr-3 text-primary-600" />
                            <a href={`mailto:${event.organizer.email}`} className="text-primary-600 hover:underline">
                              {event.organizer.email}
@@ -382,7 +382,7 @@ const EventDetail = () => {
                          </div>
                        )}
                        {event.organizer.phone && (
-                         <div className="flex items-center text-gray-600">
+                         <div className="flex items-center text-cocoa-500">
                            <Phone className="h-5 w-5 mr-3 text-primary-600" />
                            <a href={`tel:${event.organizer.phone}`} className="text-primary-600 hover:underline">
                              {event.organizer.phone}
@@ -394,7 +394,7 @@ const EventDetail = () => {
                  )}
 
                  {/* Reviews Section */}
-                 <div className="border-t border-gray-200 pt-6">
+                 <div className="border-t border-cocoa-100 pt-6">
                    <div className="flex items-center justify-between mb-4">
                      <h2 className="text-xl font-semibold flex items-center">
                        Reviews & Ratings
@@ -412,18 +412,18 @@ const EventDetail = () => {
                          {[1,2,3,4,5].map((star) => (
                            <Star
                              key={star}
-                             className={`h-5 w-5 ${star <= Math.round(avgRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                             className={`h-5 w-5 ${star <= Math.round(avgRating) ? 'text-yellow-400 fill-current' : 'text-cocoa-200'}`}
                            />
                          ))}
                        </div>
                        <span className="text-lg font-semibold">{avgRating}</span>
-                       <span className="text-gray-500">({reviews.length} reviews)</span>
+                       <span className="text-cocoa-400">({reviews.length} reviews)</span>
                      </div>
                    )}
 
                    {/* Review Form */}
                    {showReviewForm && user && !userReview && (
-                     <form onSubmit={handleSubmitReview} className="bg-gray-50 p-4 rounded-lg mb-6">
+                     <form onSubmit={handleSubmitReview} className="bg-[#fbf8f4] p-4 rounded-lg mb-6">
                        <div className="mb-4">
                          <label className="label">Rating</label>
                          <div className="flex items-center gap-2">
@@ -435,7 +435,7 @@ const EventDetail = () => {
                                className="focus:outline-none"
                              >
                                <Star
-                                 className={`h-6 w-6 ${star <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                                 className={`h-6 w-6 ${star <= rating ? 'text-yellow-400 fill-current' : 'text-cocoa-200'}`}
                                />
                              </button>
                            ))}
@@ -466,10 +466,10 @@ const EventDetail = () => {
                    {reviews.length > 0 ? (
                      <div className="space-y-4">
                        {reviews.map((review) => (
-                         <div key={review._id} className="border border-gray-200 rounded-lg p-4 bg-white">
+                         <div key={review._id} className="border border-cocoa-100 rounded-lg p-4 bg-white">
                            <div className="flex items-center justify-between mb-2">
                              <span className="font-semibold">{review.user?.name}</span>
-                             <span className="text-sm text-gray-500">
+                             <span className="text-sm text-cocoa-400">
                                {new Date(review.createdAt).toLocaleDateString()}
                              </span>
                            </div>
@@ -477,26 +477,26 @@ const EventDetail = () => {
                              {[1,2,3,4,5].map((star) => (
                                <Star
                                  key={star}
-                                 className={`h-4 w-4 ${star <= review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                                 className={`h-4 w-4 ${star <= review.rating ? 'text-yellow-400 fill-current' : 'text-cocoa-200'}`}
                                />
                              ))}
                            </div>
-                           {review.comment && <p className="text-gray-600">{review.comment}</p>}
+                           {review.comment && <p className="text-cocoa-500">{review.comment}</p>}
                          </div>
                        ))}
                      </div>
                    ) : (
-                     <div className="text-center py-8 bg-gray-50 rounded-lg">
-                       <Star className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                       <p className="text-gray-600">No reviews yet. Be the first to review!</p>
+                     <div className="text-center py-8 bg-[#fbf8f4] rounded-lg">
+                       <Star className="h-12 w-12 text-cocoa-200 mx-auto mb-3" />
+                       <p className="text-cocoa-500">No reviews yet. Be the first to review!</p>
                      </div>
                    )}
                  </div>
                </div>
 
-                <div className="border-t border-gray-200 pt-6">
+                <div className="border-t border-cocoa-100 pt-6">
                   <h2 className="text-xl font-semibold mb-4">About This Event</h2>
-                  <p className="text-gray-600 whitespace-pre-line">{event.description}</p>
+                  <p className="text-cocoa-500 whitespace-pre-line">{event.description}</p>
                 </div>
 
                 {event.tags && event.tags.length > 0 && (
@@ -506,7 +506,7 @@ const EventDetail = () => {
                       {event.tags.map((tag, index) => (
                         <span
                           key={index}
-                          className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm"
+                          className="bg-[#f3eee9] text-cocoa-700 px-3 py-1 rounded-full text-sm"
                         >
                           {tag}
                         </span>
@@ -520,17 +520,17 @@ const EventDetail = () => {
 
           {/* Booking Card */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-lg p-6 sticky top-24">
+            <div className="bg-white rounded-lg shadow-lg p-6 sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center text-primary-600">
                   <IndianRupee className="h-8 w-8" />
                   <span className="text-4xl font-bold">{event.price.toLocaleString('en-IN')}</span>
                 </div>
-                <span className="text-gray-500">per ticket</span>
+                <span className="text-cocoa-400">per ticket</span>
               </div>
 
               <div className="space-y-4 mb-6">
-                <div className="flex items-center justify-between text-gray-600">
+                <div className="flex items-center justify-between text-cocoa-500">
                   <span>Available Tickets</span>
                   <span className="font-semibold text-green-600">
                     {event.availableTickets} / {event.totalTickets}
@@ -555,16 +555,16 @@ const EventDetail = () => {
                 )}
 
                 {event.availableTickets > 0 && (
-                  <div className="border-t border-gray-200 pt-4">
-                    <div className="flex justify-between text-gray-600 mb-2">
+                  <div className="border-t border-cocoa-100 pt-4">
+                    <div className="flex justify-between text-cocoa-500 mb-2">
                       <span>Subtotal</span>
                       <span>₹{(event.price * numberOfTickets).toLocaleString('en-IN')}</span>
                     </div>
-                    <div className="flex justify-between text-gray-600 mb-2">
+                    <div className="flex justify-between text-cocoa-500 mb-2">
                       <span>Service Fee</span>
                       <span>₹0</span>
                     </div>
-                    <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t border-gray-200">
+                    <div className="flex justify-between text-xl font-bold text-cocoa-900 pt-2 border-t border-cocoa-100">
                       <span>Total</span>
                       <span>₹{(event.price * numberOfTickets).toLocaleString('en-IN')}</span>
                     </div>
@@ -604,7 +604,7 @@ const EventDetail = () => {
                ) : (
                  <button
                    disabled
-                   className="w-full bg-gray-300 text-gray-500 px-6 py-3 rounded-lg font-semibold cursor-not-allowed"
+                   className="w-full bg-gray-300 text-cocoa-400 px-6 py-3 rounded-lg font-semibold cursor-not-allowed"
                  >
                    Sold Out
                  </button>
@@ -620,7 +620,7 @@ const EventDetail = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-xl p-8 max-w-md w-full mx-4"
+              className="bg-white rounded-lg p-8 max-w-md w-full mx-4"
             >
               {!bookingOtpVerified ? (
                 <>
@@ -628,8 +628,8 @@ const EventDetail = () => {
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
                       <ShieldCheck className="h-8 w-8 text-primary-600" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900">Verify Your Booking</h2>
-                    <p className="mt-2 text-gray-600">
+                    <h2 className="text-2xl font-bold text-cocoa-900">Verify Your Booking</h2>
+                    <p className="mt-2 text-cocoa-500">
                       We sent a 6-digit code to your email<br />
                       <strong>{user?.email}</strong>
                     </p>
@@ -653,7 +653,7 @@ const EventDetail = () => {
                     </div>
 
                     {/* Timer */}
-                    <div className="flex items-center justify-center space-x-2 text-gray-600">
+                    <div className="flex items-center justify-center space-x-2 text-cocoa-500">
                       <Timer className="h-4 w-4" />
                       <span className="text-sm">
                         Expires in <strong className={bookingOtpTimer < 60 ? 'text-red-600' : ''}>{formatTime(bookingOtpTimer)}</strong>
@@ -682,7 +682,7 @@ const EventDetail = () => {
                         <span>Resend OTP</span>
                       </button>
                     ) : (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-cocoa-500">
                         Resend OTP in <strong>{bookingResendCountdown}s</strong>
                       </p>
                     )}
@@ -692,25 +692,25 @@ const EventDetail = () => {
                   <div className="mt-4 text-center">
                     <button
                       onClick={handleCloseBookingModal}
-                      className="text-gray-500 hover:text-gray-700 text-sm"
+                      className="text-cocoa-400 hover:text-cocoa-700 text-sm"
                     >
                       Close
                     </button>
                   </div>
 
                   {/* Booking Summary */}
-                  <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="mt-6 pt-6 border-t border-cocoa-100">
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Event</span>
+                        <span className="text-cocoa-500">Event</span>
                         <span className="font-semibold truncate ml-4">{event.title}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Tickets</span>
+                        <span className="text-cocoa-500">Tickets</span>
                         <span className="font-semibold">{numberOfTickets}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Total</span>
+                        <span className="text-cocoa-500">Total</span>
                         <span className="font-semibold text-primary-600">₹{(event.price * numberOfTickets).toLocaleString('en-IN')}</span>
                       </div>
                     </div>
@@ -726,8 +726,8 @@ const EventDetail = () => {
                   <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
                     <CheckCircle className="h-12 w-12 text-green-600" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
-                  <p className="text-gray-600 mb-6">
+                  <h2 className="text-2xl font-bold text-cocoa-900 mb-2">Booking Confirmed!</h2>
+                  <p className="text-cocoa-500 mb-6">
                     Your booking is confirmed. A confirmation email has been sent.
                   </p>
                   <div className="space-y-3">

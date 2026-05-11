@@ -160,7 +160,7 @@ const VerifyEmail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-[#fff8f2] relative overflow-hidden">
       <div className="absolute inset-0 bg-gray-900 bg-opacity-40" />
       <div className="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
@@ -173,8 +173,8 @@ const VerifyEmail = () => {
                 Evento
               </span>
             </a>
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">{verificationTitle}</h2>
-            <p className="mt-2 text-gray-600">
+            <h2 className="mt-4 text-2xl font-bold text-cocoa-900">{verificationTitle}</h2>
+            <p className="mt-2 text-cocoa-500">
               {verificationDescription}
               {displayEmail && (
                 <>
@@ -191,7 +191,7 @@ const VerifyEmail = () => {
             <div>
               <label htmlFor="otp" className="label">Enter Verification Code</label>
               <div className="relative">
-                <ShieldCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <ShieldCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-cocoa-300" />
                 <input
                   id="otp"
                   type="text"
@@ -208,7 +208,7 @@ const VerifyEmail = () => {
             </div>
 
             {/* Timer */}
-            <div className="flex items-center justify-center space-x-2 text-gray-600">
+            <div className="flex items-center justify-center space-x-2 text-cocoa-500">
               <Timer className="h-4 w-4" />
               <span className="text-sm">
                 Expires in <strong>{formatTime(otpTimer)}</strong>
@@ -237,7 +237,7 @@ const VerifyEmail = () => {
                 <span>Resend Code</span>
               </button>
             ) : (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-cocoa-500">
                 Resend OTP in <strong>{resendCountdown}s</strong>
               </p>
             )}

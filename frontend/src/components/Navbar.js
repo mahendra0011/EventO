@@ -76,7 +76,9 @@ const Navbar = () => {
 
   const navLinks = [
     { to: '/', label: 'Home' },
-    { to: '/events', label: 'Events' },
+    { to: '/events', label: 'Browse Events' },
+    { to: '/dashboard', label: 'Dashboard' },
+    { to: '/host', label: 'Host Panel' },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -111,36 +113,36 @@ const Navbar = () => {
     <motion.nav
       className={`sticky top-0 z-50 border-b transition-all duration-300 ${
         scrolled
-          ? 'border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-xl'
-          : 'border-transparent bg-white/95 backdrop-blur'
+          ? 'border-cocoa-100 bg-[#fffdfb]/95 shadow-sm backdrop-blur-xl'
+          : 'border-cocoa-100/70 bg-[#fffdfb]/95 backdrop-blur'
       }`}
       initial={{ y: -80 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.45, ease: 'easeOut' }}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between gap-4">
+        <div className="flex h-16 items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3" aria-label="Evento home">
-            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white shadow-lg shadow-slate-900/15">
+            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 text-white shadow-lg shadow-primary-500/20">
               <CalendarDays className="h-6 w-6" />
             </span>
             <span className="leading-none">
-              <span className="block text-xl font-extrabold tracking-tight text-slate-950">Evento</span>
-              <span className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 sm:block">
+              <span className="block text-xl font-black uppercase tracking-tight text-cocoa-900">Evento</span>
+              <span className="hidden text-xs font-extrabold uppercase tracking-[0.2em] text-cocoa-300 sm:block">
                 Events made easy
               </span>
             </span>
           </Link>
 
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-3 md:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                className={`rounded-full px-5 py-2.5 text-sm font-extrabold transition-all ${
                   isActive(link.to)
-                    ? 'bg-slate-950 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
+                    ? 'bg-primary-50 text-primary-600'
+                    : 'text-cocoa-500 hover:bg-primary-50 hover:text-primary-600'
                 }`}
               >
                 {link.label}
@@ -156,7 +158,7 @@ const Navbar = () => {
                   className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
                     isActive(accountLink.to)
                       ? 'bg-primary-50 text-primary-700'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
+                      : 'text-cocoa-600 hover:bg-primary-50 hover:text-primary-600'
                   }`}
                 >
                   <AccountIcon className="h-4 w-4" />
@@ -167,7 +169,7 @@ const Navbar = () => {
                   <button
                     type="button"
                     onClick={() => setShowNotifications(!showNotifications)}
-                    className="relative rounded-lg border border-slate-200 bg-white p-2.5 text-slate-600 shadow-sm transition-all hover:border-primary-200 hover:text-primary-700"
+                    className="relative rounded-lg border border-cocoa-100 bg-white p-2.5 text-cocoa-600 shadow-sm transition-all hover:border-primary-200 hover:text-primary-600"
                     aria-label="Open notifications"
                   >
                     <Bell className="h-5 w-5" />
@@ -184,12 +186,12 @@ const Navbar = () => {
                         initial={{ opacity: 0, y: -8 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -8 }}
-                        className="absolute right-0 mt-3 w-96 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl shadow-slate-900/15"
+                        className="absolute right-0 mt-3 w-96 overflow-hidden rounded-lg border border-cocoa-100 bg-white shadow-2xl shadow-cocoa-900/15"
                       >
-                        <div className="flex items-center justify-between border-b border-slate-100 p-4">
+                        <div className="flex items-center justify-between border-b border-cocoa-100 p-4">
                           <div>
-                            <h4 className="font-bold text-slate-950">Notifications</h4>
-                            <p className="text-xs text-slate-500">
+                            <h4 className="font-bold text-cocoa-900">Notifications</h4>
+                            <p className="text-xs text-cocoa-400">
                               {unreadCount > 0 ? `${unreadCount} unread updates` : 'All caught up'}
                             </p>
                           </div>
@@ -210,21 +212,21 @@ const Navbar = () => {
                               <button
                                 type="button"
                                 key={notification._id}
-                                className={`w-full border-b border-slate-100 p-4 text-left transition-colors hover:bg-slate-50 ${
+                                className={`w-full border-b border-cocoa-100 p-4 text-left transition-colors hover:bg-primary-50/40 ${
                                   !notification.isRead ? 'bg-primary-50/60' : ''
                                 }`}
                                 onClick={() => openNotification(notification)}
                               >
                                 <div className="flex items-start gap-3">
                                   <span className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ${
-                                    !notification.isRead ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-500'
+                                    !notification.isRead ? 'bg-primary-500 text-white' : 'bg-[#f3eee9] text-cocoa-400'
                                   }`}>
                                     <Bell className="h-4 w-4" />
                                   </span>
                                   <span className="min-w-0 flex-1">
-                                    <span className="block truncate text-sm font-bold text-slate-900">{notification.title}</span>
-                                    <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">{notification.message}</span>
-                                    <span className="mt-1 block text-xs text-slate-400">
+                                    <span className="block truncate text-sm font-bold text-cocoa-900">{notification.title}</span>
+                                    <span className="mt-1 line-clamp-2 block text-xs leading-5 text-cocoa-500">{notification.message}</span>
+                                    <span className="mt-1 block text-xs text-cocoa-300">
                                       {new Date(notification.createdAt).toLocaleDateString()}
                                     </span>
                                   </span>
@@ -235,8 +237,8 @@ const Navbar = () => {
                               </button>
                             ))
                           ) : (
-                            <div className="p-10 text-center text-slate-500">
-                              <Bell className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                            <div className="p-10 text-center text-cocoa-500">
+                              <Bell className="mx-auto mb-3 h-10 w-10 text-cocoa-200" />
                               <p className="font-medium">No notifications</p>
                             </div>
                           )}
@@ -249,7 +251,7 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-red-50 hover:text-red-600"
+                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-extrabold text-cocoa-600 transition-all hover:bg-red-50 hover:text-red-600"
                 >
                   <LogOut className="h-4 w-4" />
                   Logout
@@ -259,8 +261,9 @@ const Navbar = () => {
               <>
                 <Link
                   to="/login"
-                  className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-950"
+                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-extrabold text-cocoa-700 transition-all hover:bg-primary-50 hover:text-primary-600"
                 >
+                  <User className="h-4 w-4" />
                   Login
                 </Link>
                 <Link to="/register" className="btn-primary px-5 py-2.5 text-sm">
@@ -274,7 +277,7 @@ const Navbar = () => {
           <button
             type="button"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="rounded-lg border border-slate-200 bg-white p-2.5 text-slate-700 shadow-sm md:hidden"
+            className="rounded-lg border border-cocoa-100 bg-white p-2.5 text-cocoa-700 shadow-sm md:hidden"
             aria-label="Toggle navigation menu"
           >
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -290,15 +293,15 @@ const Navbar = () => {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25 }}
             >
-              <div className="space-y-2 border-t border-slate-100 py-4">
+              <div className="space-y-2 border-t border-cocoa-100 py-4">
                 {navLinks.map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}
                     className={`block rounded-lg px-4 py-3 text-sm font-semibold ${
                       isActive(link.to)
-                        ? 'bg-slate-950 text-white'
-                        : 'text-slate-700 hover:bg-slate-100'
+                        ? 'bg-primary-50 text-primary-600'
+                        : 'text-cocoa-700 hover:bg-primary-50'
                     }`}
                   >
                     {link.label}
@@ -312,7 +315,7 @@ const Navbar = () => {
                       className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold ${
                         isActive(accountLink.to)
                           ? 'bg-primary-50 text-primary-700'
-                          : 'text-slate-700 hover:bg-slate-100'
+                          : 'text-cocoa-700 hover:bg-primary-50'
                       }`}
                     >
                       <AccountIcon className="h-4 w-4" />
@@ -324,7 +327,7 @@ const Navbar = () => {
                         navigate(user.role === 'admin' ? '/admin?tab=notifications' : user.role === 'host' ? '/host?tab=notifications' : '/dashboard?tab=notifications');
                         setIsMenuOpen(false);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                      className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-semibold text-cocoa-700 hover:bg-primary-50"
                     >
                       <span className="flex items-center gap-2">
                         <Bell className="h-4 w-4" />
@@ -342,7 +345,7 @@ const Navbar = () => {
                         handleLogout();
                         setIsMenuOpen(false);
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-red-50 hover:text-red-600"
+                      className="flex w-full items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold text-cocoa-700 hover:bg-red-50 hover:text-red-600"
                     >
                       <LogOut className="h-4 w-4" />
                       Logout
@@ -352,13 +355,13 @@ const Navbar = () => {
                   <>
                     <Link
                       to="/login"
-                      className="block rounded-lg px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                      className="block rounded-lg px-4 py-3 text-sm font-semibold text-cocoa-700 hover:bg-primary-50"
                     >
                       Login
                     </Link>
                     <Link
                       to="/register"
-                      className="flex items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-3 text-sm font-bold text-white"
+                      className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 px-4 py-3 text-sm font-bold text-white"
                     >
                       Sign Up
                       <ArrowRight className="h-4 w-4" />

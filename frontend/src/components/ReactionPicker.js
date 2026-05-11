@@ -18,7 +18,7 @@ const ReactionPicker = ({ onSelect, onClose }) => {
         initial={{ opacity: 0, scale: 0.8, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.8, y: 10 }}
-        className='absolute bottom-full right-0 mb-2 p-2 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-10'
+        className='absolute bottom-full right-0 mb-2 p-2 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-10'
       >
         <div className='flex items-center gap-1'>
           {reactions.map((r) => (

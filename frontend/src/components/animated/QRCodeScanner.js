@@ -61,7 +61,7 @@ const QRCodeScanner = ({
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-600 to-secondary-600 p-6 text-white">
         <div className="flex items-center gap-3">
-          <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
+          <div className="bg-white/20 p-3 rounded-lg backdrop-blur-sm">
             <Camera className="h-6 w-6" />
           </div>
           <div>
@@ -82,11 +82,11 @@ const QRCodeScanner = ({
               exit={{ opacity: 0, y: -20 }}
               className="text-center py-8"
             >
-              <div className="bg-gray-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-                <Ticket className="h-12 w-12 text-gray-400" />
+              <div className="bg-[#f3eee9] rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                <Ticket className="h-12 w-12 text-cocoa-300" />
               </div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">Ready to Scan</h4>
-              <p className="text-gray-600 mb-6">
+              <h4 className="text-lg font-semibold text-cocoa-900 mb-2">Ready to Scan</h4>
+              <p className="text-cocoa-500 mb-6">
                 Click the button below to start scanning QR codes
               </p>
               <AnimatedButton
@@ -108,7 +108,7 @@ const QRCodeScanner = ({
               exit={{ opacity: 0, scale: 0.9 }}
               className="space-y-4"
             >
-              <div className="relative aspect-square max-w-md mx-auto overflow-hidden rounded-2xl border-4 border-primary-200 shadow-xl">
+              <div className="relative aspect-square max-w-md mx-auto overflow-hidden rounded-lg border-4 border-primary-200 shadow-xl">
                 <Scanner
                   onScan={handleScan}
                   onError={handleCameraError}
@@ -120,7 +120,7 @@ const QRCodeScanner = ({
                 
                 {/* Scanning Overlay */}
                 <div className="absolute inset-0 pointer-events-none">
-                  <div className="absolute inset-0 border-2 border-primary-500/50 rounded-2xl"></div>
+                  <div className="absolute inset-0 border-2 border-primary-500/50 rounded-lg"></div>
                   <motion.div
                     className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
                     animate={{ 
@@ -129,14 +129,14 @@ const QRCodeScanner = ({
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
-                    <div className="w-48 h-48 border-4 border-primary-500 rounded-2xl"></div>
+                    <div className="w-48 h-48 border-4 border-primary-500 rounded-lg"></div>
                   </motion.div>
                 </div>
               </div>
 
               <div className="text-center">
                 <motion.p
-                  className="text-gray-600"
+                  className="text-cocoa-500"
                   animate={{ opacity: [0.5, 1, 0.5] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
@@ -179,40 +179,40 @@ const QRCodeScanner = ({
                         Valid Ticket!
                       </GradientText>
                     </h4>
-                    <p className="text-gray-600">Entry approved</p>
+                    <p className="text-cocoa-500">Entry approved</p>
                   </div>
 
                   {/* Ticket Details */}
-                  <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+                  <div className="bg-[#fbf8f4] rounded-lg p-6 space-y-4">
                     <div className="flex items-center gap-3">
                       <Ticket className="h-5 w-5 text-primary-600" />
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Event</p>
-                        <p className="font-semibold text-gray-900">{scanResult.data.eventTitle}</p>
+                        <p className="text-xs text-cocoa-400 uppercase tracking-wide">Event</p>
+                        <p className="font-semibold text-cocoa-900">{scanResult.data.eventTitle}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
                       <User className="h-5 w-5 text-primary-600" />
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Attendee</p>
-                        <p className="font-semibold text-gray-900">{scanResult.data.userName}</p>
+                        <p className="text-xs text-cocoa-400 uppercase tracking-wide">Attendee</p>
+                        <p className="font-semibold text-cocoa-900">{scanResult.data.userName}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
                       <Ticket className="h-5 w-5 text-primary-600" />
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Tickets</p>
-                        <p className="font-semibold text-gray-900">{scanResult.data.numberOfTickets}</p>
+                        <p className="text-xs text-cocoa-400 uppercase tracking-wide">Tickets</p>
+                        <p className="font-semibold text-cocoa-900">{scanResult.data.numberOfTickets}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-primary-600" />
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Ticket ID</p>
-                        <p className="font-mono font-semibold text-gray-900">
+                        <p className="text-xs text-cocoa-400 uppercase tracking-wide">Ticket ID</p>
+                        <p className="font-mono font-semibold text-cocoa-900">
                           {scanResult.data.ticketId?.slice(-12).toUpperCase()}
                         </p>
                       </div>
@@ -245,7 +245,7 @@ const QRCodeScanner = ({
                         Invalid Ticket
                       </GradientText>
                     </h4>
-                    <p className="text-gray-600">{scanResult.error || 'Unable to verify ticket'}</p>
+                    <p className="text-cocoa-500">{scanResult.error || 'Unable to verify ticket'}</p>
                   </div>
 
                   <AnimatedButton
@@ -274,7 +274,7 @@ const QRCodeScanner = ({
               Evento
             </span>
           </div>
-          <p className="text-gray-400 text-sm">
+          <p className="text-cocoa-300 text-sm">
             Event Entry System
           </p>
         </div>

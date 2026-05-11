@@ -40,7 +40,7 @@ const BookingConfirmation = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-[#fbf8f4]">
         <motion.div
           className="rounded-full h-16 w-16 border-4 border-primary-200 border-t-primary-600"
           animate={{ rotate: 360 }}
@@ -52,9 +52,9 @@ const BookingConfirmation = () => {
 
   if (!booking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-[#fbf8f4]">
         <AnimatedContainer className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Booking not found</h2>
+          <h2 className="text-2xl font-bold text-cocoa-900 mb-4">Booking not found</h2>
           <AnimatedButton variant="primary">
             <Link to="/dashboard">Go to Dashboard</Link>
           </AnimatedButton>
@@ -64,7 +64,7 @@ const BookingConfirmation = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+    <div className="min-h-screen bg-[#fbf8f4] py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <motion.div
@@ -73,7 +73,7 @@ const BookingConfirmation = () => {
         >
           <Link
             to="/dashboard"
-            className="flex items-center text-gray-600 hover:text-primary-600 mb-6 transition-colors"
+            className="flex items-center text-cocoa-500 hover:text-primary-600 mb-6 transition-colors"
           >
             <ArrowLeft className="h-5 w-5 mr-2" />
             Back to Dashboard
@@ -82,7 +82,7 @@ const BookingConfirmation = () => {
 
         {/* Success Header */}
         <AnimatedContainer className="mb-8">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-8 text-center text-white shadow-xl relative overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-8 text-center text-white shadow-xl relative overflow-hidden">
             {/* Decorative Elements */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-16 -translate-x-16"></div>
@@ -123,7 +123,7 @@ const BookingConfirmation = () => {
           transition={{ delay: 0.2 }}
           className="mb-8"
         >
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-cocoa-900 mb-4 flex items-center gap-2">
             <Ticket className="h-6 w-6 text-primary-600" />
             Your E-Ticket
           </h2>
@@ -139,17 +139,17 @@ const BookingConfirmation = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-xl shadow-lg overflow-hidden mb-8"
+          className="bg-white rounded-lg shadow-lg overflow-hidden mb-8"
         >
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-900">Booking Details</h2>
+          <div className="p-6 border-b border-cocoa-100">
+            <h2 className="text-xl font-semibold text-cocoa-900">Booking Details</h2>
           </div>
           
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Event Info */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-cocoa-900 mb-4 flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-primary-600" />
                   Event Information
                 </h3>
@@ -160,10 +160,10 @@ const BookingConfirmation = () => {
                     className="w-24 h-24 object-cover rounded-lg shadow-md"
                   />
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-2">
+                    <h4 className="font-semibold text-cocoa-900 mb-2">
                       {booking.event?.title}
                     </h4>
-                    <div className="space-y-1 text-sm text-gray-600">
+                    <div className="space-y-1 text-sm text-cocoa-500">
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-2 text-primary-500" />
                         <span>{formatDate(booking.event?.date)}</span>
@@ -183,26 +183,26 @@ const BookingConfirmation = () => {
 
               {/* Ticket Info */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-cocoa-900 mb-4 flex items-center gap-2">
                   <Ticket className="h-5 w-5 text-primary-600" />
                   Ticket Details
                 </h3>
-                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="bg-[#fbf8f4] rounded-lg p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Booking ID</span>
+                    <span className="text-cocoa-500">Booking ID</span>
                     <span className="font-mono text-sm font-medium">{booking._id?.slice(-12).toUpperCase()}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Number of Tickets</span>
+                    <span className="text-cocoa-500">Number of Tickets</span>
                     <span className="font-semibold">{booking.numberOfTickets}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-600">Price per Ticket</span>
+                    <span className="text-cocoa-500">Price per Ticket</span>
                     <span className="font-semibold">₹{booking.event?.price?.toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="border-t border-gray-200 pt-3 mt-3">
+                  <div className="border-t border-cocoa-100 pt-3 mt-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-semibold text-gray-900">Total Amount</span>
+                      <span className="text-lg font-semibold text-cocoa-900">Total Amount</span>
                       <span className="text-2xl font-bold text-primary-600">₹{booking.totalPrice?.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
@@ -212,21 +212,21 @@ const BookingConfirmation = () => {
 
             {/* Attendee Details */}
             {booking.attendeeDetails && booking.attendeeDetails.length > 0 && (
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Attendee Information</h3>
+              <div className="mt-6 pt-6 border-t border-cocoa-100">
+                <h3 className="text-lg font-semibold text-cocoa-900 mb-4">Attendee Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {booking.attendeeDetails.map((attendee, index) => (
                     <motion.div 
                       key={index} 
-                      className="bg-gray-50 rounded-lg p-4"
+                      className="bg-[#fbf8f4] rounded-lg p-4"
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
                     >
-                      <p className="font-medium text-gray-900">{attendee.name}</p>
-                      <p className="text-sm text-gray-600">{attendee.email}</p>
+                      <p className="font-medium text-cocoa-900">{attendee.name}</p>
+                      <p className="text-sm text-cocoa-500">{attendee.email}</p>
                       {attendee.phone && (
-                        <p className="text-sm text-gray-600">{attendee.phone}</p>
+                        <p className="text-sm text-cocoa-500">{attendee.phone}</p>
                       )}
                     </motion.div>
                   ))}
@@ -241,7 +241,7 @@ const BookingConfirmation = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-8"
+          className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-8"
         >
           <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center gap-2">
             <Sparkles className="h-5 w-5" />

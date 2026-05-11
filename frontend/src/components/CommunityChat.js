@@ -400,7 +400,7 @@ const CommunityChat = () => {
       {/* Ambient background effects */}
       <div className='fixed inset-0 overflow-hidden pointer-events-none'>
         <div className='absolute top-0 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl' />
-        <div className='absolute bottom-0 right-1/4 w-96 h-96 bg-slate-500/10 rounded-full blur-3xl' />
+        <div className='absolute bottom-0 right-1/4 w-96 h-96 bg-[#fbf8f4]0/10 rounded-full blur-3xl' />
         <div className='absolute top-1/2 left-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.03),transparent_70%)]' />
       </div>
       
@@ -409,22 +409,22 @@ const CommunityChat = () => {
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
           className='flex items-center justify-between mb-4'>
           <div className='flex items-center gap-4'>
-            <div className='w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20'>
-              <MessageSquare className='w-6 h-6 text-slate-900' />
+            <div className='w-12 h-12 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20'>
+              <MessageSquare className='w-6 h-6 text-cocoa-900' />
             </div>
             <div>
               <h1 className='text-3xl font-serif text-white tracking-tight'>Community Hub</h1>
-              <p className='text-slate-400 text-sm'>Connect, collaborate, and converse</p>
+              <p className='text-cocoa-300 text-sm'>Connect, collaborate, and converse</p>
             </div>
           </div>
           
-          <div className='flex bg-slate-800/50 backdrop-blur-sm rounded-xl p-1 border border-slate-700/50'>
+          <div className='flex bg-slate-800/50 backdrop-blur-sm rounded-lg p-1 border border-slate-700/50'>
             <button onClick={() => { setActiveRole("user"); setSelectedUser(null); setSelectedEvent(null); }}
-              className={'px-5 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ' + (activeRole === "user" ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 shadow-lg shadow-amber-500/20" : "text-slate-400")}>
+              className={'px-5 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ' + (activeRole === "user" ? "bg-gradient-to-r from-amber-500 to-amber-600 text-cocoa-900 shadow-lg shadow-amber-500/20" : "text-cocoa-300")}>
               <User className='w-4 h-4' /> User View
             </button>
             <button onClick={() => { setActiveRole("host"); setSelectedUser(null); setSelectedEvent(null); }}
-              className={'px-5 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ' + (activeRole === "host" ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 shadow-lg shadow-amber-500/20" : "text-slate-400")}>
+              className={'px-5 py-2.5 rounded-lg font-medium text-sm transition-all flex items-center gap-2 ' + (activeRole === "host" ? "bg-gradient-to-r from-amber-500 to-amber-600 text-cocoa-900 shadow-lg shadow-amber-500/20" : "text-cocoa-300")}>
               <Crown className='w-4 h-4' /> Host View
             </button>
           </div>
@@ -435,7 +435,7 @@ const CommunityChat = () => {
           
           {/* Sidebar - Events List */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
-            className='xl:col-span-1 bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-2xl overflow-hidden shadow-2xl'>
+            className='xl:col-span-1 bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-lg overflow-hidden shadow-2xl'>
             <div className='p-5 border-b border-slate-800/50 bg-slate-900/30'>
               <div className='flex items-center gap-2 mb-3'>
                 <Users className='w-5 h-5 text-amber-500' />
@@ -453,7 +453,7 @@ const CommunityChat = () => {
                     onClick={() => { setSelectedEvent(event.id); setSelectedUser(null); }}
                     className={'p-4 cursor-pointer border-b border-slate-800/30 transition-all duration-300 group relative ' + (selectedEvent === event.id ? "bg-gradient-to-r from-amber-500/10 to-transparent border-amber-500/30" : "hover:bg-slate-800/20 hover:border-slate-700/50")}>
                     <div className='flex items-start gap-3'>
-                      <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform'>
+                      <div className='w-10 h-10 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform'>
                         <span className='text-xs font-bold text-amber-500'>{event.category}</span>
                       </div>
                       <div className='flex-1 min-w-0'>
@@ -462,9 +462,9 @@ const CommunityChat = () => {
                           {isJoined && <span className='flex-shrink-0 w-2 h-2 rounded-full bg-emerald-500/60 border border-emerald-500/30' />}
                         </div>
                         <div className='flex items-center gap-2 mt-1'>
-                          <span className='text-xs text-slate-500'>{host?.name}</span>
-                          <span className='text-xs text-slate-600'>•</span>
-                          <span className='text-xs text-slate-500'>{event.participantCount} attending</span>
+                          <span className='text-xs text-cocoa-400'>{host?.name}</span>
+                          <span className='text-xs text-cocoa-500'>•</span>
+                          <span className='text-xs text-cocoa-400'>{event.participantCount} attending</span>
                         </div>
                       </div>
                     </div>
@@ -486,20 +486,20 @@ const CommunityChat = () => {
 
           {/* Main Chat Area */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
-            className='xl:col-span-3 bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-2xl overflow-hidden shadow-2xl flex flex-col'>
+            className='xl:col-span-3 bg-slate-900/40 backdrop-blur-md border border-slate-800/50 rounded-lg overflow-hidden shadow-2xl flex flex-col'>
             {selectedEvent ? (
               <>
                 {/* Chat Header */}
                 <div className='p-5 border-b border-slate-800/50 bg-slate-900/30'>
                   <div className='flex items-center justify-between'>
                     <div className='flex items-center gap-4'>
-                      <div className='w-12 h-12 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 flex items-center justify-center'>
+                      <div className='w-12 h-12 rounded-lg bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 flex items-center justify-center'>
                         <User className='w-6 h-6 text-amber-500' />
                       </div>
                       <div>
                         <h2 className='font-serif text-xl text-white'>{mockEvents.find(e => e.id === selectedEvent)?.title}</h2>
                         <div className='flex items-center gap-3 mt-1'>
-                          <span className='text-sm text-slate-400'>{mockEvents.find(e => e.id === selectedEvent)?.date}</span>
+                          <span className='text-sm text-cocoa-300'>{mockEvents.find(e => e.id === selectedEvent)?.date}</span>
                           {activeRole === "host" && (
                             <span className='flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium'>
                               <Star className='w-3 h-3' /> Host Mode
@@ -509,13 +509,13 @@ const CommunityChat = () => {
                       </div>
                     </div>
                     
-                    <div className='flex bg-slate-800/50 rounded-xl p-1'>
+                    <div className='flex bg-slate-800/50 rounded-lg p-1'>
                       <button onClick={() => setActiveTab("direct")}
-                        className={'px-4 py-2 rounded-lg text-sm font-medium transition-all ' + (activeTab === "direct" ? "bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20" : "text-slate-400")}>
+                        className={'px-4 py-2 rounded-lg text-sm font-medium transition-all ' + (activeTab === "direct" ? "bg-amber-500 text-cocoa-900 shadow-lg shadow-amber-500/20" : "text-cocoa-300")}>
                         Direct
                       </button>
                       <button onClick={() => setActiveTab("community")}
-                        className={'px-4 py-2 rounded-lg text-sm font-medium transition-all ' + (activeTab === "community" ? "bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20" : "text-slate-400")}>
+                        className={'px-4 py-2 rounded-lg text-sm font-medium transition-all ' + (activeTab === "community" ? "bg-amber-500 text-cocoa-900 shadow-lg shadow-amber-500/20" : "text-cocoa-300")}>
                         Community Feed
                       </button>
                     </div>
@@ -524,8 +524,8 @@ const CommunityChat = () => {
                   {/* User Selector for Host Direct Messages */}
                   {activeRole === "host" && activeTab === "direct" && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className='mt-4 flex items-center gap-3'>
-                      <MessageSquare className='w-4 h-4 text-slate-500' />
-                      <span className='text-sm text-slate-400'>Message attendee:</span>
+                      <MessageSquare className='w-4 h-4 text-cocoa-400' />
+                      <span className='text-sm text-cocoa-300'>Message attendee:</span>
                       <select value={selectedUser?.id || ""} onChange={(e) => setSelectedUser(mockAllUsers.find(u => u.id === e.target.value))}
                         className='bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-1.5 text-sm text-slate-200 outline-none'>
                         <option value="">Select a user...</option>
@@ -547,12 +547,12 @@ const CommunityChat = () => {
                      className='p-4 border-b border-slate-800/50 bg-gradient-to-r from-amber-500/5 via-amber-500/5 to-transparent relative overflow-hidden'>
                      <div className='absolute inset-0 opacity-20' style={{ background: 'radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.3), transparent 70%)' }} />
                      <div className='relative flex items-center gap-3 mb-3'>
-                       <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/30 to-amber-600/30 border border-amber-500/30 flex items-center justify-center'>
+                       <div className='w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/30 to-amber-600/30 border border-amber-500/30 flex items-center justify-center'>
                          <Megaphone className='w-5 h-5 text-amber-400' />
                        </div>
                        <div>
                          <span className='font-medium text-amber-500 text-sm uppercase tracking-wider'>Community Feed</span>
-                         <p className='text-slate-400 text-xs'>Connect with fellow attendees</p>
+                         <p className='text-cocoa-300 text-xs'>Connect with fellow attendees</p>
                        </div>
                      </div>
                      <div className='flex items-center gap-2 mb-3'>
@@ -562,12 +562,12 @@ const CommunityChat = () => {
                              className='w-7 h-7 rounded-full border-2 border-slate-900/50' />
                          ))}
                          {getEventParticipants(selectedEvent).length > 3 && (
-                           <div className='w-7 h-7 rounded-full bg-slate-800/80 border-2 border-slate-900/50 flex items-center justify-center text-xs text-slate-500'>
+                           <div className='w-7 h-7 rounded-full bg-slate-800/80 border-2 border-slate-900/50 flex items-center justify-center text-xs text-cocoa-400'>
                              +{getEventParticipants(selectedEvent).length - 3}
                            </div>
                          )}
                        </div>
-                       <span className='text-xs text-slate-500'>{getEventParticipants(selectedEvent).length} attendees</span>
+                       <span className='text-xs text-cocoa-400'>{getEventParticipants(selectedEvent).length} attendees</span>
                      </div>
                    </motion.div>
                  )}
@@ -583,7 +583,7 @@ const CommunityChat = () => {
                      <form onSubmit={handleBroadcast} className='flex gap-2'>
                         <input type='text' value={broadcastMessage} onChange={(e) => setBroadcastMessage(e.target.value)}
                           placeholder='Send announcement to all event participants...' className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none' />
-                       <button type='submit' disabled={!broadcastMessage.trim()} className='px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-lg font-medium text-sm disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-amber-500/20'>
+                       <button type='submit' disabled={!broadcastMessage.trim()} className='px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-cocoa-900 rounded-lg font-medium text-sm disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-amber-500/20'>
                          <span className='flex items-center gap-1'>
                            <Megaphone className='w-4 h-4' />
                            Broadcast
@@ -602,17 +602,17 @@ const CommunityChat = () => {
                   {messages.length === 0 ? (
                      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                        className='flex flex-col items-center justify-center h-full text-center py-12'>
-                       <div className='w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-800/50 flex items-center justify-center mb-4 shadow-lg'>
+                       <div className='w-20 h-20 rounded-lg bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-800/50 flex items-center justify-center mb-4 shadow-lg'>
                          {activeTab === "community" ? (
-                           <MessageSquare className='w-10 h-10 text-slate-600' />
+                           <MessageSquare className='w-10 h-10 text-cocoa-500' />
                          ) : (
-                           <Users className='w-10 h-10 text-slate-600' />
+                           <Users className='w-10 h-10 text-cocoa-500' />
                          )}
                        </div>
-                       <p className='text-slate-400 font-medium text-lg mb-2'>
+                       <p className='text-cocoa-300 font-medium text-lg mb-2'>
                          {activeTab === "community" ? "No community messages yet" : (selectedUser ? `Start a conversation with ${selectedUser.name}` : "Select a user to start chatting")}
                        </p>
-                       <p className='text-slate-600 text-sm'>
+                       <p className='text-cocoa-500 text-sm'>
                          {activeTab === "community" ? (
                            <>
                              {activeRole === "host" ? "Post an announcement or start the conversation!" : "Be the first to post in the community feed!"}
@@ -636,18 +636,18 @@ const CommunityChat = () => {
                                <div className={`flex items-end gap-2 ${msg.senderRole === activeRole && !msg._alignLeft ? 'flex-row-reverse' : ''}`}>
                                  {(msg.senderRole !== activeRole || activeTab === "community") && (
                                     <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
-                                      className={`w-8 h-8 rounded-xl bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-lg border ${
+                                      className={`w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-lg border ${
                                         msg.senderRole === "host" 
                                           ? "from-amber-500/20 to-amber-600/20 border-amber-500/30" 
                                           : "from-slate-700 to-slate-800 border-slate-600/50"
                                       }`}>
-                                     <span className={'text-xs font-bold ' + (msg.senderRole === "host" ? "text-amber-400" : "text-slate-300")}>
+                                     <span className={'text-xs font-bold ' + (msg.senderRole === "host" ? "text-amber-400" : "text-cocoa-200")}>
                                        {(msg.senderName || msg.senderId?.charAt(0) || "?").toUpperCase()}
                                      </span>
                                    </motion.div>
                                  )}
                                <div 
-                                  className={msg.senderRole === activeRole && !msg._alignLeft ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-2xl rounded-br-sm ml-8 px-4 py-2.5 shadow-lg shadow-amber-500/20 group group-hover:shadow-xl transition-all duration-300 relative break-words" : (msg.type === "community" ? "bg-gradient-to-br from-slate-800/80 to-slate-900/80 text-slate-200 border border-amber-500/20 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group group-hover:shadow-xl transition-all duration-300 relative backdrop-blur-sm break-words" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-2xl rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group group-hover:shadow-xl transition-all duration-300 relative break-words")}
+                                  className={msg.senderRole === activeRole && !msg._alignLeft ? "bg-gradient-to-r from-amber-500 to-amber-600 text-cocoa-900 rounded-lg rounded-br-sm ml-8 px-4 py-2.5 shadow-lg shadow-amber-500/20 group group-hover:shadow-xl transition-all duration-300 relative break-words" : (msg.type === "community" ? "bg-gradient-to-br from-slate-800/80 to-slate-900/80 text-slate-200 border border-amber-500/20 rounded-lg rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group group-hover:shadow-xl transition-all duration-300 relative backdrop-blur-sm break-words" : "bg-slate-800/80 backdrop-blur-sm text-slate-200 border border-slate-700/50 rounded-lg rounded-bl-sm mr-8 px-4 py-2.5 shadow-lg group group-hover:shadow-xl transition-all duration-300 relative break-words")}
                                  onContextMenu={(e) => { e.preventDefault(); setActiveMenu(msg.id); }}
                                  onDoubleClick={() => setActiveMenu(msg.id)}
                                  style={{ overflow: 'visible' }}
@@ -670,7 +670,7 @@ const CommunityChat = () => {
                                              autoFocus
                                              className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:ring-2 focus:ring-amber-500/50'
                                            />
-                                           <button onClick={() => handleSaveEdit(msg.id)} className='p-2 bg-emerald-500 text-slate-900 rounded-lg hover:bg-emerald-400'>
+                                           <button onClick={() => handleSaveEdit(msg.id)} className='p-2 bg-emerald-500 text-cocoa-900 rounded-lg hover:bg-emerald-400'>
                                              <Check className='w-4 h-4' />
                                            </button>
                                            <button onClick={handleCancelEdit} className='p-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600'>
@@ -684,11 +684,11 @@ const CommunityChat = () => {
                                            {/* Reply preview */}
                                            {msg.replyTo && (
                                              <div className='mt-2 pt-2 border-t border-slate-700/30'>
-                                               <div className='text-xs text-slate-400 flex items-center gap-1'>
+                                               <div className='text-xs text-cocoa-300 flex items-center gap-1'>
                                                  <Reply className='w-3 h-3' />
                                                  Replying to {msg.replyTo.senderName || 'user'}
                                                </div>
-                                               <div className='text-xs text-slate-500 truncate mt-0.5'>
+                                               <div className='text-xs text-cocoa-400 truncate mt-0.5'>
                                                  {msg.replyTo.content || 'Original message'}
                                                </div>
                                              </div>
@@ -737,7 +737,7 @@ const CommunityChat = () => {
                                          )}
                                          {msg.senderRole === activeRole && (
                                            <span className='flex items-center gap-0.5'>
-                                             {msg.seen ? <CheckCheck className='w-3 h-3 text-slate-400' /> : <Check className='w-3 h-3 text-slate-400' />}
+                                             {msg.seen ? <CheckCheck className='w-3 h-3 text-cocoa-300' /> : <Check className='w-3 h-3 text-cocoa-300' />}
                                            </span>
                                          )}
                                        </div>
@@ -751,7 +751,7 @@ const CommunityChat = () => {
                                         className='absolute -top-2 -right-2 w-8 h-8 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30'
                                        title='More actions'
                                      >
-                                        <svg className='w-4 h-4 text-slate-300' fill='currentColor' viewBox='0 0 20 20'>
+                                        <svg className='w-4 h-4 text-cocoa-200' fill='currentColor' viewBox='0 0 20 20'>
                                          <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
                                        </svg>
                                      </button>
@@ -762,15 +762,15 @@ const CommunityChat = () => {
                                            className='absolute top-full mt-2 right-0 flex items-center justify-end gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 shadow-xl z-50'
                                         >
                                          <button onClick={() => handleReply(msg)} className='p-1.5 hover:bg-slate-700 rounded' title='Reply'>
-                                           <Reply className='w-4 h-4 text-slate-300' />
+                                           <Reply className='w-4 h-4 text-cocoa-200' />
                                          </button>
                                          <button onClick={() => setShowReactionPicker(showReactionPicker === msg.id ? null : msg.id)} className='p-1.5 hover:bg-slate-700 rounded' title='React'>
-                                           <Smile className='w-4 h-4 text-slate-300' />
+                                           <Smile className='w-4 h-4 text-cocoa-200' />
                                          </button>
                                          {msg.senderId === currentUser.id && (
                                            <>
                                              <button onClick={() => handleEdit(msg)} className='p-1.5 hover:bg-slate-700 rounded' title='Edit'>
-                                               <Edit3 className='w-4 h-4 text-slate-300' />
+                                               <Edit3 className='w-4 h-4 text-cocoa-200' />
                                              </button>
                                              <button onClick={() => handleDelete(msg.id)} className='p-1.5 hover:bg-red-500/20 rounded' title='Delete'>
                                                <Trash2 className='w-4 h-4 text-red-400' />
@@ -778,7 +778,7 @@ const CommunityChat = () => {
                                            </>
                                          )}
                                          <button onClick={() => setActiveMenu(null)} className='p-1 hover:bg-slate-700 rounded' title='Close'>
-                                           <X className='w-3 h-3 text-slate-500' />
+                                           <X className='w-3 h-3 text-cocoa-400' />
                                          </button>
                                          {showReactionPicker === msg.id && (
                                            <div className='absolute bottom-full mb-2 left-1/2 -translate-x-1/2'>
@@ -799,7 +799,7 @@ const CommunityChat = () => {
                    {showScrollBtn && (
                      <button
                        onClick={scrollToBottom}
-                       className='absolute bottom-4 right-4 p-2 bg-amber-500 text-slate-900 rounded-full shadow-lg hover:bg-amber-400 transition-colors z-10 flex items-center justify-center'
+                       className='absolute bottom-4 right-4 p-2 bg-amber-500 text-cocoa-900 rounded-full shadow-lg hover:bg-amber-400 transition-colors z-10 flex items-center justify-center'
                        aria-label='Scroll to bottom'
                      >
                        <ChevronDown className='w-5 h-5' />
@@ -815,23 +815,23 @@ const CommunityChat = () => {
                         <div className='mb-3 px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg flex items-center justify-between'>
                           <div className='flex items-center gap-2'>
                             <Reply className='w-4 h-4 text-amber-500' />
-                            <span className='text-xs text-slate-300'>
+                            <span className='text-xs text-cocoa-200'>
                               Replying to <span className='font-medium'>{replyTo.senderName}</span>
                             </span>
                           </div>
                           <button type="button" onClick={handleCancelReply} className='p-1 hover:bg-slate-700 rounded'>
-                            <X className='w-4 h-4 text-slate-400' />
+                            <X className='w-4 h-4 text-cocoa-300' />
                           </button>
                         </div>
                       )}
                       <form onSubmit={handleSendMessage} className='flex items-end gap-3'>
-                        <button type='button' className='p-2.5 text-slate-500 hover:text-amber-500 rounded-xl hover:bg-slate-800/50 transition-all' title='Add emoji'>
+                        <button type='button' className='p-2.5 text-cocoa-400 hover:text-amber-500 rounded-lg hover:bg-slate-800/50 transition-all' title='Add emoji'>
                           <Smile className='w-5 h-5' />
                         </button>
                         <input type='text' value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
                           placeholder={replyTo ? "Write a reply..." : (activeRole === "host" ? `Message ${selectedUser?.name || "attendee"}...` : `Message host...`)}
-                          className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none' />
-                        <button type='submit' disabled={!newMessage.trim()} className='px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-medium text-sm disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-amber-500/20 flex items-center gap-2'>
+                          className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-3 text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none' />
+                        <button type='submit' disabled={!newMessage.trim()} className='px-4 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-cocoa-900 rounded-lg font-medium text-sm disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-amber-500/20 flex items-center gap-2'>
                           <Send className='w-4 h-4' />
                           {replyTo ? 'Reply' : 'Send'}
                         </button>
@@ -847,12 +847,12 @@ const CommunityChat = () => {
                         <div className='mb-3 px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg flex items-center justify-between'>
                           <div className='flex items-center gap-2'>
                             <Reply className='w-4 h-4 text-amber-500' />
-                            <span className='text-xs text-slate-300'>
+                            <span className='text-xs text-cocoa-200'>
                               Replying to <span className='font-medium'>{replyTo.senderName}</span>
                             </span>
                           </div>
                           <button type="button" onClick={handleCancelReply} className='p-1 hover:bg-slate-700 rounded'>
-                            <X className='w-4 h-4 text-slate-400' />
+                            <X className='w-4 h-4 text-cocoa-300' />
                           </button>
                         </div>
                       )}
@@ -860,7 +860,7 @@ const CommunityChat = () => {
                         <div className='w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-amber-600/30 border border-amber-500/30 flex items-center justify-center'>
                           <MessageSquare className='w-4 h-4 text-amber-400' />
                         </div>
-                        <span className='text-sm text-slate-400'>Post to community feed</span>
+                        <span className='text-sm text-cocoa-300'>Post to community feed</span>
                         {activeRole === "host" && (
                           <span className='ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium'>
                             <Crown className='w-3 h-3' />
@@ -871,8 +871,8 @@ const CommunityChat = () => {
                       <form onSubmit={handleSendMessage} className='flex gap-2'>
                         <input type='text' value={newMessage} onChange={(e) => setNewMessage(e.target.value)}
                           placeholder={replyTo ? "Write a reply..." : (activeRole === "host" ? "Share an announcement with all attendees..." : "Share your thoughts with the community...")}
-                          className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none' />
-                        <button type='submit' disabled={!newMessage.trim()} className='px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 rounded-xl font-medium text-sm disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-amber-500/20 flex items-center gap-2'>
+                          className='flex-1 bg-slate-800/50 border border-slate-700/50 rounded-lg px-4 py-3 text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none' />
+                        <button type='submit' disabled={!newMessage.trim()} className='px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-cocoa-900 rounded-lg font-medium text-sm disabled:opacity-50 transition-all hover:shadow-lg hover:shadow-amber-500/20 flex items-center gap-2'>
                           <Send className='w-4 h-4' />
                           {replyTo ? 'Reply' : 'Post'}
                         </button>
@@ -883,15 +883,15 @@ const CommunityChat = () => {
             ) : (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='flex-1 flex items-center justify-center text-center p-8'>
                 <div className='max-w-md'>
-                  <div className='w-24 h-24 rounded-3xl bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-800/50 mx-auto mb-6 flex items-center justify-center'>
-                    <Users className='w-12 h-12 text-slate-700' />
+                  <div className='w-24 h-24 rounded-lg bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-slate-800/50 mx-auto mb-6 flex items-center justify-center'>
+                    <Users className='w-12 h-12 text-cocoa-700' />
                   </div>
                   <h3 className='text-2xl font-serif text-white mb-3'>Welcome, {activeRole === "host" ? "Host" : "Back"}</h3>
-                  <p className='text-slate-400 mb-6 leading-relaxed'>{activeRole === "host" ? "Select an event to message attendees and manage community." : "Select an event to chat with hosts and attendees."}</p>
+                  <p className='text-cocoa-300 mb-6 leading-relaxed'>{activeRole === "host" ? "Select an event to message attendees and manage community." : "Select an event to chat with hosts and attendees."}</p>
                   <div className='flex flex-wrap gap-2 justify-center'>
                     {mockEvents.slice(0, 3).map(e => (
                       <motion.button key={e.id} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                        onClick={() => setSelectedEvent(e.id)} className='px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 rounded-full text-sm text-slate-300 transition-all'>
+                        onClick={() => setSelectedEvent(e.id)} className='px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 rounded-full text-sm text-cocoa-200 transition-all'>
                         {e.title}
                       </motion.button>
                     ))}
@@ -906,7 +906,7 @@ const CommunityChat = () => {
         <AnimatePresence>
           {selectedEvent && activeTab === "community" && activeRole === "user" && (
             <motion.button initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0 }}
-              className='fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900 shadow-lg shadow-amber-500/30 flex items-center justify-center hover:scale-110 transition-all'
+              className='fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-cocoa-900 shadow-lg shadow-amber-500/30 flex items-center justify-center hover:scale-110 transition-all'
               onClick={() => document.querySelector("form[onSubmit*='handleSendMessage']")?.scrollIntoView({ behavior: "smooth" })}>
               <Send className='w-5 h-5' />
             </motion.button>
