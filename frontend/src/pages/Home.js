@@ -21,7 +21,10 @@ import {
   BadgeCheck,
   TrendingUp,
   Headphones,
-  BarChart3
+  BarChart3,
+  MessageCircle,
+  Star,
+  Quote
 } from 'lucide-react';
 
 const AnimatedCounter = ({ value, duration = 1.7 }) => {
@@ -123,6 +126,30 @@ const trustItems = [
   { icon: Mail, label: 'Email confirmations' },
   { icon: BadgeCheck, label: 'Verified tickets' },
   { icon: TrendingUp, label: 'Host analytics' }
+];
+
+const comments = [
+  {
+    name: 'Alex Johnson',
+    role: 'Festival guest',
+    event: 'Summer Solstice Festival',
+    comment: 'Booking was quick, the ticket stayed easy to find, and every event update arrived right on time.',
+    rating: '5.0'
+  },
+  {
+    name: 'Maya Patel',
+    role: 'Workshop host',
+    event: 'Creative Makers Lab',
+    comment: 'The host dashboard made check-ins, attendee messages, and sales tracking feel clean and organized.',
+    rating: '4.9'
+  },
+  {
+    name: 'Chris Morgan',
+    role: 'Conference attendee',
+    event: 'Tech Innovators Summit',
+    comment: 'I liked seeing booking status, event details, and community messages together without digging around.',
+    rating: '4.8'
+  }
 ];
 
 const Home = () => {
@@ -439,6 +466,86 @@ const Home = () => {
                 <h3 className="text-xl font-extrabold text-cocoa-900">{step.title}</h3>
                 <p className="mt-3 leading-7 text-cocoa-500">{step.description}</p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#fbf8f4] py-20">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <span className="section-kicker">
+              <MessageCircle className="h-3.5 w-3.5" />
+              Guest comments
+            </span>
+            <h2 className="mt-3 text-3xl font-extrabold text-cocoa-900 sm:text-4xl">
+              People remember the little details.
+            </h2>
+            <p className="mt-4 text-lg leading-8 text-cocoa-500">
+              Helpful updates, clean tickets, and easy host tools make the full event journey feel calmer from first click to final check-in.
+            </p>
+
+            <div className="mt-8 rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
+              <div className="flex items-center gap-4">
+                <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                  <Star className="h-7 w-7 fill-current" />
+                </span>
+                <div>
+                  <p className="text-3xl font-extrabold text-cocoa-900">4.9/5</p>
+                  <p className="text-sm font-bold uppercase text-cocoa-400">Average event experience</p>
+                </div>
+              </div>
+              <div className="mt-6 grid grid-cols-3 gap-3 text-center">
+                {[
+                  { value: '96%', label: 'Smooth booking' },
+                  { value: '88%', label: 'Clear updates' },
+                  { value: '91%', label: 'Would return' }
+                ].map((item) => (
+                  <div key={item.label} className="rounded-lg bg-[#fbf8f4] p-4">
+                    <p className="text-xl font-extrabold text-cocoa-900">{item.value}</p>
+                    <p className="mt-1 text-xs font-bold uppercase text-cocoa-400">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            {comments.map((comment, index) => (
+              <motion.article
+                key={comment.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ duration: 0.45, delay: index * 0.08 }}
+                className="surface-panel p-6"
+              >
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 text-lg font-extrabold text-white shadow-lg shadow-primary-500/20">
+                      {comment.name.split(' ').map((part) => part[0]).join('')}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-extrabold text-cocoa-900">{comment.name}</h3>
+                      <p className="font-semibold text-cocoa-400">{comment.role}</p>
+                    </div>
+                  </div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-extrabold text-amber-700">
+                    <Star className="h-4 w-4 fill-current" />
+                    {comment.rating}
+                  </div>
+                </div>
+
+                <div className="mt-6 flex gap-4">
+                  <Quote className="mt-1 h-7 w-7 flex-shrink-0 text-primary-300" />
+                  <p className="text-lg leading-8 text-cocoa-600">{comment.comment}</p>
+                </div>
+
+                <div className="mt-6 flex items-center justify-between border-t border-cocoa-100 pt-4">
+                  <span className="text-sm font-bold uppercase text-cocoa-400">Event</span>
+                  <span className="text-sm font-extrabold text-primary-600">{comment.event}</span>
+                </div>
+              </motion.article>
             ))}
           </div>
         </div>

@@ -77,8 +77,6 @@ const Navbar = () => {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/events', label: 'Browse Events' },
-    { to: '/dashboard', label: 'Dashboard' },
-    { to: '/host', label: 'Host Panel' },
   ];
 
   const isActive = (path) => location.pathname === path;
