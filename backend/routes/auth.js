@@ -5,6 +5,8 @@ const {
   login,
   getMe,
   updateProfile,
+  changePassword,
+  changeHostKeyword,
   hostRegister,
   hostLogin,
   hostKeywordLogin,
@@ -45,5 +47,9 @@ router.post('/host-keyword-register', hostKeywordRegister);
 router.get('/me', auth, getMe);
 
 router.put('/profile', auth, updateProfile);
+
+router.put('/password', auth, changePassword);
+
+router.put('/host-keyword', auth, changeHostKeyword);
 
 module.exports = router;

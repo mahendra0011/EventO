@@ -74,6 +74,16 @@ export const hostKeywordRegister = async (userData) => {
   return res.data;
 };
 
+export const changePassword = async (currentPassword, newPassword) => {
+  const res = await api.put('/auth/password', { currentPassword, newPassword });
+  return res.data;
+};
+
+export const changeHostKeyword = async (currentPassword, currentKeyword, newKeyword) => {
+  const res = await api.put('/auth/host-keyword', { currentPassword, currentKeyword, newKeyword });
+  return res.data;
+};
+
 // Wishlist / Saved Events - Now backed by server
 export const getWishlist = async () => {
   const res = await api.get('/wishlist');

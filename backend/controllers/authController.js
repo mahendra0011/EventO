@@ -628,6 +628,78 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.changeHostKeyword = async (req, res) => {
+  try {
+    const { currentPassword, currentKeyword, newKeyword } = req.body;
+
+    if (!currentPassword || !currentKeyword || !newKeyword) {
+      return res.status(400).json({ message: 'Current password, current keyword, and new keyword are required' });
+    }
+
+    if (newKeyword.trim().length < 4) {
+      return res.status(400).json({ message: 'New host keyword must be at least 4 characters' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.role !== 'host') {
+      return res.status(403).json({ message: 'Only hosts can change a host keyword' });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    if (user.secretKeyword !== currentKeyword) {
+      return res.status(400).json({ message: 'Current host keyword is incorrect' });
+    }
+
+    user.secretKeyword = newKeyword.trim();
+    await user.save();
+
+    res.json({ message: 'Host keyword changed successfully' });
+  } catch (error) {
+    console.error('Change host keyword error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 exports.hostKeywordLogin = async (req, res) => {
   try {
     const { email, password, hostKeyword } = req.body;

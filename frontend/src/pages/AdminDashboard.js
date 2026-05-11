@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import api, { broadcastToEventBookers, getNotifications } from '../utils/api';
+import api, { broadcastToEventBookers, changeHostKeyword, changePassword, getNotifications } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -26,6 +26,14 @@ import {
     LogOut,
     User,
     Key,
+    Lock,
+    ShieldCheck,
+    Save,
+    Globe,
+    Smartphone,
+    CreditCard,
+    Target,
+    Activity,
     MessageSquare,
     Send,
     Megaphone,
@@ -40,10 +48,10 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [events, setEvents] = useState([]);
-  const [attendees, setAttendees] = useState([]);
+  const [, setAttendees] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [messages] = useState([]);
   const [individualSelectedEvent, setIndividualSelectedEvent] = useState('');
   const [broadcastSelectedEvent, setBroadcastSelectedEvent] = useState('');
   const [subject, setSubject] = useState('');
@@ -62,8 +70,31 @@ const AdminDashboard = () => {
      name: user?.name || '',
      phone: user?.phone || ''
    });
+   const [passwordData, setPasswordData] = useState({
+     currentPassword: '',
+     newPassword: '',
+     confirmPassword: ''
+   });
+   const [keywordData, setKeywordData] = useState({
+     currentPassword: '',
+     currentKeyword: '',
+     newKeyword: ''
+   });
+   const [notificationPreferences, setNotificationPreferences] = useState({
+     newBookings: true,
+     bookingDecisions: true,
+     eventReminders: true,
+     communityMessages: true
+   });
+   const [hostPreferences, setHostPreferences] = useState({
+     autoConfirmFreeEvents: false,
+     showRevenueCards: true,
+     requireQrAtEntry: true,
+     weeklyDigest: true
+   });
    const [updatingProfile, setUpdatingProfile] = useState(false);
-    const [sendingNotification, setSendingNotification] = useState(false);
+   const [savingPassword, setSavingPassword] = useState(false);
+   const [savingKeyword, setSavingKeyword] = useState(false);
 
     // Notification states
     const [notifications, setNotifications] = useState([]);
@@ -71,13 +102,62 @@ const AdminDashboard = () => {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    setUpdatingProfile(true);
     try {
       await updateProfile(profileData);
       toast.success('Profile updated successfully');
       // updateProfile already updates the user in context
     } catch (error) {
-      toast.error('Failed to update profile');
+      toast.error(error.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setUpdatingProfile(false);
     }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('New password and confirmation do not match');
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await changePassword(passwordData.currentPassword, passwordData.newPassword);
+      toast.success('Password changed successfully');
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to change password');
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  const handleChangeHostKeyword = async (e) => {
+    e.preventDefault();
+    setSavingKeyword(true);
+    try {
+      await changeHostKeyword(
+        keywordData.currentPassword,
+        keywordData.currentKeyword,
+        keywordData.newKeyword
+      );
+      toast.success('Host keyword changed successfully');
+      setKeywordData({ currentPassword: '', currentKeyword: '', newKeyword: '' });
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to change host keyword');
+    } finally {
+      setSavingKeyword(false);
+    }
+  };
+
+  const toggleNotificationPreference = (key) => {
+    setNotificationPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleHostPreference = (key) => {
+    setHostPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   // Reset profileData when user changes (e.g., after update)
@@ -115,25 +195,14 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleSendNotification = async () => {
-    setSendingNotification(true);
-    try {
-      toast.success('Notification feature coming soon!');
-    } catch (error) {
-      toast.error('Failed to send notification');
-    } finally {
-      setSendingNotification(false);
-    }
-  };
-
    useEffect(() => {
      fetchDashboardData();
-     if (user && user.role === 'host') {
+     if (user?.role === 'host') {
        fetchAttendees();
        fetchHostConversations();
        fetchNotifications();
      }
-   }, []);
+   }, [user]);
 
    const fetchDashboardData = async () => {
      try {
@@ -181,30 +250,6 @@ const AdminDashboard = () => {
          console.error('Error fetching notifications:', error);
        }
       };
-
-   const handleConfirmBooking = async (bookingId) => {
-    try {
-      await api.put(`/bookings/${bookingId}/confirm`);
-      toast.success('Booking confirmed successfully');
-      fetchDashboardData();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to confirm booking');
-    }
-  };
-
-  const handleRejectBooking = async (bookingId) => {
-    if (!window.confirm('Are you sure you want to reject this booking?')) {
-      return;
-    }
-
-    try {
-      await api.put(`/bookings/${bookingId}/reject`);
-      toast.success('Booking rejected');
-      fetchDashboardData();
-    } catch (error) {
-      toast.error('Failed to reject booking');
-    }
-  };
 
   const handleBroadcastMessage = async (e) => {
     e.preventDefault();
@@ -278,6 +323,58 @@ const AdminDashboard = () => {
   const filteredBookings = bookingFilter === 'all'
     ? bookings
     : bookings.filter(b => b.status === bookingFilter);
+
+  const analyticsStats = stats?.stats || {};
+  const totalRevenue = Number(analyticsStats.totalRevenue || 0);
+  const totalBookings = Number(analyticsStats.totalBookings || 0);
+  const confirmedBookings = Number(analyticsStats.confirmedBookings || 0);
+  const pendingBookings = Number(analyticsStats.pendingBookings || 0);
+  const totalEvents = Number(analyticsStats.totalEvents || 0);
+  const ticketsSold = events.reduce((sum, event) => {
+    const sold = Number(event.totalTickets || 0) - Number(event.availableTickets || 0);
+    return sum + Math.max(0, sold);
+  }, 0);
+  const totalCapacity = events.reduce((sum, event) => sum + Number(event.totalTickets || 0), 0);
+  const fillRate = totalCapacity ? Math.round((ticketsSold / totalCapacity) * 100) : 0;
+  const approvalRate = totalBookings ? Math.round((confirmedBookings / totalBookings) * 100) : 0;
+  const pendingRate = totalBookings ? Math.round((pendingBookings / totalBookings) * 100) : 0;
+  const avgBookingValue = totalBookings ? Math.round(totalRevenue / totalBookings) : 0;
+  const activeEvents = events.filter((event) => new Date(event.date) >= new Date()).length;
+  const topRevenueEvent = stats?.topEvents?.[0];
+  const maxTopRevenue = Math.max(...(stats?.topEvents || []).map((item) => Number(item.revenue || 0)), 1);
+  const maxStatusCount = Math.max(...(stats?.bookingsByStatus || []).map((item) => Number(item.count || 0)), 1);
+  const revenueGoal = Math.max(50000, Math.ceil((totalRevenue || 1) / 50000) * 50000);
+  const revenueGoalProgress = Math.min(100, Math.round((totalRevenue / revenueGoal) * 100));
+  const analyticsCards = [
+    {
+      label: 'Total Revenue',
+      value: `₹${totalRevenue.toLocaleString('en-IN')}`,
+      detail: `${revenueGoalProgress}% of ₹${revenueGoal.toLocaleString('en-IN')} goal`,
+      icon: IndianRupee,
+      color: 'from-primary-500 to-secondary-500'
+    },
+    {
+      label: 'Approval Rate',
+      value: `${approvalRate}%`,
+      detail: `${confirmedBookings} confirmed bookings`,
+      icon: ShieldCheck,
+      color: 'from-emerald-500 to-teal-500'
+    },
+    {
+      label: 'Tickets Sold',
+      value: ticketsSold.toLocaleString('en-IN'),
+      detail: `${fillRate}% capacity filled`,
+      icon: Ticket,
+      color: 'from-amber-500 to-orange-500'
+    },
+    {
+      label: 'Live Events',
+      value: activeEvents.toLocaleString('en-IN'),
+      detail: `${totalEvents} total hosted events`,
+      icon: Calendar,
+      color: 'from-violet-500 to-fuchsia-500'
+    }
+  ];
 
   if (loading) {
     return (
@@ -942,99 +1039,174 @@ const AdminDashboard = () => {
 
               {activeTab === 'analytics' && (
                <div className="space-y-8">
-                 {/* Analytics Cards */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">
-                    <div className="flex items-center justify-between">
+                  <div className="overflow-hidden rounded-lg bg-gradient-to-br from-cocoa-900 via-cocoa-800 to-primary-900 text-white shadow-2xl shadow-cocoa-900/15">
+                    <div className="grid gap-8 p-6 lg:grid-cols-[1.2fr_0.8fr] lg:p-8">
                       <div>
-                        <p className="text-blue-100 text-sm">Total Revenue</p>
-                        <p className="text-3xl font-bold">₹{(stats?.stats.totalRevenue || 0).toLocaleString('en-IN')}</p>
-                      </div>
-                      <DollarSign className="h-12 w-12 text-blue-300" />
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-green-100 text-sm">Confirmed Bookings</p>
-                        <p className="text-3xl font-bold">{stats?.stats.totalBookings || 0}</p>
-                      </div>
-                      <CheckCircle className="h-12 w-12 text-green-300" />
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 text-white">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-purple-100 text-sm">Total Events</p>
-                        <p className="text-3xl font-bold">{stats?.stats.totalEvents || 0}</p>
-                      </div>
-                      <Calendar className="h-12 w-12 text-purple-300" />
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg p-6 text-white">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-amber-100 text-sm">Avg per Booking</p>
-                        <p className="text-3xl font-bold">
-                          ₹{stats?.stats.totalBookings ? Math.round(stats.stats.totalRevenue / stats.stats.totalBookings).toLocaleString('en-IN') : 0}
+                        <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-bold uppercase text-primary-100">
+                          <Activity className="h-4 w-4" />
+                          Host analytics
+                        </span>
+                        <h3 className="mt-5 text-3xl font-extrabold">Performance snapshot</h3>
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-primary-50/80">
+                          Track revenue, approvals, capacity, and the event doing the most work for your business.
                         </p>
+                        <div className="mt-7 grid gap-4 sm:grid-cols-3">
+                          <div className="rounded-lg border border-white/10 bg-white/10 p-4">
+                            <p className="text-sm text-primary-50/75">Average booking</p>
+                            <p className="mt-2 text-2xl font-extrabold">₹{avgBookingValue.toLocaleString('en-IN')}</p>
+                          </div>
+                          <div className="rounded-lg border border-white/10 bg-white/10 p-4">
+                            <p className="text-sm text-primary-50/75">Pending queue</p>
+                            <p className="mt-2 text-2xl font-extrabold">{pendingBookings}</p>
+                          </div>
+                          <div className="rounded-lg border border-white/10 bg-white/10 p-4">
+                            <p className="text-sm text-primary-50/75">Capacity filled</p>
+                            <p className="mt-2 text-2xl font-extrabold">{fillRate}%</p>
+                          </div>
+                        </div>
                       </div>
-                      <TrendingUp className="h-12 w-12 text-amber-300" />
+                      <div className="rounded-lg border border-white/10 bg-white/10 p-5">
+                        <div className="mb-4 flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-primary-50/75">Revenue goal</p>
+                            <p className="text-2xl font-extrabold">₹{revenueGoal.toLocaleString('en-IN')}</p>
+                          </div>
+                          <Target className="h-10 w-10 text-primary-200" />
+                        </div>
+                        <div className="h-3 overflow-hidden rounded-full bg-white/15">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-primary-300 to-secondary-300"
+                            style={{ width: `${revenueGoalProgress}%` }}
+                          />
+                        </div>
+                        <p className="mt-3 text-sm text-primary-50/75">
+                          ₹{totalRevenue.toLocaleString('en-IN')} earned so far.
+                        </p>
+                        <div className="mt-5 rounded-lg bg-white p-4 text-cocoa-900">
+                          <p className="text-xs font-bold uppercase text-cocoa-400">Best event</p>
+                          <p className="mt-1 font-extrabold">{topRevenueEvent?.title || 'No event data yet'}</p>
+                          <p className="mt-1 text-sm text-cocoa-500">
+                            ₹{Number(topRevenueEvent?.revenue || 0).toLocaleString('en-IN')} revenue
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Top Performing Events */}
-                <div>
-                  <h3 className="text-lg font-semibold text-cocoa-900 mb-4">Top Performing Events</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {stats?.topEvents?.slice(0, 4).map((item, index) => (
-                      <div key={index} className="bg-white border border-cocoa-100 rounded-lg p-4 flex items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-4 ${
-                          index === 0 ? 'bg-yellow-100 text-yellow-600' :
-                          index === 1 ? 'bg-[#f3eee9] text-cocoa-500' :
-                          index === 2 ? 'bg-amber-100 text-amber-600' :
-                          'bg-blue-100 text-blue-600'
-                        }`}>
-                          {index + 1}
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {analyticsCards.map((card) => {
+                      const Icon = card.icon;
+                      return (
+                        <div key={card.label} className="rounded-lg border border-white bg-white p-5 shadow-xl shadow-cocoa-900/5">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-bold text-cocoa-400">{card.label}</p>
+                              <p className="mt-2 text-3xl font-extrabold text-cocoa-900">{card.value}</p>
+                              <p className="mt-2 text-sm text-cocoa-500">{card.detail}</p>
+                            </div>
+                            <span className={`flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br ${card.color} text-white shadow-lg shadow-primary-500/15`}>
+                              <Icon className="h-6 w-6" />
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-cocoa-900">{item._id?.title}</h4>
-                          <p className="text-sm text-cocoa-400">{item.bookings} bookings</p>
+                      );
+                    })}
+                  </div>
+
+                  <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+                    <div className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
+                      <div className="mb-6 flex items-center justify-between">
+                        <div>
+                          <h3 className="text-xl font-extrabold text-cocoa-900">Top performing events</h3>
+                          <p className="mt-1 text-sm text-cocoa-500">Ranked by revenue and booking momentum.</p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-green-600">₹{item.revenue?.toLocaleString('en-IN')}</p>
-                          <p className="text-xs text-cocoa-400">revenue</p>
+                        <TrendingUp className="h-5 w-5 text-primary-500" />
+                      </div>
+
+                      <div className="space-y-4">
+                        {(stats?.topEvents || []).slice(0, 5).map((item, index) => {
+                          const revenue = Number(item.revenue || 0);
+                          const width = Math.max(8, Math.round((revenue / maxTopRevenue) * 100));
+                          return (
+                            <div key={item._id || index} className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4">
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex min-w-0 items-center gap-3">
+                                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary-50 font-extrabold text-primary-600">
+                                    {index + 1}
+                                  </span>
+                                  <div className="min-w-0">
+                                    <h4 className="truncate font-extrabold text-cocoa-900">{item.title || item._id?.title || 'Untitled event'}</h4>
+                                    <p className="text-sm text-cocoa-500">{item.bookings || 0} bookings</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-extrabold text-emerald-600">₹{revenue.toLocaleString('en-IN')}</p>
+                                  <p className="text-xs text-cocoa-400">revenue</p>
+                                </div>
+                              </div>
+                              <div className="mt-4 h-2 overflow-hidden rounded-full bg-cocoa-100">
+                                <div className="h-full rounded-full bg-gradient-to-r from-primary-500 to-secondary-500" style={{ width: `${width}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {(stats?.topEvents || []).length === 0 && (
+                          <div className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-8 text-center">
+                            <BarChart3 className="mx-auto h-10 w-10 text-cocoa-300" />
+                            <p className="mt-3 font-bold text-cocoa-500">No event performance yet</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
+                        <h3 className="text-xl font-extrabold text-cocoa-900">Booking health</h3>
+                        <div className="mt-5 space-y-4">
+                          {(stats?.bookingsByStatus || []).map((item) => {
+                            const width = Math.max(5, Math.round((Number(item.count || 0) / maxStatusCount) * 100));
+                            return (
+                              <div key={item._id}>
+                                <div className="mb-2 flex items-center justify-between text-sm">
+                                  <span className="font-bold capitalize text-cocoa-700">{item._id}</span>
+                                  <span className="text-cocoa-400">{item.count}</span>
+                                </div>
+                                <div className="h-2 rounded-full bg-cocoa-100">
+                                  <div className="h-2 rounded-full bg-primary-500" style={{ width: `${width}%` }} />
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Quick Insights */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-primary-50 rounded-lg p-6 border border-primary-100">
-                    <h4 className="font-semibold text-primary-900 mb-2">📈 Sales Trend</h4>
-                    <p className="text-primary-700 text-sm">
-                      {stats?.stats.pendingBookings > 0 
-                        ? `You have ${stats.stats.pendingBookings} bookings waiting for approval!`
-                        : 'All bookings are processed.'
-                      }
-                    </p>
+                      <div className="rounded-lg border border-primary-100 bg-primary-50 p-6">
+                        <h3 className="text-xl font-extrabold text-cocoa-900">Quick insights</h3>
+                        <div className="mt-5 space-y-4">
+                          <div className="flex gap-3">
+                            <ShieldCheck className="mt-1 h-5 w-5 text-primary-600" />
+                            <p className="text-sm leading-6 text-cocoa-600">
+                              {pendingBookings > 0
+                                ? `${pendingBookings} booking request${pendingBookings > 1 ? 's need' : ' needs'} your review.`
+                                : 'All booking requests are handled.'}
+                            </p>
+                          </div>
+                          <div className="flex gap-3">
+                            <Ticket className="mt-1 h-5 w-5 text-primary-600" />
+                            <p className="text-sm leading-6 text-cocoa-600">
+                              {ticketsSold.toLocaleString('en-IN')} of {totalCapacity.toLocaleString('en-IN')} tickets are sold.
+                            </p>
+                          </div>
+                          <div className="flex gap-3">
+                            <DollarSign className="mt-1 h-5 w-5 text-primary-600" />
+                            <p className="text-sm leading-6 text-cocoa-600">
+                              Average booking value is ₹{avgBookingValue.toLocaleString('en-IN')} with {pendingRate}% still pending.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-6 border border-green-100">
-                    <h4 className="font-semibold text-green-900 mb-2">🎫 Ticket Status</h4>
-                    <p className="text-green-700 text-sm">
-                      {events.reduce((acc, e) => acc + (e.totalTickets - e.availableTickets), 0)} tickets sold across all events
-                    </p>
-                  </div>
-                  <div className="bg-blue-50 rounded-lg p-6 border border-blue-100">
-                    <h4 className="font-semibold text-blue-900 mb-2">💰 Revenue Goal</h4>
-                    <p className="text-blue-700 text-sm">
-                      Track your earnings in the analytics tab
-                    </p>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -1142,116 +1314,261 @@ const AdminDashboard = () => {
 
             {activeTab === 'settings' && (
               <div className="space-y-8">
-                {/* Profile Settings */}
-                <div>
-                  <h3 className="text-lg font-semibold text-cocoa-900 mb-4 flex items-center">
-                    <User className="h-5 w-5 mr-2" />
-                    Profile Settings
-                  </h3>
-                  <div className="bg-white border border-cocoa-100 rounded-lg p-6 max-w-xl">
+                <div className="overflow-hidden rounded-lg bg-gradient-to-br from-primary-50 via-white to-[#fbf8f4] p-6 shadow-xl shadow-cocoa-900/5">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <span className="section-kicker">
+                        <Settings className="h-3.5 w-3.5" />
+                        Host settings
+                      </span>
+                      <h3 className="text-3xl font-extrabold text-cocoa-900">Control your host workspace</h3>
+                      <p className="mt-3 max-w-2xl text-cocoa-500">
+                        Manage account security, login keyword, notifications, and event workflow preferences from one place.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-lg border border-white bg-white p-4 shadow-lg shadow-cocoa-900/5">
+                        <p className="font-bold text-cocoa-400">Role</p>
+                        <p className="mt-1 font-extrabold text-cocoa-900">Host</p>
+                      </div>
+                      <div className="rounded-lg border border-white bg-white p-4 shadow-lg shadow-cocoa-900/5">
+                        <p className="font-bold text-cocoa-400">Events</p>
+                        <p className="mt-1 font-extrabold text-cocoa-900">{totalEvents}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+                  <form onSubmit={handleUpdateProfile} className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
+                    <div className="mb-6 flex items-center gap-3">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+                        <User className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <h3 className="text-xl font-extrabold text-cocoa-900">Profile details</h3>
+                        <p className="text-sm text-cocoa-500">Shown on event and host communications.</p>
+                      </div>
+                    </div>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-cocoa-700 mb-1">Full Name</label>
+                        <label className="label">Full name</label>
                         <input
                           type="text"
                           value={profileData.name}
-                          onChange={(e) => setProfileData({...profileData, name: e.target.value})}
-                          className="w-full px-4 py-2 border border-cocoa-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                          className="input-field"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-cocoa-700 mb-1">Phone Number</label>
+                        <label className="label">Phone number</label>
                         <input
                           type="tel"
                           value={profileData.phone}
-                          onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                          className="w-full px-4 py-2 border border-cocoa-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                          className="input-field"
                           placeholder="+91 9876543210"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-cocoa-700 mb-1">Email</label>
+                        <label className="label">Email address</label>
                         <input
                           type="email"
                           value={user?.email || ''}
                           disabled
-                          className="w-full px-4 py-2 border border-cocoa-100 rounded-lg bg-[#fbf8f4] text-cocoa-400"
+                          className="input-field bg-[#fbf8f4] text-cocoa-400"
                         />
                       </div>
-                       <button
-                         onClick={handleUpdateProfile}
-                         className="btn-primary"
-                       >
-                         <Edit className="h-4 w-4 inline mr-2" />
-                         Update Profile
-                       </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Security Settings */}
-                <div>
-                  <h3 className="text-lg font-semibold text-cocoa-900 mb-4 flex items-center">
-                    <Key className="h-5 w-5 mr-2" />
-                    Security
-                  </h3>
-                  <div className="bg-white border border-cocoa-100 rounded-lg p-6 max-w-xl">
-                    <div className="space-y-4">
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <div className="flex items-center">
-                          <Key className="h-5 w-5 text-yellow-600 mr-2" />
-                          <div>
-                            <p className="font-medium text-yellow-800">Host Secret Keyword</p>
-                            <p className="text-sm text-yellow-700">Used for secure host login - keep it private!</p>
-                          </div>
-                        </div>
-                      </div>
-                      <button className="btn-outline">
-                        <Key className="h-4 w-4 inline mr-2" />
-                        Change Keyword
+                      <button type="submit" disabled={updatingProfile} className="btn-primary">
+                        <Save className="h-4 w-4" />
+                        {updatingProfile ? 'Saving...' : 'Save profile'}
                       </button>
                     </div>
+                  </form>
+
+                  <div className="grid gap-6">
+                    <form onSubmit={handleChangePassword} className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
+                      <div className="mb-6 flex items-center gap-3">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                          <Lock className="h-5 w-5" />
+                        </span>
+                        <div>
+                          <h3 className="text-xl font-extrabold text-cocoa-900">Change password</h3>
+                          <p className="text-sm text-cocoa-500">Use a strong password with at least 6 characters.</p>
+                        </div>
+                      </div>
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <input
+                          type="password"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                          className="input-field"
+                          placeholder="Current password"
+                          required
+                        />
+                        <input
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          className="input-field"
+                          placeholder="New password"
+                          minLength={6}
+                          required
+                        />
+                        <input
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                          className="input-field"
+                          placeholder="Confirm password"
+                          minLength={6}
+                          required
+                        />
+                      </div>
+                      <button type="submit" disabled={savingPassword} className="btn-primary mt-4">
+                        <ShieldCheck className="h-4 w-4" />
+                        {savingPassword ? 'Updating...' : 'Update password'}
+                      </button>
+                    </form>
+
+                    <form onSubmit={handleChangeHostKeyword} className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
+                      <div className="mb-6 flex items-center gap-3">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                          <Key className="h-5 w-5" />
+                        </span>
+                        <div>
+                          <h3 className="text-xl font-extrabold text-cocoa-900">Change host keyword</h3>
+                          <p className="text-sm text-cocoa-500">This keyword is required for host login.</p>
+                        </div>
+                      </div>
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <input
+                          type="password"
+                          value={keywordData.currentPassword}
+                          onChange={(e) => setKeywordData({ ...keywordData, currentPassword: e.target.value })}
+                          className="input-field"
+                          placeholder="Current password"
+                          required
+                        />
+                        <input
+                          type="password"
+                          value={keywordData.currentKeyword}
+                          onChange={(e) => setKeywordData({ ...keywordData, currentKeyword: e.target.value })}
+                          className="input-field"
+                          placeholder="Current keyword"
+                          required
+                        />
+                        <input
+                          type="password"
+                          value={keywordData.newKeyword}
+                          onChange={(e) => setKeywordData({ ...keywordData, newKeyword: e.target.value })}
+                          className="input-field"
+                          placeholder="New keyword"
+                          minLength={4}
+                          required
+                        />
+                      </div>
+                      <button type="submit" disabled={savingKeyword} className="btn-secondary mt-4">
+                        <Key className="h-4 w-4" />
+                        {savingKeyword ? 'Changing...' : 'Change keyword'}
+                      </button>
+                    </form>
                   </div>
                 </div>
 
-                {/* Notification Settings */}
-                <div>
-                  <h3 className="text-lg font-semibold text-cocoa-900 mb-4 flex items-center">
-                    <Bell className="h-5 w-5 mr-2" />
-                    Notifications
-                  </h3>
-                  <div className="bg-white border border-cocoa-100 rounded-lg p-6 max-w-xl">
-                    <div className="space-y-3">
-                      <label className="flex items-center justify-between p-3 border border-cocoa-100 rounded-lg">
-                        <div className="flex items-center">
-                          <Mail className="h-5 w-5 text-cocoa-300 mr-3" />
-                          <span className="text-cocoa-700">Email notifications for new bookings</span>
-                        </div>
-                        <input type="checkbox" defaultChecked className="h-5 w-5 text-primary-600" />
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
+                    <h3 className="text-xl font-extrabold text-cocoa-900">Notification controls</h3>
+                    <p className="mt-1 text-sm text-cocoa-500">Choose which host alerts should stay active.</p>
+                    <div className="mt-5 space-y-3">
+                      {[
+                        { key: 'newBookings', icon: Ticket, label: 'New booking requests', description: 'Alert me when an attendee requests a ticket.' },
+                        { key: 'bookingDecisions', icon: CheckCircle, label: 'Confirmations and rejections', description: 'Notify me when booking states change.' },
+                        { key: 'eventReminders', icon: Calendar, label: 'Event reminders', description: 'Send operational reminders before event day.' },
+                        { key: 'communityMessages', icon: MessageSquare, label: 'Community messages', description: 'Surface attendee chat activity.' }
+                      ].map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <button
+                            type="button"
+                            key={item.key}
+                            onClick={() => toggleNotificationPreference(item.key)}
+                            className="flex w-full items-center justify-between gap-4 rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4 text-left transition hover:border-primary-200 hover:bg-primary-50"
+                          >
+                            <div className="flex items-start gap-3">
+                              <Icon className="mt-1 h-5 w-5 text-primary-600" />
+                              <div>
+                                <p className="font-bold text-cocoa-900">{item.label}</p>
+                                <p className="text-sm text-cocoa-500">{item.description}</p>
+                              </div>
+                            </div>
+                            <span className={`h-6 w-11 rounded-full p-1 transition ${notificationPreferences[item.key] ? 'bg-primary-500' : 'bg-cocoa-200'}`}>
+                              <span className={`block h-4 w-4 rounded-full bg-white transition ${notificationPreferences[item.key] ? 'translate-x-5' : ''}`} />
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
+                    <h3 className="text-xl font-extrabold text-cocoa-900">Host workflow preferences</h3>
+                    <p className="mt-1 text-sm text-cocoa-500">Fine tune common host operations.</p>
+                    <div className="mt-5 grid gap-3">
+                      {[
+                        { key: 'autoConfirmFreeEvents', icon: CreditCard, label: 'Auto-confirm free events' },
+                        { key: 'showRevenueCards', icon: BarChart3, label: 'Show revenue cards by default' },
+                        { key: 'requireQrAtEntry', icon: Smartphone, label: 'Require QR check-in at entry' },
+                        { key: 'weeklyDigest', icon: Mail, label: 'Send weekly host digest' }
+                      ].map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <label key={item.key} className="flex items-center justify-between rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4">
+                            <span className="flex items-center gap-3 font-bold text-cocoa-800">
+                              <Icon className="h-5 w-5 text-primary-600" />
+                              {item.label}
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={hostPreferences[item.key]}
+                              onChange={() => toggleHostPreference(item.key)}
+                              className="h-5 w-5 rounded border-cocoa-200 text-primary-600 focus:ring-primary-500"
+                            />
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-5 rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4">
+                      <label className="label flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-primary-600" />
+                        Default event visibility
                       </label>
-                      <label className="flex items-center justify-between p-3 border border-cocoa-100 rounded-lg">
-                        <div className="flex items-center">
-                          <Bell className="h-5 w-5 text-cocoa-300 mr-3" />
-                          <span className="text-cocoa-700">Push notifications</span>
-                        </div>
-                        <input type="checkbox" defaultChecked className="h-5 w-5 text-primary-600" />
-                      </label>
+                      <select className="input-field">
+                        <option>Public after publishing</option>
+                        <option>Private draft first</option>
+                        <option>Manual review before listing</option>
+                      </select>
                     </div>
                   </div>
                 </div>
 
-                {/* Logout */}
-                <div>
-                  <button
-                    onClick={() => {
-                      logout();
-                      navigate('/login');
-                    }}
-                    className="btn-outline text-red-600 border-red-300 hover:bg-red-50"
-                  >
-                    <LogOut className="h-4 w-4 inline mr-2" />
-                    Logout
-                  </button>
+                <div className="rounded-lg border border-red-100 bg-red-50 p-6">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <h3 className="text-xl font-extrabold text-red-800">Account session</h3>
+                      <p className="mt-1 text-sm text-red-700">Sign out from this device when you finish host operations.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        navigate('/login');
+                      }}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-5 py-3 font-bold text-red-600 transition hover:bg-red-100"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
