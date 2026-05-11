@@ -76,9 +76,9 @@ const Login = () => {
                             <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-500 text-white">
                                 <CalendarDays className="h-6 w-6" />
                             </span>
-                            <span className="text-2xl font-black uppercase">Evento</span>
+                            <span className="text-2xl font-extrabold uppercase">Evento</span>
                         </Link>
-                        <h1 className="max-w-xl text-4xl font-black tracking-tight">
+                        <h1 className="max-w-xl text-4xl font-extrabold">
                             Welcome back to your event workspace.
                         </h1>
                         <div className="mt-6 grid gap-3 text-sm font-bold text-cocoa-100">
@@ -100,9 +100,9 @@ const Login = () => {
                                     <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-500 text-white">
                                         <CalendarDays className="h-6 w-6" />
                                     </span>
-                                    <span className="text-2xl font-black uppercase text-cocoa-900">Evento</span>
+                                    <span className="text-2xl font-extrabold uppercase text-cocoa-900">Evento</span>
                                 </Link>
-                                <h2 className="mt-5 text-3xl font-black tracking-tight text-cocoa-900">
+                                <h2 className="mt-5 text-3xl font-extrabold text-cocoa-900">
                                     {isHost ? 'Host access' : 'Sign in'}
                                 </h2>
                                 <p className="mt-2 font-semibold text-cocoa-500">
@@ -116,7 +116,7 @@ const Login = () => {
                                         <Shield className="h-5 w-5" />
                                     </span>
                                     <span>
-                                        <span className="block text-sm font-black text-cocoa-900">Login as host</span>
+                                        <span className="block text-sm font-extrabold text-cocoa-900">Login as host</span>
                                         <span className="text-xs font-semibold text-cocoa-400">Enable host panel authentication</span>
                                     </span>
                                 </span>

@@ -127,8 +127,8 @@ const Navbar = () => {
               <CalendarDays className="h-6 w-6" />
             </span>
             <span className="leading-none">
-              <span className="block text-xl font-black uppercase tracking-tight text-cocoa-900">Evento</span>
-              <span className="hidden text-xs font-extrabold uppercase tracking-[0.2em] text-cocoa-300 sm:block">
+              <span className="block text-xl font-extrabold uppercase text-cocoa-900">Evento</span>
+              <span className="hidden text-xs font-extrabold uppercase text-cocoa-300 sm:block">
                 Events made easy
               </span>
             </span>

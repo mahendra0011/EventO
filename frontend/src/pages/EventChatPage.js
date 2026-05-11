@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
@@ -14,9 +14,7 @@ const EventChatPage = () => {
   const [error, setError] = useState(null);
   const userRole = user?.role || 'user';
 
-  useEffect(() => { fetchEvent(); }, [eventId]);
-
-  const fetchEvent = async () => {
+  const fetchEvent = useCallback(async () => {
     try {
       setLoading(true);
       const res = await api.get(`/events/${eventId}`);
@@ -28,14 +26,16 @@ const EventChatPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [eventId]);
+
+  useEffect(() => { fetchEvent(); }, [fetchEvent]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0d1117]">
+      <div className="flex min-h-screen items-center justify-center bg-[#fbf8f4]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-3"></div>
-          <p className="text-[#8b949e] text-sm">Loading event chat...</p>
+          <div className="mx-auto mb-3 h-12 w-12 animate-spin rounded-full border-4 border-primary-100 border-t-primary-500"></div>
+          <p className="text-sm text-cocoa-500">Loading event chat...</p>
         </div>
       </div>
     );
@@ -43,11 +43,11 @@ const EventChatPage = () => {
 
   if (error || !event) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0d1117]">
+      <div className="flex min-h-screen items-center justify-center bg-[#fbf8f4]">
         <div className="text-center">
-          <MessageCircle className="h-12 w-12 text-[#484f58] mx-auto mb-3" />
-          <h2 className="text-xl font-serif text-white mb-2">Event not found</h2>
-          <p className="text-[#8b949e] mb-4 text-sm">The event you're looking for doesn't exist.</p>
+          <MessageCircle className="mx-auto mb-3 h-12 w-12 text-cocoa-300" />
+          <h2 className="mb-2 text-xl font-bold text-cocoa-900">Event not found</h2>
+          <p className="mb-4 text-sm text-cocoa-500">The event you're looking for doesn't exist.</p>
           <Link to="/dashboard" className="btn-primary">
             <ArrowLeft className="h-4 w-4 inline mr-1.5" />
             Back to Dashboard
@@ -58,35 +58,35 @@ const EventChatPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] overflow-hidden flex flex-col">
+    <div className="flex min-h-screen flex-col overflow-hidden bg-[#fbf8f4]">
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
-        <div className="max-w-4xl mx-auto px-6 py-6 h-full flex flex-col">
+        <div className="mx-auto flex h-full max-w-5xl flex-col px-6 py-8">
           {/* Breadcrumb */}
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center text-[#58a6ff] hover:underline mb-4 text-sm"
+            className="mb-5 flex items-center text-sm font-bold text-primary-600 hover:text-primary-700"
           >
             <ArrowLeft className="h-4 w-4 mr-1.5" />
             Back to {userRole === 'host' ? 'Host Panel' : 'Dashboard'}
           </button>
 
           {/* Page Header */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <h1 className="text-2xl font-semibold text-[#e6edf3]">Community Chat</h1>
-              <p className="text-sm text-[#8b949e] mt-0.5">{event.title} • {new Date(event.date).toLocaleDateString()}</p>
+              <h1 className="text-3xl font-extrabold text-cocoa-900">Community Chat</h1>
+              <p className="mt-1 text-sm text-cocoa-500">{event.title} • {new Date(event.date).toLocaleDateString()}</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#161b22] border border-[#30363d] rounded-full text-sm text-[#8b949e]">
-                <Users className="h-4 w-4 text-amber-500" />
+              <div className="flex items-center gap-1.5 rounded-full border border-cocoa-100 bg-white px-3 py-1.5 text-sm font-semibold text-cocoa-500 shadow-sm">
+                <Users className="h-4 w-4 text-primary-500" />
                 <span>Confirmed attendees can participate</span>
               </div>
             </div>
           </div>
 
           {/* Chat Card */}
-          <div className="flex flex-col bg-[#161b22] border border-[#30363d] rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
+          <div className="flex flex-col overflow-hidden rounded-lg border border-white bg-white shadow-2xl shadow-cocoa-900/10" style={{ height: 'calc(100vh - 220px)' }}>
             <EventChat
               eventId={eventId}
               eventTitle={event.title}

@@ -413,7 +413,7 @@ const CommunityChat = () => {
               <MessageSquare className='w-6 h-6 text-cocoa-900' />
             </div>
             <div>
-              <h1 className='text-3xl font-serif text-white tracking-tight'>Community Hub</h1>
+              <h1 className='text-3xl font-serif text-white'>Community Hub</h1>
               <p className='text-cocoa-300 text-sm'>Connect, collaborate, and converse</p>
             </div>
           </div>
@@ -439,7 +439,7 @@ const CommunityChat = () => {
             <div className='p-5 border-b border-slate-800/50 bg-slate-900/30'>
               <div className='flex items-center gap-2 mb-3'>
                 <Users className='w-5 h-5 text-amber-500' />
-                <span className='font-medium text-white text-sm uppercase tracking-wider'>{activeRole === "host" ? "Your Events" : "My Events"}</span>
+                <span className='font-medium text-white text-sm uppercase'>{activeRole === "host" ? "Your Events" : "My Events"}</span>
               </div>
             </div>
             
@@ -551,7 +551,7 @@ const CommunityChat = () => {
                          <Megaphone className='w-5 h-5 text-amber-400' />
                        </div>
                        <div>
-                         <span className='font-medium text-amber-500 text-sm uppercase tracking-wider'>Community Feed</span>
+                         <span className='font-medium text-amber-500 text-sm uppercase'>Community Feed</span>
                          <p className='text-cocoa-300 text-xs'>Connect with fellow attendees</p>
                        </div>
                      </div>
@@ -719,7 +719,7 @@ const CommunityChat = () => {
                                         <div className='flex items-center justify-between mt-1.5'>
                                           {/* Show sender name only if NOT a host (hosts show only "Host" badge) */}
                                           {msg.senderName && msg.senderRole !== activeRole && msg.senderRole !== 'host' && (
-                                            <span className='text-[10px] font-medium text-amber-400/80 uppercase tracking-wide'>
+                                            <span className='text-[10px] font-medium text-amber-400/80 uppercase'>
                                               {msg.senderName}
                                             </span>
                                           )}

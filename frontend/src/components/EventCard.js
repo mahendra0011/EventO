@@ -91,7 +91,7 @@ const EventCard = ({ event, index = 0 }) => {
             </span>
           )}
           {isSoldOut && (
-            <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
+            <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-bold uppercase text-white shadow-sm">
               Sold out
             </span>
           )}
@@ -115,7 +115,7 @@ const EventCard = ({ event, index = 0 }) => {
         <div className="mb-4 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <Link to={`/events/${event._id}`}>
-              <h3 className="line-clamp-1 text-lg font-black tracking-tight text-cocoa-900 transition-colors group-hover:text-primary-600">
+              <h3 className="line-clamp-1 text-lg font-extrabold text-cocoa-900 transition-colors group-hover:text-primary-600">
                 {event.title}
               </h3>
             </Link>
@@ -148,8 +148,8 @@ const EventCard = ({ event, index = 0 }) => {
 
         <div className="mt-auto flex items-center justify-between gap-4 border-t border-cocoa-100 pt-5">
           <div>
-            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-cocoa-300">From</p>
-            <div className="mt-1 flex items-center text-xl font-black text-primary-500">
+            <p className="text-xs font-extrabold uppercase text-cocoa-300">From</p>
+            <div className="mt-1 flex items-center text-xl font-extrabold text-primary-500">
               <IndianRupee className="h-5 w-5" />
               <span>{Number(event.price || 0).toLocaleString('en-IN')}</span>
             </div>

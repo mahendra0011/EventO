@@ -89,7 +89,7 @@ const Events = () => {
               <CalendarDays className="h-4 w-4" />
               Curated experiences
             </span>
-            <h1 className="text-4xl font-black tracking-tight text-cocoa-900 sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-extrabold text-cocoa-900 sm:text-5xl lg:text-6xl">
               Browse events that feel worth showing up for.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-cocoa-500">
@@ -160,7 +160,7 @@ const Events = () => {
               <Filter className="h-3.5 w-3.5" />
               {hasFilters ? 'Filtered events' : 'All events'}
             </div>
-            <h2 className="text-3xl font-black tracking-tight text-cocoa-900">
+            <h2 className="text-3xl font-extrabold text-cocoa-900">
               {selectedCategory ? `${selectedCategory} events` : 'Available events'}
             </h2>
           </div>
@@ -233,7 +233,7 @@ const Events = () => {
             <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-lg bg-primary-50 text-primary-400">
               <Search className="h-8 w-8" />
             </div>
-            <h3 className="text-xl font-black text-cocoa-900">No events found</h3>
+            <h3 className="text-xl font-extrabold text-cocoa-900">No events found</h3>
             <p className="mx-auto mt-2 max-w-md text-cocoa-500">
               Try a different search term, clear the category, or check back after hosts publish more events.
             </p>

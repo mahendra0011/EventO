@@ -293,7 +293,7 @@ const AdminDashboard = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-10">
           <div>
-            <h1 className="text-4xl font-black text-cocoa-900">Host Dashboard</h1>
+            <h1 className="text-4xl font-extrabold text-cocoa-900">Host Dashboard</h1>
             <p className="text-cocoa-500 text-lg font-semibold">Manage events, bookings, and analytics</p>
           </div>
           <Link to="/host/create-event" className="mt-4 md:mt-0 btn-primary inline-flex items-center">
@@ -311,7 +311,7 @@ const AdminDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-bold text-cocoa-400">Total Events</p>
-                <p className="text-2xl font-black text-cocoa-900">{stats?.stats.totalEvents || 0}</p>
+                <p className="text-2xl font-extrabold text-cocoa-900">{stats?.stats.totalEvents || 0}</p>
               </div>
             </div>
           </div>
@@ -323,7 +323,7 @@ const AdminDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-bold text-cocoa-400">Total Bookings</p>
-                <p className="text-2xl font-black text-cocoa-900">{stats?.stats.totalBookings || 0}</p>
+                <p className="text-2xl font-extrabold text-cocoa-900">{stats?.stats.totalBookings || 0}</p>
               </div>
             </div>
           </div>
@@ -335,7 +335,7 @@ const AdminDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-bold text-cocoa-400">Confirmed</p>
-                <p className="text-2xl font-black text-cocoa-900">{stats?.stats.confirmedBookings || 0}</p>
+                <p className="text-2xl font-extrabold text-cocoa-900">{stats?.stats.confirmedBookings || 0}</p>
               </div>
             </div>
           </div>
@@ -347,7 +347,7 @@ const AdminDashboard = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-bold text-cocoa-400">Total Revenue</p>
-                <p className="text-2xl font-black text-cocoa-900">₹{(stats?.stats.totalRevenue || 0).toLocaleString('en-IN')}</p>
+                <p className="text-2xl font-extrabold text-cocoa-900">₹{(stats?.stats.totalRevenue || 0).toLocaleString('en-IN')}</p>
               </div>
             </div>
           </div>
@@ -463,19 +463,19 @@ const AdminDashboard = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-[#fbf8f4]">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase">
                             User
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase">
                             Event
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase">
                             Tickets
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase">
                             Amount
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase tracking-wider">
+                          <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase">
                             Status
                           </th>
                         </tr>
@@ -535,7 +535,7 @@ const AdminDashboard = () => {
                       className={`px-4 py-2 rounded-full text-sm font-medium capitalize ${
                         bookingFilter === status
                           ? 'bg-primary-600 text-white'
-                          : 'bg-[#f3eee9] text-cocoa-700 hover:bg-gray-200'
+                          : 'bg-[#f3eee9] text-cocoa-700 hover:bg-primary-50'
                       }`}
                     >
                       {status}
@@ -548,22 +548,22 @@ const AdminDashboard = () => {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-[#fbf8f4]">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase">
                           User
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase">
                           Event
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase">
                           Tickets
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase">
                           Amount
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase">
                           Status
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-medium text-cocoa-400 uppercase">
                           Actions
                         </th>
                       </tr>
@@ -1120,7 +1120,7 @@ const AdminDashboard = () => {
                             className="p-4 bg-[#fbf8f4] border border-cocoa-100 rounded-lg opacity-75"
                           >
                             <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                              <div className="w-8 h-8 rounded-full bg-cocoa-100 flex items-center justify-center flex-shrink-0">
                                 <Bell className="h-4 w-4 text-cocoa-500" />
                               </div>
                               <div className="flex-1 min-w-0">

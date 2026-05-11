@@ -192,14 +192,14 @@ const QRCodeTicket = ({
                   <div className="bg-[#f3eee9] rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-cocoa-400 uppercase tracking-wide">Ticket ID</p>
+                        <p className="text-xs text-cocoa-400 uppercase">Ticket ID</p>
                         <p className="font-mono font-bold text-cocoa-900 text-lg">{ticketId.slice(-12).toUpperCase()}</p>
                       </div>
                       <motion.button
                         onClick={handleCopyTicketId}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                        className="rounded-lg p-2 transition-colors hover:bg-primary-50"
                       >
                         {copied ? (
                           <Check className="h-5 w-5 text-green-600" />
@@ -215,14 +215,14 @@ const QRCodeTicket = ({
                     <div className="bg-[#fbf8f4] rounded-lg p-3">
                       <div className="flex items-center gap-2 text-cocoa-500 mb-1">
                         <User className="h-4 w-4" />
-                        <span className="text-xs uppercase tracking-wide">Attendee</span>
+                        <span className="text-xs uppercase">Attendee</span>
                       </div>
                       <p className="font-semibold text-cocoa-900">{user?.name || 'Guest'}</p>
                     </div>
                     <div className="bg-[#fbf8f4] rounded-lg p-3">
                       <div className="flex items-center gap-2 text-cocoa-500 mb-1">
                         <Ticket className="h-4 w-4" />
-                        <span className="text-xs uppercase tracking-wide">Tickets</span>
+                        <span className="text-xs uppercase">Tickets</span>
                       </div>
                       <p className="font-semibold text-cocoa-900">{booking?.numberOfTickets || 1}</p>
                     </div>
@@ -266,17 +266,17 @@ const QRCodeTicket = ({
       </div>
 
       {/* Ticket Footer */}
-      <div className="bg-gray-900 px-6 py-4 text-white">
+      <div className="border-t border-cocoa-100 bg-[#fbf8f4] px-6 py-4 text-cocoa-700">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
               <Ticket className="h-4 w-4" />
             </div>
-            <span className="font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text font-bold text-transparent">
               Evento
             </span>
           </div>
-          <p className="text-cocoa-300 text-sm text-center">
+          <p className="text-center text-sm text-cocoa-400">
             Present this QR code at the venue for entry • Valid for {booking?.numberOfTickets || 1} person(s)
           </p>
         </div>

@@ -103,9 +103,9 @@ const Register = () => {
                   <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-500 text-white">
                     <CalendarDays className="h-6 w-6" />
                   </span>
-                  <span className="text-2xl font-black uppercase text-cocoa-900">Evento</span>
+                  <span className="text-2xl font-extrabold uppercase text-cocoa-900">Evento</span>
                 </Link>
-                <h2 className="mt-5 text-3xl font-black tracking-tight text-cocoa-900">Create your account</h2>
+                <h2 className="mt-5 text-3xl font-extrabold text-cocoa-900">Create your account</h2>
                 <p className="mt-2 font-semibold text-cocoa-500">Start booking events or register as a host to publish your own.</p>
               </div>
 
@@ -115,7 +115,7 @@ const Register = () => {
                     <Shield className="h-5 w-5" />
                   </span>
                   <span>
-                    <span className="block text-sm font-black text-cocoa-900">Register as host</span>
+                    <span className="block text-sm font-extrabold text-cocoa-900">Register as host</span>
                     <span className="text-xs font-semibold text-cocoa-400">Create events and manage attendees</span>
                   </span>
                 </span>
@@ -275,7 +275,7 @@ const Register = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-cocoa-900 via-cocoa-900/60 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-10 text-white">
-            <h1 className="max-w-xl text-4xl font-black tracking-tight">
+            <h1 className="max-w-xl text-4xl font-extrabold">
               Join the platform built for memorable events.
             </h1>
             <div className="mt-6 grid gap-3 text-sm font-bold text-cocoa-100">

@@ -575,7 +575,7 @@ const AdminPanel = () => {
                   <Shield className="h-6 w-6" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-950">Admin Console</h1>
+                  <h1 className="text-2xl font-bold text-cocoa-900">Admin Console</h1>
                   <p className="text-sm text-cocoa-400">Evento platform control center</p>
                 </div>
               </div>
@@ -608,7 +608,7 @@ const AdminPanel = () => {
                   className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'bg-primary-600 text-white'
-                      : 'bg-[#f3eee9] text-cocoa-700 hover:bg-gray-200'
+                      : 'bg-[#f3eee9] text-cocoa-700 hover:bg-primary-50'
                   }`}
                 >
                   <Icon className="h-4 w-4" />

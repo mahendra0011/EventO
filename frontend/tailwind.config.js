@@ -44,7 +44,7 @@ module.exports = {
         }
       },
       fontFamily: {
-        sans: ['Nunito Sans', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',

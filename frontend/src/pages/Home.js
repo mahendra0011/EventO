@@ -156,7 +156,7 @@ const Home = () => {
   return (
     <div className="overflow-x-hidden bg-[#fbf8f4]">
       <section className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-[#fff8f2] to-[#fbf8f4]">
-        <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-16 lg:min-h-[620px] lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
           <div>
             <motion.div
               initial={{ opacity: 0, y: 18 }}
@@ -172,26 +172,45 @@ const Home = () => {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.65 }}
-              className="max-w-3xl text-5xl font-black leading-[0.95] tracking-tight text-cocoa-900 sm:text-6xl lg:text-7xl"
+              className="max-w-3xl text-4xl font-extrabold leading-tight text-cocoa-900 sm:text-5xl 2xl:text-6xl"
             >
-              Evento
+              Curate Your{' '}
+              <span className="block bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">
+                Unforgettable
+              </span>
+              Moments
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.55 }}
-              className="mt-7 max-w-2xl text-lg leading-8 text-cocoa-500 sm:text-xl"
+              className="mt-5 max-w-2xl text-lg leading-8 text-cocoa-500 sm:text-xl"
             >
               A polished event booking and management platform for discovering live experiences, selling tickets, verifying bookings, and keeping attendees informed.
             </motion.p>
 
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.28, duration: 0.55 }}
+              className="mt-6 flex flex-col gap-3 sm:flex-row"
+            >
+              <Link to="/events" className="btn-primary px-8">
+                <Search className="h-4 w-4" />
+                Explore Events
+              </Link>
+              <Link to="/register?host=true" className="btn-secondary px-8">
+                Start Hosting
+              </Link>
+            </motion.div>
+
             <motion.form
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.55 }}
+              transition={{ delay: 0.36, duration: 0.55 }}
               onSubmit={handleSearch}
-              className="mt-9 grid max-w-2xl gap-3 rounded-lg bg-white p-2 shadow-2xl shadow-cocoa-900/10 sm:grid-cols-[1fr_auto]"
+              className="mt-5 grid max-w-2xl gap-3 rounded-lg bg-white p-2 shadow-2xl shadow-cocoa-900/10 sm:grid-cols-[1fr_auto]"
             >
               <div className="relative">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-cocoa-300" />
@@ -199,11 +218,11 @@ const Home = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search concerts, workshops, conferences..."
-                  className="h-12 w-full rounded-lg border-0 bg-white pl-12 pr-4 text-cocoa-900 outline-none placeholder:text-cocoa-300 focus:ring-0"
+                  placeholder="Search events, venues, categories..."
+                  className="h-11 w-full rounded-lg border-0 bg-white pl-12 pr-4 text-cocoa-900 outline-none placeholder:text-cocoa-300 focus:ring-0"
                 />
               </div>
-              <button type="submit" className="btn-primary h-12 px-6">
+              <button type="submit" className="btn-primary h-11 px-6">
                 Explore Events
                 <ArrowRight className="h-4 w-4" />
               </button>
@@ -212,15 +231,15 @@ const Home = () => {
             <motion.div
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.55 }}
-              className="mt-9 grid max-w-2xl grid-cols-2 gap-5 sm:grid-cols-4"
+              transition={{ delay: 0.44, duration: 0.55 }}
+              className="mt-7 grid max-w-2xl grid-cols-2 gap-5 sm:grid-cols-4"
             >
               {stats.map((stat) => (
                 <div key={stat.label}>
-                  <div className="text-2xl font-black text-cocoa-900">
+                  <div className="text-2xl font-extrabold text-cocoa-900">
                     <AnimatedCounter value={stat.value} />
                   </div>
-                  <div className="mt-1 text-xs font-extrabold uppercase tracking-wide text-cocoa-400">
+                  <div className="mt-1 text-xs font-bold uppercase text-cocoa-400">
                     {stat.label}
                   </div>
                 </div>
@@ -238,7 +257,7 @@ const Home = () => {
               <img
                 src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1400&q=85"
                 alt="Audience enjoying a live event"
-                className="h-[320px] w-full object-cover sm:h-[430px]"
+                className="h-[300px] w-full object-cover sm:h-[400px]"
               />
             </div>
             <div className="absolute -bottom-7 left-6 flex items-center gap-4 rounded-lg bg-white px-5 py-4 shadow-2xl shadow-cocoa-900/15">
@@ -246,7 +265,7 @@ const Home = () => {
                 <CalendarDays className="h-6 w-6" />
               </span>
               <div>
-                <p className="font-black text-cocoa-900">Next Event</p>
+                <p className="font-extrabold text-cocoa-900">Next Event</p>
                 <p className="text-sm font-semibold text-cocoa-400">Summer Music Fest - 2 days</p>
               </div>
             </div>
@@ -275,7 +294,7 @@ const Home = () => {
                 <Ticket className="h-3.5 w-3.5" />
                 Trending now
               </span>
-              <h2 className="text-3xl font-black tracking-tight text-cocoa-900 sm:text-4xl">
+              <h2 className="text-3xl font-extrabold text-cocoa-900 sm:text-4xl">
                 Featured events
               </h2>
               <p className="mt-3 max-w-2xl text-cocoa-500">
@@ -304,7 +323,7 @@ const Home = () => {
           ) : featuredEvents.length === 0 ? (
             <div className="surface-panel flex flex-col items-center justify-center px-6 py-16 text-center">
               <CalendarDays className="mb-4 h-12 w-12 text-primary-300" />
-              <h3 className="text-xl font-black text-cocoa-900">Featured events are coming soon</h3>
+              <h3 className="text-xl font-extrabold text-cocoa-900">Featured events are coming soon</h3>
               <p className="mt-2 max-w-md text-cocoa-500">
                 Explore all events or create an account to start hosting your own.
               </p>
@@ -335,7 +354,7 @@ const Home = () => {
                 <Users className="h-3.5 w-3.5" />
                 Built for both sides
               </span>
-              <h2 className="text-3xl font-black tracking-tight text-cocoa-900 sm:text-4xl">
+              <h2 className="text-3xl font-extrabold text-cocoa-900 sm:text-4xl">
                 One platform for guests and event teams.
               </h2>
               <p className="mt-4 text-lg leading-8 text-cocoa-500">
@@ -358,7 +377,7 @@ const Home = () => {
                   <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-lg ${feature.color}`}>
                     <feature.icon className="h-6 w-6" />
                   </div>
-                  <h3 className="text-lg font-black text-cocoa-900">{feature.title}</h3>
+                  <h3 className="text-lg font-extrabold text-cocoa-900">{feature.title}</h3>
                   <p className="mt-2 leading-7 text-cocoa-500">{feature.description}</p>
                 </div>
               ))}
@@ -374,7 +393,7 @@ const Home = () => {
               <Search className="h-3.5 w-3.5" />
               Explore by interest
             </span>
-            <h2 className="text-3xl font-black tracking-tight text-cocoa-900 sm:text-4xl">
+            <h2 className="text-3xl font-extrabold text-cocoa-900 sm:text-4xl">
               Find the category that fits your calendar.
             </h2>
           </div>
@@ -401,7 +420,7 @@ const Home = () => {
               <CheckCircle className="h-3.5 w-3.5" />
               Simple process
             </span>
-            <h2 className="text-3xl font-black tracking-tight text-cocoa-900 sm:text-4xl">
+            <h2 className="text-3xl font-extrabold text-cocoa-900 sm:text-4xl">
               From discovery to the door in three steps.
             </h2>
           </div>
@@ -410,14 +429,14 @@ const Home = () => {
             {steps.map((step, index) => (
               <div key={step.title} className="surface-panel p-6">
                 <div className="mb-6 flex items-center justify-between">
-                  <span className="text-sm font-extrabold uppercase tracking-[0.2em] text-cocoa-300">
+                  <span className="text-sm font-extrabold uppercase text-cocoa-300">
                     Step {index + 1}
                   </span>
                   <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-500 text-white">
                     <step.icon className="h-5 w-5" />
                   </span>
                 </div>
-                <h3 className="text-xl font-black text-cocoa-900">{step.title}</h3>
+                <h3 className="text-xl font-extrabold text-cocoa-900">{step.title}</h3>
                 <p className="mt-3 leading-7 text-cocoa-500">{step.description}</p>
               </div>
             ))}
@@ -430,7 +449,7 @@ const Home = () => {
           <span className="section-kicker">
             Ready when you are
           </span>
-          <h2 className="text-3xl font-black tracking-tight sm:text-5xl">
+          <h2 className="text-3xl font-extrabold sm:text-5xl">
             Make the next event easier to find, book, and manage.
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-cocoa-500">

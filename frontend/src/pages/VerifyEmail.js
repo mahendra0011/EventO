@@ -200,7 +200,7 @@ const VerifyEmail = () => {
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   required
-                  className="input-field pl-10 text-center text-2xl tracking-widest"
+                  className="input-field pl-10 text-center text-2xlst"
                   placeholder="000000"
                   autoFocus
                 />

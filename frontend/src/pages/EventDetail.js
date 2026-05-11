@@ -604,7 +604,7 @@ const EventDetail = () => {
                ) : (
                  <button
                    disabled
-                   className="w-full bg-gray-300 text-cocoa-400 px-6 py-3 rounded-lg font-semibold cursor-not-allowed"
+                   className="w-full rounded-lg bg-cocoa-200 px-6 py-3 font-semibold text-cocoa-400 cursor-not-allowed"
                  >
                    Sold Out
                  </button>
@@ -646,7 +646,7 @@ const EventDetail = () => {
                         value={bookingOtp}
                         onChange={(e) => setBookingOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                         required
-                        className="input-field text-center text-2xl tracking-widest"
+                        className="input-field text-center text-2xlst"
                         placeholder="000000"
                         autoFocus
                       />

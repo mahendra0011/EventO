@@ -369,7 +369,7 @@ const Dashboard = () => {
                   className="p-4 bg-[#fbf8f4] border border-cocoa-100 rounded-lg opacity-75"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-cocoa-100 flex items-center justify-center flex-shrink-0">
                       <Bell className="h-4 w-4 text-cocoa-500" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -424,7 +424,7 @@ const Dashboard = () => {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <Megaphone className="h-4 w-4 text-primary-600" />
-                    <span className="text-xs font-medium uppercase tracking-wide text-primary-700">
+                    <span className="text-xs font-medium uppercase text-primary-700">
                       {message.event?.title || 'Event broadcast'}
                     </span>
                     {!message.isRead && (
@@ -459,7 +459,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-          <h1 className="text-4xl font-black text-cocoa-900 mb-2">
+          <h1 className="text-4xl font-extrabold text-cocoa-900 mb-2">
             My <GradientText>Dashboard</GradientText>
           </h1>
           <p className="text-cocoa-500 text-lg font-semibold">Welcome back, {user?.name}!</p>
@@ -494,7 +494,7 @@ const Dashboard = () => {
                     <Icon className="h-5 w-5" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-base font-black text-cocoa-900">{label}</span>
+                    <span className="block text-base font-extrabold text-cocoa-900">{label}</span>
                     <span className="block text-sm font-semibold text-cocoa-400">{description}</span>
                   </span>
                 </span>
@@ -518,7 +518,7 @@ const Dashboard = () => {
                 </AnimatedIcon>
                 <div className="ml-4">
                   <p className="text-sm font-bold text-cocoa-400">{stat.label}</p>
-                  <p className="text-2xl font-black text-cocoa-900">{stat.value}</p>
+                  <p className="text-2xl font-extrabold text-cocoa-900">{stat.value}</p>
                 </div>
               </div>
             </AnimatedCard>
@@ -593,7 +593,7 @@ const Dashboard = () => {
                                 className="w-24 h-24 object-cover rounded-lg"
                               />
                               <div>
-                                <h3 className="text-lg font-black text-cocoa-900">{booking.event?.title}</h3>
+                                <h3 className="text-lg font-extrabold text-cocoa-900">{booking.event?.title}</h3>
                                 <p className="text-cocoa-500 text-sm font-semibold">{formatDate(booking.event?.date)} at {booking.event?.time}</p>
                                 <p className="text-cocoa-500 text-sm font-semibold">{booking.numberOfTickets} ticket(s) - ₹{booking.totalPrice?.toLocaleString('en-IN')}</p>
                               </div>

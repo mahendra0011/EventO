@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Send, Smile, Users, Crown, MessageSquare, Trash2, X, Check, Paperclip, Image, Reply
+  Send, Smile, Users, Crown, MessageSquare, Trash2, X, Check, Paperclip, Image
 } from 'lucide-react';
 import {
   getCommunityMessages,
@@ -9,8 +9,7 @@ import {
   getEventAttendees,
   deleteMessage,
   editMessage,
-  addReaction,
-  getMessageReactions
+  addReaction
 } from '../utils/api';
 import ReactionPicker from './ReactionPicker';
 import './EventChat.css';
@@ -22,18 +21,16 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const [editingId, setEditingId] = useState(null);
   const [editContent, setEditContent] = useState('');
   const [attendees, setAttendees] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState({});
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
-  const [typingUsers, setTypingUsers] = useState([]);
+  const [typingUsers] = useState([]);
   const [showReactionPicker, setShowReactionPicker] = useState(null);
   const [activeMenu, setActiveMenu] = useState(null);
 
   const chatEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const autoScrollRef = useRef(true);
-  const prevMessagesLengthRef = useRef(0);
 
   const fetchMessages = useCallback(async (silent = false) => {
     if (!eventId) return;
@@ -54,9 +51,6 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       const data = await getEventAttendees(eventId);
       const attendeeList = data.attendees || data.users || [];
       setAttendees(attendeeList);
-      const online = {};
-      attendeeList.forEach(att => { online[att._id] = Math.random() > 0.5; });
-      setOnlineUsers(online);
     } catch (error) {
       console.error('Error fetching attendees:', error);
       setAttendees([]);
@@ -95,8 +89,6 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   }, []);
 
   useEffect(() => {
-    const prevLength = prevMessagesLengthRef.current;
-    prevMessagesLengthRef.current = messages.length;
     if (autoScrollRef.current) {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
@@ -197,9 +189,9 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   if (!eventId) {
     return (
       <div className='flex flex-col items-center justify-center h-full text-center p-8'>
-        <MessageSquare className='w-12 h-12 text-[#484f58] mb-3' />
-        <h3 className='text-lg font-serif text-white mb-2'>Event Community Chat</h3>
-        <p className='text-sm text-[#8b949e]'>Select an event from your bookings to join its community chat.</p>
+        <MessageSquare className='w-12 h-12 text-cocoa-300 mb-3' />
+        <h3 className='text-lg font-bold text-cocoa-900 mb-2'>Event Community Chat</h3>
+        <p className='text-sm text-cocoa-500'>Select an event from your bookings to join its community chat.</p>
       </div>
     );
   }
@@ -207,17 +199,17 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   return (
     <div className='flex flex-col h-full'>
       {/* Chat Header */}
-      <div className='p-3 border-b border-[#30363d] bg-[#161b22] flex items-center justify-between flex-shrink-0'>
+      <div className='p-3 border-b border-cocoa-100 bg-white flex items-center justify-between flex-shrink-0'>
         <div className='flex items-center gap-3'>
-          <div className='w-9 h-9 rounded-lg bg-[#21262d] border border-[#30363d] flex items-center justify-center'>
-            <span className='text-[#58a6ff] font-semibold text-sm'>{eventTitle?.charAt(0)?.toUpperCase()}</span>
+          <div className='w-9 h-9 rounded-lg bg-[#fbf8f4] border border-cocoa-100 flex items-center justify-center'>
+            <span className='text-primary-600 font-semibold text-sm'>{eventTitle?.charAt(0)?.toUpperCase()}</span>
           </div>
           <div>
-            <h2 className='font-semibold text-[#e6edf3] text-sm'>Community Chat</h2>
-            <p className='text-xs text-[#8b949e]'>{attendees.length} participants • {messages.length} messages</p>
+            <h2 className='font-semibold text-cocoa-900 text-sm'>Community Chat</h2>
+            <p className='text-xs text-cocoa-500'>{attendees.length} participants • {messages.length} messages</p>
           </div>
           {userRole === 'host' && (
-            <span className='px-1.5 py-0.5 bg-[#2d2206] text-[#EF9F27] border border-[#854F0B] rounded text-[10px] font-bold uppercase flex items-center gap-1'>
+            <span className='px-1.5 py-0.5 bg-primary-50 text-primary-700 border border-primary-100 rounded text-[10px] font-bold uppercase flex items-center gap-1'>
               <Crown className='w-3 h-3 fill-current' />
               Host
             </span>
@@ -226,15 +218,15 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
         <div className='flex items-center gap-2'>
           <button
             onClick={() => setShowParticipants(!showParticipants)}
-            className='p-1.5 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-lg'
+            className='p-1.5 text-cocoa-500 hover:text-cocoa-900 hover:bg-[#fbf8f4] rounded-lg'
           >
             <Users className='w-4 h-4' />
           </button>
           {typingUsers.length > 0 && (
             <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className='flex items-center gap-1.5 px-2 py-1 bg-[#21262d] rounded-lg text-xs text-[#8b949e]'
+              className='flex items-center gap-1.5 px-2 py-1 bg-[#fbf8f4] rounded-lg text-xs text-cocoa-500'
             >
-              <span className='w-2 h-2 bg-amber-400 rounded-full animate-pulse' />
+              <span className='w-2 h-2 bg-primary-400 rounded-full animate-pulse' />
               {typingUsers.map(u => u.name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
             </motion.div>
           )}
@@ -244,15 +236,15 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       {/* Messages Area */}
        <div ref={messagesContainerRef} onScroll={handleScroll} className='flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 space-y-3'>
         {loading ? (
-          <div className='flex items-center justify-center h-full text-[#8b949e]'>
-            <span className='w-4 h-4 border-2 border-[#30363d] border-t-amber-500 rounded-full animate-spin mr-2' />
+          <div className='flex items-center justify-center h-full text-cocoa-500'>
+            <span className='w-4 h-4 border-2 border-cocoa-100 border-t-primary-500 rounded-full animate-spin mr-2' />
             Loading...
           </div>
         ) : messages.length === 0 ? (
-          <div className='flex flex-col items-center justify-center h-full text-[#8b949e]'>
+          <div className='flex flex-col items-center justify-center h-full text-cocoa-500'>
             <MessageSquare className='w-12 h-12 mb-2' />
             <p className='text-sm'>No messages yet</p>
-            <p className='text-xs text-[#484f58]'>Start the conversation!</p>
+            <p className='text-xs text-cocoa-300'>Start the conversation!</p>
           </div>
         ) : (
           <AnimatePresence>
@@ -265,7 +257,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                 <React.Fragment key={msg._id}>
                   {showDate && (
                     <div className='flex justify-center my-2'>
-                      <span className='px-2 py-1 bg-[#21262d] text-[#8b949e] text-xs rounded-full'>
+                      <span className='px-2 py-1 bg-[#fbf8f4] text-cocoa-500 text-xs rounded-full'>
                         {new Date(msg.createdAt).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                       </span>
                     </div>
@@ -274,18 +266,18 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                        <div className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}>
                          {!isOwn && showAvatar && sender && (
-                           <div className='w-8 h-8 rounded-full bg-[#21262d] border border-[#30363d] flex items-center justify-center flex-shrink-0'>
-                             <span className='text-[#58a6ff] font-medium text-sm'>{sender.name?.charAt(0)?.toUpperCase()}</span>
+                           <div className='w-8 h-8 rounded-full bg-[#fbf8f4] border border-cocoa-100 flex items-center justify-center flex-shrink-0'>
+                             <span className='text-primary-600 font-medium text-sm'>{sender.name?.charAt(0)?.toUpperCase()}</span>
                            </div>
                          )}
                          <div className={`flex-1 min-w-0 max-w-[70%]`}>
-                           <div className={`relative px-4 py-2.5 shadow-sm group group-hover:shadow-md transition-all break-words ${isOwn ? 'bg-[#1f4068] text-[#cde3ff] rounded-lg rounded-br-sm' : 'bg-[#21262d] text-[#c9d1d9] border border-[#30363d] rounded-lg rounded-bl-sm'}`}
+                           <div className={`relative px-4 py-2.5 shadow-sm group group-hover:shadow-md transition-all break-words ${isOwn ? 'bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-lg rounded-br-sm' : 'bg-[#fbf8f4] text-cocoa-700 border border-cocoa-100 rounded-lg rounded-bl-sm'}`}
                              onContextMenu={(e) => { e.preventDefault(); toggleActionMenu(msg._id); }}
                              onDoubleClick={() => toggleActionMenu(msg._id)}
                              style={{ overflow: 'visible' }}
                            >
                           {msg.replyTo && (
-                            <div className='mb-2 px-2 py-1 bg-[#0d1117] border-l-2 border-[#30363d] rounded text-xs text-[#8b949e]'>
+                            <div className='mb-2 px-2 py-1 bg-[#fbf8f4] border-l-2 border-cocoa-100 rounded text-xs text-cocoa-500'>
                               Replying to {msg.replyTo.sender?.name}
                             </div>
                           )}
@@ -293,10 +285,10 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                               <div className='flex items-center gap-2 mb-1.5'>
                                 {/* Show sender name only if NOT a host (hosts show only badge) */}
                                 {sender.role !== 'host' && (
-                                  <span className='text-xs font-semibold text-[#c9d1d9]'>{sender.name}</span>
+                                  <span className='text-xs font-semibold text-cocoa-700'>{sender.name}</span>
                                 )}
                                 {sender.role === 'host' && (
-                                  <span className='px-1.5 py-0.5 bg-[#2d2206] text-[#EF9F27] border border-[#854F0B] rounded text-[10px] font-bold uppercase flex items-center gap-1'>
+                                  <span className='px-1.5 py-0.5 bg-primary-50 text-primary-700 border border-primary-100 rounded text-[10px] font-bold uppercase flex items-center gap-1'>
                                     <Crown className='w-3 h-3 fill-current' />
                                     Host
                                   </span>
@@ -313,12 +305,12 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                                 onChange={(e) => setEditContent(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(msg._id); if (e.key === 'Escape') setEditingId(null); }}
                                 autoFocus
-                                className='flex-1 bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-[#e6edf3] outline-none focus:ring-2 focus:ring-[#58a6ff]'
+                                className='flex-1 bg-[#fbf8f4] border border-cocoa-100 rounded-lg px-3 py-2 text-sm text-cocoa-900 outline-none focus:ring-2 focus:ring-primary-200'
                               />
-                              <button onClick={() => handleEdit(msg._id)} className='p-2 bg-[#238636] text-white rounded-lg hover:bg-[#2ea043]'>
+                              <button onClick={() => handleEdit(msg._id)} className='p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600'>
                                 <Check className='w-4 h-4' />
                               </button>
-                              <button onClick={() => setEditingId(null)} className='p-2 bg-[#30363d] text-[#c9d1d9] rounded-lg hover:bg-[#484f58]'>
+                              <button onClick={() => setEditingId(null)} className='rounded-lg bg-cocoa-100 p-2 text-cocoa-700 hover:bg-cocoa-200'>
                                 <X className='w-4 h-4' />
                               </button>
                             </div>
@@ -328,12 +320,12 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                               
                               {/* Reply preview */}
                               {msg.replyTo && (
-                                <div className='mt-2 pt-2 border-t border-[#30363d]/50'>
-                                  <div className='text-xs text-[#8b949e] flex items-center gap-1'>
+                                <div className='mt-2 pt-2 border-t border-cocoa-100/50'>
+                                  <div className='text-xs text-cocoa-500 flex items-center gap-1'>
                                     <MessageSquare className='w-3 h-3' />
                                     Replying to {msg.replyTo.sender?.name || 'user'}
                                   </div>
-                                  <div className='text-xs text-[#8b949e] truncate mt-0.5'>
+                                  <div className='text-xs text-cocoa-500 truncate mt-0.5'>
                                     {msg.replyTo.content || 'Original message'}
                                   </div>
                                 </div>
@@ -344,26 +336,26 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                           {/* Actions Menu */}
                           {activeMenu === msg._id && (
                              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                                className='absolute top-full mt-2 right-0 flex items-center justify-end gap-1 bg-[#161b22] border border-[#30363d] rounded-full px-2 py-1.5 shadow-xl z-50'
+                                className='absolute top-full mt-2 right-0 flex items-center justify-end gap-1 bg-white border border-cocoa-100 rounded-full px-2 py-1.5 shadow-xl z-50'
                              >
-                              <button onClick={() => handleReply(msg)} className='p-1.5 hover:bg-[#21262d] rounded-full' title='Reply'>
-                                <MessageSquare className='w-4 h-4 text-[#8b949e]' />
+                              <button onClick={() => handleReply(msg)} className='p-1.5 hover:bg-[#fbf8f4] rounded-full' title='Reply'>
+                                <MessageSquare className='w-4 h-4 text-cocoa-500' />
                               </button>
-                              <button onClick={() => setShowReactionPicker(showReactionPicker === msg._id ? null : msg._id)} className='p-1.5 hover:bg-[#21262d] rounded-full' title='React'>
-                                <Smile className='w-4 h-4 text-[#8b949e]' />
+                              <button onClick={() => setShowReactionPicker(showReactionPicker === msg._id ? null : msg._id)} className='p-1.5 hover:bg-[#fbf8f4] rounded-full' title='React'>
+                                <Smile className='w-4 h-4 text-cocoa-500' />
                               </button>
                               {isOwn && (
                                 <>
-                                  <button onClick={() => { setEditingId(msg._id); setEditContent(msg.content); setActiveMenu(null); }} className='p-1.5 hover:bg-[#21262d] rounded-full' title='Edit'>
-                                    <svg className='w-4 h-4 text-[#8b949e]' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' /></svg>
+                                  <button onClick={() => { setEditingId(msg._id); setEditContent(msg.content); setActiveMenu(null); }} className='p-1.5 hover:bg-[#fbf8f4] rounded-full' title='Edit'>
+                                    <svg className='w-4 h-4 text-cocoa-500' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' /></svg>
                                   </button>
                                   <button onClick={() => handleDelete(msg._id)} className='p-1.5 hover:bg-red-500/20 rounded-full' title='Delete'>
                                     <Trash2 className='w-4 h-4 text-red-400' />
                                   </button>
                                 </>
                               )}
-                              <button onClick={() => setActiveMenu(null)} className='p-1 hover:bg-[#21262d] rounded-full' title='Close'>
-                                <X className='w-3 h-3 text-[#484f58]' />
+                              <button onClick={() => setActiveMenu(null)} className='p-1 hover:bg-[#fbf8f4] rounded-full' title='Close'>
+                                <X className='w-3 h-3 text-cocoa-300' />
                               </button>
                               {showReactionPicker === msg._id && (
                                 <div className='absolute bottom-full mb-2 left-1/2 -translate-x-1/2'>
@@ -390,7 +382,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                                     <button
                                       key={emoji}
                                       onClick={() => handleReaction(msg._id, emoji)}
-                                      className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-all ${hasReacted ? 'bg-[#1f4068] border border-[#58a6ff]' : 'bg-[#0d1117] border border-[#30363d] hover:border-[#58a6ff]'}`}
+                                      className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-all ${hasReacted ? 'bg-primary-50 border border-primary-300' : 'bg-[#fbf8f4] border border-cocoa-100 hover:border-primary-300'}`}
                                       title={hasReacted ? 'Remove reaction' : 'Add reaction'}
                                     >
                                       {emoji} {count}
@@ -402,7 +394,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                           )}
 
                           {/* Timestamp & Check */}
-                          <div className={`flex items-center justify-end gap-1.5 mt-1.5 ${isOwn ? 'text-[#cde3ff]/60' : 'text-[#484f58]'}`}>
+                          <div className={`flex items-center justify-end gap-1.5 mt-1.5 ${isOwn ? 'text-white/70' : 'text-cocoa-300'}`}>
                             <span className='text-xs font-medium'>{formatTime(msg.createdAt)}</span>
                             {isOwn && <><Check className='w-4 h-4 text-[#3fb950]' />{msg.isEdited && <span className='text-xs'>(edited)</span>}</>}
                           </div>
@@ -413,10 +405,10 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                               e.stopPropagation();
                               toggleActionMenu(msg._id);
                             }}
-                             className='absolute -top-2 -right-2 w-8 h-8 bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30'
+                             className='absolute -top-2 -right-2 w-8 h-8 bg-[#fbf8f4] hover:bg-cocoa-100 border border-cocoa-100 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30'
                             title='Message actions'
                           >
-                            <svg className='w-4 h-4 text-[#8b949e]' fill='currentColor' viewBox='0 0 20 20'>
+                            <svg className='w-4 h-4 text-cocoa-500' fill='currentColor' viewBox='0 0 20 20'>
                               <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
                             </svg>
                            </button>
@@ -435,14 +427,14 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
       </div>
 
       {/* Message Input */}
-      <div className='p-4 border-t border-[#30363d] bg-[#161b22]'>
+      <div className='p-4 border-t border-cocoa-100 bg-white'>
         <form onSubmit={handleSendMessage} className='flex items-start gap-3'>
           {/* Attachments */}
           <div className='flex gap-1 pt-2'>
-            <button type='button' className='p-2 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-lg' title='Attach file'>
+            <button type='button' className='p-2 text-cocoa-500 hover:text-cocoa-900 hover:bg-[#fbf8f4] rounded-lg' title='Attach file'>
               <Paperclip className='w-5 h-5' />
             </button>
-            <button type='button' className='p-2 text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d] rounded-lg' title='Add image'>
+            <button type='button' className='p-2 text-cocoa-500 hover:text-cocoa-900 hover:bg-[#fbf8f4] rounded-lg' title='Add image'>
               <Image className='w-5 h-5' />
             </button>
           </div>
@@ -451,19 +443,19 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
           <div className='flex-1 relative'>
             {/* Reply preview */}
             {replyTo && (
-              <div className='mb-2 px-3 py-2 bg-[#0d1117] border border-[#30363d] rounded-lg flex items-center justify-between'>
+              <div className='mb-2 px-3 py-2 bg-[#fbf8f4] border border-cocoa-100 rounded-lg flex items-center justify-between'>
                 <div className='flex items-center gap-2'>
-                  <MessageSquare className='w-4 h-4 text-[#58a6ff]' />
-                  <span className='text-xs text-[#8b949e]'>
-                    Replying to <span className='font-medium text-[#c9d1d9]'>{replyTo.sender?.name}</span>
+                  <MessageSquare className='w-4 h-4 text-primary-600' />
+                  <span className='text-xs text-cocoa-500'>
+                    Replying to <span className='font-medium text-cocoa-700'>{replyTo.sender?.name}</span>
                   </span>
                 </div>
                 <button
                   type='button'
                   onClick={() => setReplyTo(null)}
-                  className='p-0.5 hover:bg-[#21262d] rounded'
+                  className='p-0.5 hover:bg-[#fbf8f4] rounded'
                 >
-                  <X className='w-4 h-4 text-[#484f58]' />
+                  <X className='w-4 h-4 text-cocoa-300' />
                 </button>
               </div>
             )}
@@ -473,7 +465,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
               onChange={(e) => { setNewMessage(e.target.value); handleTyping(); }}
               placeholder={replyTo ? 'Write a reply...' : 'Type your message...'}
               rows={1}
-              className='w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-3 text-[#e6edf3] placeholder-[#484f58] outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent transition-all resize-none'
+              className='w-full resize-none rounded-lg border border-cocoa-100 bg-[#fbf8f4] px-4 py-3 text-cocoa-900 outline-none transition-all placeholder:text-cocoa-300 focus:border-primary-300 focus:ring-2 focus:ring-primary-200'
               style={{ minHeight: '44px', maxHeight: '120px' }}
             />
           </div>
@@ -482,7 +474,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
           <button
             type='submit'
             disabled={!newMessage.trim() || sending}
-            className='px-5 py-2.5 bg-[#1f6feb] text-white rounded-lg font-medium text-sm hover:bg-[#388bfd] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 mt-8 sm:mt-0'
+            className='mt-8 flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 px-5 py-2.5 text-sm font-bold text-white transition-all hover:shadow-lg hover:shadow-primary-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:mt-0'
           >
             <Send className='w-4 h-4' />
             <span className='hidden sm:inline'>Send</span>

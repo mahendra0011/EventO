@@ -138,7 +138,7 @@ const ForgotPassword = () => {
               <div className="rounded-lg border border-primary-100 bg-primary-50 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-primary-700">OTP sent to</p>
+                    <p className="text-xs font-semibold uppercase text-primary-700">OTP sent to</p>
                     <p className="truncate text-sm font-semibold text-cocoa-900">{normalizedEmail}</p>
                   </div>
                   <button type="button" onClick={changeEmail} className="text-sm font-semibold text-primary-700 hover:text-primary-800">
@@ -160,7 +160,7 @@ const ForgotPassword = () => {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     required
-                    className="input-field pl-10 tracking-widest"
+                    className="input-field pl-10st"
                     placeholder="000000"
                   />
                 </div>

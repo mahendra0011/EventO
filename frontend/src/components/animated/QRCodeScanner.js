@@ -187,7 +187,7 @@ const QRCodeScanner = ({
                     <div className="flex items-center gap-3">
                       <Ticket className="h-5 w-5 text-primary-600" />
                       <div>
-                        <p className="text-xs text-cocoa-400 uppercase tracking-wide">Event</p>
+                        <p className="text-xs text-cocoa-400 uppercase">Event</p>
                         <p className="font-semibold text-cocoa-900">{scanResult.data.eventTitle}</p>
                       </div>
                     </div>
@@ -195,7 +195,7 @@ const QRCodeScanner = ({
                     <div className="flex items-center gap-3">
                       <User className="h-5 w-5 text-primary-600" />
                       <div>
-                        <p className="text-xs text-cocoa-400 uppercase tracking-wide">Attendee</p>
+                        <p className="text-xs text-cocoa-400 uppercase">Attendee</p>
                         <p className="font-semibold text-cocoa-900">{scanResult.data.userName}</p>
                       </div>
                     </div>
@@ -203,7 +203,7 @@ const QRCodeScanner = ({
                     <div className="flex items-center gap-3">
                       <Ticket className="h-5 w-5 text-primary-600" />
                       <div>
-                        <p className="text-xs text-cocoa-400 uppercase tracking-wide">Tickets</p>
+                        <p className="text-xs text-cocoa-400 uppercase">Tickets</p>
                         <p className="font-semibold text-cocoa-900">{scanResult.data.numberOfTickets}</p>
                       </div>
                     </div>
@@ -211,7 +211,7 @@ const QRCodeScanner = ({
                     <div className="flex items-center gap-3">
                       <Calendar className="h-5 w-5 text-primary-600" />
                       <div>
-                        <p className="text-xs text-cocoa-400 uppercase tracking-wide">Ticket ID</p>
+                        <p className="text-xs text-cocoa-400 uppercase">Ticket ID</p>
                         <p className="font-mono font-semibold text-cocoa-900">
                           {scanResult.data.ticketId?.slice(-12).toUpperCase()}
                         </p>
@@ -264,17 +264,17 @@ const QRCodeScanner = ({
       </div>
 
       {/* Footer */}
-      <div className="bg-gray-900 px-6 py-4 text-white">
+      <div className="border-t border-cocoa-100 bg-[#fbf8f4] px-6 py-4 text-cocoa-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
               <Ticket className="h-4 w-4" />
             </div>
-            <span className="font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text font-bold text-transparent">
               Evento
             </span>
           </div>
-          <p className="text-cocoa-300 text-sm">
+          <p className="text-sm text-cocoa-400">
             Event Entry System
           </p>
         </div>

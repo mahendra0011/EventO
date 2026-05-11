@@ -1,4 +1,4 @@
-/* Event Chat - GitHub Dark Theme */
+/* Event Chat */
 
 .event-chat-container {
   display: flex;
@@ -16,17 +16,17 @@
 }
 
 .chat-scroll-container::-webkit-scrollbar-thumb {
-  background: #30363d;
+  background: #e6d8ca;
   border-radius: 3px;
 }
 
 .chat-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #484f58;
+  background: #d2bdaa;
 }
 
 .chat-scroll-container {
   scrollbar-width: thin;
-  scrollbar-color: #30363d transparent;
+  scrollbar-color: #e6d8ca transparent;
 }
 
 /* Participants scrollbar */
@@ -39,6 +39,6 @@
 }
 
 .participants-scroll::-webkit-scrollbar-thumb {
-  background: #30363d;
+  background: #e6d8ca;
   border-radius: 2px;
 }

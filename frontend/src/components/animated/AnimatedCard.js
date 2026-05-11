@@ -10,7 +10,7 @@ const AnimatedCard = ({
 }) => {
   return (
     <motion.div
-      className={`bg-white rounded-lg shadow-lg overflow-hidden ${className}`}
+      className={`overflow-hidden rounded-lg border border-white bg-white shadow-xl shadow-cocoa-900/5 ${className}`}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ 
@@ -19,8 +19,8 @@ const AnimatedCard = ({
         ease: [0.25, 0.46, 0.45, 0.94]
       }}
       whileHover={hover ? { 
-        y: -10, 
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        y: -6,
+        boxShadow: '0 24px 55px -24px rgba(58, 39, 29, 0.28)',
         transition: { duration: 0.3 }
       } : {}}
       {...props}

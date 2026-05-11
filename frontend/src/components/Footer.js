@@ -15,8 +15,8 @@ const Footer = () => {
                 <CalendarDays className="h-6 w-6" />
               </span>
               <span>
-                <span className="block text-2xl font-black uppercase tracking-tight">Evento</span>
-                <span className="text-xs font-extrabold uppercase tracking-[0.2em] text-cocoa-300">
+                <span className="block text-2xl font-extrabold uppercase">Evento</span>
+                <span className="text-xs font-extrabold uppercase text-cocoa-300">
                   Events made easy
                 </span>
               </span>
@@ -44,7 +44,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-black text-white">Platform</h3>
+            <h3 className="text-sm font-extrabold text-white">Platform</h3>
             <ul className="mt-5 space-y-3">
               {[
                 { to: '/', label: 'Home' },
@@ -62,7 +62,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-black text-white">Categories</h3>
+            <h3 className="text-sm font-extrabold text-white">Categories</h3>
             <ul className="mt-5 space-y-3">
               {['Music', 'Technology', 'Sports', 'Business'].map((category) => (
                 <li key={category}>
@@ -75,7 +75,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-black text-white">Contact</h3>
+            <h3 className="text-sm font-extrabold text-white">Contact</h3>
             <ul className="mt-5 space-y-4">
               <li className="flex gap-3 text-cocoa-200">
                 <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary-300" />
