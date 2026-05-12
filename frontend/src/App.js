@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { Toaster, resolveValue, toast } from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { CheckCircle2, Info, Loader2, X, XCircle } from 'lucide-react';
 
 // Components
@@ -291,7 +292,7 @@ function AppContent() {
   const hideFooter = location.pathname.includes('/chat');
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fbf8f4] text-cocoa-900">
+    <div className="flex min-h-screen flex-col bg-[#fbf8f4] text-cocoa-900 transition-colors duration-300">
       <Navbar />
       <main className="flex-grow">
         <AnimatedRoutes />
@@ -328,9 +329,11 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <ThemeProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

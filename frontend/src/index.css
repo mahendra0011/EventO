@@ -18,6 +18,20 @@ body {
   background: #fbf8f4;
 }
 
+:root {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+  background: #120f0d;
+}
+
+html.dark body {
+  color: #f8eee7;
+  background: #120f0d;
+}
+
 h1,
 h2,
 h3,
@@ -34,6 +48,11 @@ html {
 ::selection {
   background: rgba(244, 90, 44, 0.18);
   color: #3a271d;
+}
+
+html.dark ::selection {
+  background: rgba(244, 90, 44, 0.34);
+  color: #fff7f0;
 }
 
 @layer components {
@@ -126,6 +145,134 @@ html {
 .surface-panel,
 .premium-surface {
   background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 253, 251, 0.92));
+}
+
+html.dark .warm-page,
+html.dark .bg-\[\#fbf8f4\],
+html.dark .bg-\[\#fff8f2\],
+html.dark .bg-\[\#fffdfb\],
+html.dark .bg-\[\#fffdfb\]\/95 {
+  background-color: #120f0d !important;
+  color: #f8eee7;
+}
+
+html.dark .bg-gradient-to-br.from-primary-50,
+html.dark .bg-gradient-to-br.from-primary-50.to-\[\#fff8f2\] {
+  background-image: linear-gradient(135deg, #1b120f 0%, #211816 48%, #120f0d 100%) !important;
+}
+
+html.dark .subtle-grid {
+  background-color: #120f0d !important;
+  background-image:
+    linear-gradient(rgba(244, 90, 44, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 90, 44, 0.08) 1px, transparent 1px);
+}
+
+html.dark .card,
+html.dark .surface-panel,
+html.dark .premium-surface,
+html.dark .evento-toast,
+html.dark .bg-white,
+html.dark .bg-white\/90,
+html.dark .bg-white\/95 {
+  border-color: rgba(255, 255, 255, 0.09) !important;
+  background-color: rgba(36, 28, 24, 0.92) !important;
+  background-image: linear-gradient(180deg, rgba(45, 35, 30, 0.96), rgba(29, 23, 20, 0.92)) !important;
+  color: #f8eee7;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34) !important;
+}
+
+html.dark .bg-\[\#f3eee9\],
+html.dark .bg-cocoa-50,
+html.dark .bg-cocoa-100,
+html.dark .bg-cocoa-200,
+html.dark .bg-primary-50,
+html.dark .bg-primary-50\/40,
+html.dark .bg-primary-50\/50,
+html.dark .bg-primary-50\/60,
+html.dark .bg-primary-100 {
+  background-color: rgba(244, 90, 44, 0.13) !important;
+}
+
+html.dark .hover\:bg-primary-50:hover,
+html.dark .hover\:bg-primary-50\/40:hover,
+html.dark .hover\:bg-primary-50\/50:hover,
+html.dark .hover\:bg-red-50:hover {
+  background-color: rgba(244, 90, 44, 0.16) !important;
+}
+
+html.dark .border-cocoa-100,
+html.dark .border-cocoa-100\/70,
+html.dark .border-white,
+html.dark .border-white\/10,
+html.dark .border-white\/80,
+html.dark .border-primary-100,
+html.dark .border-primary-200,
+html.dark .border-primary-300 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .text-cocoa-900,
+html.dark .text-cocoa-800,
+html.dark .text-cocoa-700 {
+  color: #f8eee7 !important;
+}
+
+html.dark .text-cocoa-600,
+html.dark .text-cocoa-500 {
+  color: #d8c8bd !important;
+}
+
+html.dark .text-cocoa-400,
+html.dark .text-cocoa-300 {
+  color: #ad9b8f !important;
+}
+
+html.dark .text-cocoa-200 {
+  color: #cdbdaf !important;
+}
+
+html.dark .placeholder\:text-cocoa-300::placeholder {
+  color: #8f7a6b !important;
+}
+
+html.dark .input-field,
+html.dark input,
+html.dark textarea,
+html.dark select {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(25, 20, 17, 0.88) !important;
+  color: #f8eee7 !important;
+}
+
+html.dark .input-field:focus,
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus {
+  border-color: rgba(244, 90, 44, 0.6) !important;
+  box-shadow: 0 0 0 4px rgba(244, 90, 44, 0.16) !important;
+}
+
+html.dark .label,
+html.dark .section-kicker,
+html.dark .soft-pill {
+  color: #f8eee7 !important;
+}
+
+html.dark .btn-secondary {
+  border-color: rgba(244, 90, 44, 0.38) !important;
+  background: rgba(34, 27, 23, 0.92) !important;
+  color: #ff9a72 !important;
+}
+
+html.dark .btn-secondary:hover {
+  background: rgba(244, 90, 44, 0.16) !important;
+}
+
+html.dark .shadow-cocoa-900\/5,
+html.dark .shadow-cocoa-900\/10,
+html.dark .shadow-cocoa-900\/15 {
+  --tw-shadow-color: rgba(0, 0, 0, 0.36) !important;
 }
 
 @keyframes evento-toast-in {

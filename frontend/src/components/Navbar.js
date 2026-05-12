@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../utils/api';
-import { Menu, X, CalendarDays, User, LogOut, Settings, Bell, Check, Shield, ArrowRight } from 'lucide-react';
+import { Menu, X, CalendarDays, User, LogOut, Settings, Bell, Check, Shield, ArrowRight, Moon, Sun } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -112,6 +114,36 @@ const Navbar = () => {
       : { to: '/dashboard', label: 'Dashboard', icon: User };
 
   const AccountIcon = accountLink.icon;
+  const ThemeIcon = isDark ? Sun : Moon;
+  const nextThemeLabel = isDark ? 'light' : 'dark';
+
+  const ThemeToggle = ({ mobile = false }) => (
+    <motion.button
+      type="button"
+      onClick={toggleTheme}
+      whileHover={mobile ? undefined : { y: -2 }}
+      whileTap={{ scale: 0.96 }}
+      className={`inline-flex items-center gap-2 rounded-lg border border-cocoa-100 bg-white text-sm font-extrabold text-cocoa-700 shadow-sm transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 ${
+        mobile ? 'w-full justify-between px-4 py-3' : 'px-3 py-2.5'
+      }`}
+      aria-label={`Switch to ${nextThemeLabel} theme`}
+      title={`Switch to ${nextThemeLabel} theme`}
+    >
+      <span className="inline-flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary-50 text-primary-600">
+          <ThemeIcon className="h-4 w-4" />
+        </span>
+        <span className={mobile ? '' : 'hidden xl:inline'}>
+          {isDark ? 'Light' : 'Dark'}
+        </span>
+      </span>
+      {mobile && (
+        <span className="text-xs font-bold uppercase text-cocoa-400">
+          {isDark ? 'On' : 'Off'}
+        </span>
+      )}
+    </motion.button>
+  );
 
   return (
     <motion.nav
@@ -166,6 +198,8 @@ const Navbar = () => {
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
+            <ThemeToggle />
+
             {user ? (
               <>
                 <Link
@@ -325,6 +359,7 @@ const Navbar = () => {
                     {link.label}
                   </Link>
                 ))}
+                <ThemeToggle mobile />
 
                 {user ? (
                   <>
