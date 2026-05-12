@@ -38,15 +38,15 @@ html {
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 px-6 py-3 font-bold text-white shadow-lg shadow-primary-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary-500/25 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-60;
+    @apply relative isolate inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 px-6 py-3 font-bold text-white shadow-lg shadow-primary-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary-500/25 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-60;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-primary-300 bg-white px-6 py-3 font-bold text-primary-600 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-60;
+    @apply relative isolate inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg border border-primary-300 bg-white px-6 py-3 font-bold text-primary-600 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-60;
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-red-500 px-6 py-3 font-bold text-white shadow-lg shadow-red-500/15 transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-60;
+    @apply relative isolate inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-red-500 px-6 py-3 font-bold text-white shadow-lg shadow-red-500/15 transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-60;
   }
 
   .card {
@@ -67,6 +67,10 @@ html {
 
   .surface-panel {
     @apply rounded-lg border border-white bg-white shadow-xl shadow-cocoa-900/5;
+  }
+
+  .premium-surface {
+    @apply rounded-lg border border-white/80 bg-white/90 shadow-2xl shadow-cocoa-900/10 backdrop-blur-xl;
   }
 
   .subtle-grid {
@@ -91,6 +95,37 @@ html {
   .motion-surface {
     @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-cocoa-900/10;
   }
+}
+
+.btn-primary::before,
+.btn-secondary::before,
+.btn-danger::before {
+  content: '';
+  position: absolute;
+  inset: -40% auto -40% -55%;
+  width: 45%;
+  transform: translateX(-40%) rotate(16deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  opacity: 0;
+  transition: transform 650ms ease, opacity 250ms ease;
+  z-index: 0;
+}
+
+.btn-secondary::before {
+  background: linear-gradient(90deg, transparent, rgba(244, 90, 44, 0.16), transparent);
+}
+
+.btn-primary:hover::before,
+.btn-secondary:hover::before,
+.btn-danger:hover::before {
+  opacity: 1;
+  transform: translateX(330%) rotate(16deg);
+}
+
+.card,
+.surface-panel,
+.premium-surface {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 253, 251, 0.92));
 }
 
 @keyframes evento-toast-in {

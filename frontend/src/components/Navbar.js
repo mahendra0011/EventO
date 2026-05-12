@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import { Menu, X, CalendarDays, User, LogOut, Settings, Bell, Check, Shield, ArrowRight } from 'lucide-react';
@@ -14,6 +14,12 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const { scrollYProgress } = useScroll();
+  const scrollProgress = useSpring(scrollYProgress, {
+    stiffness: 160,
+    damping: 28,
+    mass: 0.25
+  });
 
   useEffect(() => {
     if (user) {
@@ -121,9 +127,13 @@ const Navbar = () => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3" aria-label="Evento home">
-            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 text-white shadow-lg shadow-primary-500/20">
+            <motion.span
+              whileHover={{ rotate: -4, scale: 1.06 }}
+              whileTap={{ scale: 0.96 }}
+              className="flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 text-white shadow-lg shadow-primary-500/20"
+            >
               <CalendarDays className="h-6 w-6" />
-            </span>
+            </motion.span>
             <span className="leading-none">
               <span className="block text-xl font-extrabold uppercase text-cocoa-900">Evento</span>
               <span className="hidden text-xs font-extrabold uppercase text-cocoa-300 sm:block">
@@ -137,13 +147,20 @@ const Navbar = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`rounded-full px-5 py-2.5 text-sm font-extrabold transition-all ${
+                className={`relative isolate rounded-full px-5 py-2.5 text-sm font-extrabold transition-all ${
                   isActive(link.to)
-                    ? 'bg-primary-50 text-primary-600'
+                    ? 'text-primary-600'
                     : 'text-cocoa-500 hover:bg-primary-50 hover:text-primary-600'
                 }`}
               >
-                {link.label}
+                {isActive(link.to) && (
+                  <motion.span
+                    layoutId="navbar-active-pill"
+                    className="absolute inset-0 -z-10 rounded-full bg-primary-50 shadow-sm"
+                    transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <span className="relative">{link.label}</span>
               </Link>
             ))}
           </div>
@@ -164,9 +181,11 @@ const Navbar = () => {
                 </Link>
 
                 <div className="relative">
-                  <button
+                  <motion.button
                     type="button"
                     onClick={() => setShowNotifications(!showNotifications)}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.96 }}
                     className="relative rounded-lg border border-cocoa-100 bg-white p-2.5 text-cocoa-600 shadow-sm transition-all hover:border-primary-200 hover:text-primary-600"
                     aria-label="Open notifications"
                   >
@@ -176,7 +195,7 @@ const Navbar = () => {
                         {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     )}
-                  </button>
+                  </motion.button>
 
                   <AnimatePresence>
                     {showNotifications && (
@@ -272,14 +291,15 @@ const Navbar = () => {
             )}
           </div>
 
-          <button
+          <motion.button
             type="button"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            whileTap={{ scale: 0.94 }}
             className="rounded-lg border border-cocoa-100 bg-white p-2.5 text-cocoa-700 shadow-sm md:hidden"
             aria-label="Toggle navigation menu"
           >
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          </motion.button>
         </div>
 
         <AnimatePresence>
@@ -371,6 +391,10 @@ const Navbar = () => {
           )}
         </AnimatePresence>
       </div>
+      <motion.div
+        className="absolute bottom-0 left-0 h-0.5 w-full origin-left bg-gradient-to-r from-primary-500 via-secondary-500 to-emerald-400"
+        style={{ scaleX: scrollProgress }}
+      />
     </motion.nav>
   );
 };

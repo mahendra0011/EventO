@@ -56,6 +56,9 @@ const EventCard = ({ event, index = 0 }) => {
   };
 
   const availableTickets = Number(event.availableTickets ?? 0);
+  const totalTickets = Math.max(Number(event.totalTickets ?? availableTickets), availableTickets);
+  const soldTickets = Math.max(0, totalTickets - availableTickets);
+  const ticketProgress = totalTickets ? Math.min(100, Math.round((soldTickets / totalTickets) * 100)) : 0;
   const isSoldOut = availableTickets === 0;
   const isLowStock = availableTickets > 0 && availableTickets <= 10;
   const image = event.image || FALLBACK_IMAGE;
@@ -170,6 +173,22 @@ const EventCard = ({ event, index = 0 }) => {
             <Ticket className="h-3.5 w-3.5" />
             {isSoldOut ? 'Unavailable' : `${availableTickets} tickets`}
           </span>
+        </div>
+
+        <div className="mt-5 rounded-lg bg-[#fbf8f4] p-3">
+          <div className="mb-2 flex items-center justify-between text-xs font-extrabold uppercase text-cocoa-400">
+            <span>{soldTickets.toLocaleString('en-IN')} booked</span>
+            <span>{ticketProgress}% filled</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-white">
+            <motion.span
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: ticketProgress / 100 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.75, delay: index * 0.04, ease: 'easeOut' }}
+              className="block h-full origin-left rounded-full bg-gradient-to-r from-primary-500 to-secondary-500"
+            />
+          </div>
         </div>
 
         <Link to={`/events/${event._id}`} className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-primary-600 transition-colors hover:text-primary-700">
