@@ -53,20 +53,32 @@ const EventDetail = () => {
     try {
       const res = await api.get(`/events/${id}`);
       setEvent(res.data);
-      // Check if in wishlist
+
       if (user) {
-        const wishlistRes = await checkWishlist(id);
-        setInWishlist(wishlistRes.inWishlist);
+        try {
+          const wishlistRes = await checkWishlist(id);
+          setInWishlist(wishlistRes.inWishlist);
+        } catch (error) {
+          console.error('Wishlist check failed:', error);
+        }
       }
-      // Fetch reviews
-      const reviewsRes = await api.get(`/reviews/event/${id}`);
-      setReviews(reviewsRes.data.reviews);
-      setAvgRating(reviewsRes.data.averageRating);
-      // Check if user has already reviewed
+
+      try {
+        const reviewsRes = await api.get(`/reviews/event/${id}`);
+        setReviews(reviewsRes.data.reviews || []);
+        setAvgRating(reviewsRes.data.averageRating || 0);
+      } catch (error) {
+        console.error('Reviews fetch failed:', error);
+      }
+
       if (user) {
-        const myReviewsRes = await api.get('/reviews/my');
-        const myReview = myReviewsRes.data.find(r => r.event._id === id);
-        setUserReview(myReview);
+        try {
+          const myReviewsRes = await api.get('/reviews/my');
+          const myReview = myReviewsRes.data.find(r => r.event._id === id);
+          setUserReview(myReview);
+        } catch (error) {
+          console.error('User review check failed:', error);
+        }
       }
     } catch (error) {
       console.error('Error fetching event:', error);
@@ -296,13 +308,20 @@ const EventDetail = () => {
     return null;
   }
 
+  const detailImage = event.image || 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1400&q=85';
+  const availableTickets = Number(event.availableTickets || 0);
+  const totalTickets = Math.max(Number(event.totalTickets || 0), availableTickets);
+  const bookedTickets = Math.max(0, totalTickets - availableTickets);
+  const ticketProgress = totalTickets ? Math.min(100, Math.round((bookedTickets / totalTickets) * 100)) : 0;
+  const eventPrice = Number(event.price || 0);
+
   return (
-    <div className="min-h-screen bg-[#fbf8f4] py-8">
+    <div className="subtle-grid min-h-screen bg-[#fbf8f4] py-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center text-cocoa-500 hover:text-primary-600 mb-6"
+          className="mb-6 inline-flex items-center rounded-full bg-white/90 px-4 py-2 text-sm font-extrabold text-cocoa-500 shadow-sm transition-all hover:-translate-x-1 hover:text-primary-600"
         >
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back to Events
@@ -311,18 +330,37 @@ const EventDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Event Details */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <img
-                src={event.image}
-                alt={event.title}
-                className="w-full h-96 object-cover"
-              />
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              className="premium-surface overflow-hidden"
+            >
+              <div className="group relative h-[360px] overflow-hidden sm:h-[430px]">
+                <img
+                  src={detailImage}
+                  alt={event.title}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-cocoa-900/65 via-cocoa-900/10 to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6 flex flex-wrap items-end justify-between gap-4 text-white">
+                  <div>
+                    <span className="mb-3 inline-flex rounded-full bg-white/15 px-4 py-1.5 text-sm font-extrabold backdrop-blur">
+                      {event.category}
+                    </span>
+                    <h1 className="max-w-3xl text-3xl font-extrabold sm:text-5xl">{event.title}</h1>
+                  </div>
+                  <div className="rounded-lg bg-white/15 px-4 py-3 text-sm font-bold backdrop-blur">
+                    {ticketProgress}% booked
+                  </div>
+                </div>
+              </div>
               <div className="p-8">
                 <div className="flex items-center gap-4 mb-4">
                   <span className="bg-primary-100 text-primary-600 px-4 py-1 rounded-full text-sm font-semibold">
                     {event.category}
                   </span>
-                  {event.availableTickets === 0 && (
+                  {availableTickets === 0 && (
                     <span className="bg-red-100 text-red-600 px-4 py-1 rounded-full text-sm font-semibold">
                       Sold Out
                     </span>
@@ -342,22 +380,20 @@ const EventDetail = () => {
                   </motion.button>
                 </div>
 
-                <h1 className="text-3xl font-bold text-cocoa-900 mb-4">{event.title}</h1>
-
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="flex items-center text-cocoa-500">
+                  <div className="flex items-center rounded-lg bg-[#fbf8f4] p-4 text-cocoa-600">
                     <Calendar className="h-5 w-5 mr-3 text-primary-600" />
                     <span>{formatDate(event.date)}</span>
                   </div>
-                  <div className="flex items-center text-cocoa-500">
+                  <div className="flex items-center rounded-lg bg-[#fbf8f4] p-4 text-cocoa-600">
                     <Clock className="h-5 w-5 mr-3 text-primary-600" />
                     <span>{event.time}</span>
                   </div>
-                  <div className="flex items-center text-cocoa-500">
+                  <div className="flex items-center rounded-lg bg-[#fbf8f4] p-4 text-cocoa-600">
                     <MapPin className="h-5 w-5 mr-3 text-primary-600" />
                     <span>{event.venue}</span>
                   </div>
-                  <div className="flex items-center text-cocoa-500">
+                  <div className="flex items-center rounded-lg bg-[#fbf8f4] p-4 text-cocoa-600">
                     <Users className="h-5 w-5 mr-3 text-primary-600" />
                     <span>{event.location}</span>
                  </div>
@@ -515,16 +551,21 @@ const EventDetail = () => {
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* Booking Card */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-lg p-6 sticky top-24">
+            <motion.div
+              initial={{ opacity: 0, x: 28 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              className="premium-surface sticky top-24 p-6"
+            >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center text-primary-600">
                   <IndianRupee className="h-8 w-8" />
-                  <span className="text-4xl font-bold">{event.price.toLocaleString('en-IN')}</span>
+                  <span className="text-4xl font-bold">{eventPrice.toLocaleString('en-IN')}</span>
                 </div>
                 <span className="text-cocoa-400">per ticket</span>
               </div>
@@ -533,11 +574,26 @@ const EventDetail = () => {
                 <div className="flex items-center justify-between text-cocoa-500">
                   <span>Available Tickets</span>
                   <span className="font-semibold text-green-600">
-                    {event.availableTickets} / {event.totalTickets}
+                    {availableTickets} / {totalTickets}
                   </span>
                 </div>
 
-                {event.availableTickets > 0 && (
+                <div className="rounded-lg bg-[#fbf8f4] p-3">
+                  <div className="mb-2 flex items-center justify-between text-xs font-extrabold uppercase text-cocoa-400">
+                    <span>{bookedTickets.toLocaleString('en-IN')} booked</span>
+                    <span>{ticketProgress}% filled</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-white">
+                    <motion.span
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: ticketProgress / 100 }}
+                      transition={{ duration: 0.9, ease: 'easeOut' }}
+                      className="block h-full origin-left rounded-full bg-gradient-to-r from-primary-500 to-secondary-500"
+                    />
+                  </div>
+                </div>
+
+                {availableTickets > 0 && (
                   <div>
                     <label className="label">Number of Tickets</label>
                     <select
@@ -545,7 +601,7 @@ const EventDetail = () => {
                       onChange={(e) => setNumberOfTickets(Number(e.target.value))}
                       className="input-field"
                     >
-                      {[...Array(Math.min(10, event.availableTickets))].map((_, i) => (
+                      {[...Array(Math.min(10, availableTickets))].map((_, i) => (
                         <option key={i + 1} value={i + 1}>
                           {i + 1} {i === 0 ? 'ticket' : 'tickets'}
                         </option>
@@ -554,11 +610,11 @@ const EventDetail = () => {
                   </div>
                 )}
 
-                {event.availableTickets > 0 && (
+                {availableTickets > 0 && (
                   <div className="border-t border-cocoa-100 pt-4">
                     <div className="flex justify-between text-cocoa-500 mb-2">
                       <span>Subtotal</span>
-                      <span>₹{(event.price * numberOfTickets).toLocaleString('en-IN')}</span>
+                      <span>₹{(eventPrice * numberOfTickets).toLocaleString('en-IN')}</span>
                     </div>
                     <div className="flex justify-between text-cocoa-500 mb-2">
                       <span>Service Fee</span>
@@ -566,61 +622,61 @@ const EventDetail = () => {
                     </div>
                     <div className="flex justify-between text-xl font-bold text-cocoa-900 pt-2 border-t border-cocoa-100">
                       <span>Total</span>
-                      <span>₹{(event.price * numberOfTickets).toLocaleString('en-IN')}</span>
+                      <span>₹{(eventPrice * numberOfTickets).toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 )}
               </div>
 
-               {event.availableTickets > 0 ? (
-                 <div className="flex gap-2">
-                   <button
-                     onClick={handleBooking}
-                     disabled={bookingLoading}
-                     className="flex-1 btn-primary flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
-                   >
-                     <Ticket className="h-5 w-5 mr-2" />
-                     {bookingLoading ? 'Sending OTP...' : 'Book Now'}
-                   </button>
-                   <motion.button
-                     onClick={handleShare}
-                     className="flex-1 btn-secondary flex items-center justify-center"
-                     whileHover={{ scale: 1.02 }}
-                     whileTap={{ scale: 0.98 }}
-                   >
-                     {copied ? (
-                       <>
-                         <Check className="h-5 w-5 mr-2 text-green-600" />
-                         Copied!
-                       </>
-                     ) : (
-                       <>
-                         <Share2 className="h-5 w-5 mr-2" />
-                         Share Event
-                       </>
-                     )}
-                   </motion.button>
-                 </div>
-               ) : (
-                 <button
-                   disabled
-                   className="w-full rounded-lg bg-cocoa-200 px-6 py-3 font-semibold text-cocoa-400 cursor-not-allowed"
-                 >
-                   Sold Out
-                 </button>
-               )}
-            </div>
+              {availableTickets > 0 ? (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleBooking}
+                    disabled={bookingLoading}
+                    className="flex-1 btn-primary flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <Ticket className="h-5 w-5 mr-2" />
+                    {bookingLoading ? 'Sending OTP...' : 'Book Now'}
+                  </button>
+                  <motion.button
+                    onClick={handleShare}
+                    className="flex-1 btn-secondary flex items-center justify-center"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-5 w-5 mr-2 text-green-600" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="h-5 w-5 mr-2" />
+                        Share Event
+                      </>
+                    )}
+                  </motion.button>
+                </div>
+              ) : (
+                <button
+                  disabled
+                  className="w-full rounded-lg bg-cocoa-200 px-6 py-3 font-semibold text-cocoa-400 cursor-not-allowed"
+                >
+                  Sold Out
+                </button>
+              )}
+            </motion.div>
           </div>
         </div>
       </div>
 
         {/* Booking OTP Verification Modal */}
         {showBookingModal && lastBookingId && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-cocoa-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-lg p-8 max-w-md w-full mx-4"
+              className="premium-surface w-full max-w-md p-8"
             >
               {!bookingOtpVerified ? (
                 <>
@@ -646,7 +702,7 @@ const EventDetail = () => {
                         value={bookingOtp}
                         onChange={(e) => setBookingOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                         required
-                        className="input-field text-center text-2xlst"
+                        className="input-field text-center text-2xl"
                         placeholder="000000"
                         autoFocus
                       />
@@ -711,7 +767,7 @@ const EventDetail = () => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-cocoa-500">Total</span>
-                        <span className="font-semibold text-primary-600">₹{(event.price * numberOfTickets).toLocaleString('en-IN')}</span>
+                        <span className="font-semibold text-primary-600">₹{(eventPrice * numberOfTickets).toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                   </div>

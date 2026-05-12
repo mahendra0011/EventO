@@ -94,9 +94,9 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-[#fff8f2] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="subtle-grid min-h-screen bg-gradient-to-br from-primary-50 to-[#fff8f2] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
-        <div className="bg-white rounded-lg shadow-2xl p-8">
+        <div className="premium-surface animate-fade-in-up p-8">
           <div className="text-center mb-8">
             <Link to="/" className="inline-flex items-center space-x-2">
               <Calendar className="h-10 w-10 text-primary-600" />
@@ -160,7 +160,7 @@ const ForgotPassword = () => {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     required
-                    className="input-field pl-10st"
+                    className="input-field pl-10"
                     placeholder="000000"
                   />
                 </div>

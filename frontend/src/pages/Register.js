@@ -93,11 +93,11 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fbf8f4]">
+    <div className="subtle-grid min-h-screen bg-[#fbf8f4]">
       <div className="mx-auto grid min-h-screen max-w-7xl px-4 py-10 sm:px-6 lg:grid-cols-[0.95fr_1fr] lg:px-8">
         <div className="flex items-center justify-center lg:px-10">
           <div className="w-full max-w-xl">
-            <div className="surface-panel p-8">
+            <div className="premium-surface animate-fade-in-up p-8">
               <div className="mb-8 text-center">
                 <Link to="/" className="inline-flex items-center gap-3">
                   <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-500 text-white">
@@ -109,7 +109,7 @@ const Register = () => {
                 <p className="mt-2 font-semibold text-cocoa-500">Start booking events or register as a host to publish your own.</p>
               </div>
 
-              <label className="mb-6 flex cursor-pointer items-center justify-between rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4">
+              <label className="mb-6 flex cursor-pointer items-center justify-between rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4 transition-all hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50/50">
                 <span className="flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-primary-700 shadow-sm">
                     <Shield className="h-5 w-5" />
@@ -267,13 +267,16 @@ const Register = () => {
           </div>
         </div>
 
-        <div className="relative hidden overflow-hidden rounded-lg bg-cocoa-900 lg:block">
+        <div className="relative hidden animate-fade-in-up overflow-hidden rounded-lg bg-cocoa-900 shadow-2xl shadow-cocoa-900/20 lg:block">
           <img
             src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=85"
             alt="Live event stage with crowd"
-            className="absolute inset-0 h-full w-full object-cover opacity-65"
+            className="absolute inset-0 h-full w-full object-cover opacity-65 transition-transform duration-700 hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-cocoa-900 via-cocoa-900/60 to-transparent" />
+          <div className="absolute right-8 top-8 rounded-lg border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white backdrop-blur">
+            Guest or host, start here
+          </div>
           <div className="absolute inset-x-0 bottom-0 p-10 text-white">
             <h1 className="max-w-xl text-4xl font-extrabold">
               Join the platform built for memorable events.

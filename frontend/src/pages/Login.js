@@ -62,15 +62,18 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#fbf8f4]">
+        <div className="subtle-grid min-h-screen bg-[#fbf8f4]">
             <div className="mx-auto grid min-h-screen max-w-7xl px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8">
-                <div className="relative hidden overflow-hidden rounded-lg bg-cocoa-900 lg:block">
+                <div className="relative hidden animate-fade-in-up overflow-hidden rounded-lg bg-cocoa-900 shadow-2xl shadow-cocoa-900/20 lg:block">
                     <img
                         src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&w=1400&q=85"
                         alt="Event audience in a professional venue"
-                        className="absolute inset-0 h-full w-full object-cover opacity-65"
+                        className="absolute inset-0 h-full w-full object-cover opacity-65 transition-transform duration-700 hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-cocoa-900 via-cocoa-900/60 to-transparent" />
+                    <div className="absolute right-8 top-8 rounded-lg border border-white/10 bg-white/10 px-4 py-3 text-sm font-bold text-white backdrop-blur">
+                        Secure workspace access
+                    </div>
                     <div className="absolute inset-x-0 bottom-0 p-10 text-white">
                         <Link to="/" className="mb-8 inline-flex items-center gap-3">
                             <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-500 text-white">
@@ -94,7 +97,7 @@ const Login = () => {
 
                 <div className="flex items-center justify-center lg:px-10">
                     <div className="w-full max-w-md">
-                        <div className="surface-panel p-8">
+                        <div className="premium-surface animate-fade-in-up p-8">
                             <div className="mb-8 text-center">
                                 <Link to="/" className="inline-flex items-center gap-3 lg:hidden">
                                     <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-500 text-white">
@@ -110,7 +113,7 @@ const Login = () => {
                                 </p>
                             </div>
 
-                            <label className="mb-6 flex cursor-pointer items-center justify-between rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4">
+                            <label className="mb-6 flex cursor-pointer items-center justify-between rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4 transition-all hover:-translate-y-0.5 hover:border-primary-200 hover:bg-primary-50/50">
                                 <span className="flex items-center gap-3">
                                     <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-primary-700 shadow-sm">
                                         <Shield className="h-5 w-5" />
