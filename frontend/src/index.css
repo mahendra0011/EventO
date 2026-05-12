@@ -335,6 +335,47 @@ html.dark .shadow-cocoa-900\/15 {
   }
 }
 
+@keyframes interest-card-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes interest-orbit-spin {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  to {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes interest-icon-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, -5px, 0) rotate(3deg);
+  }
+}
+
+@keyframes interest-spark-pop {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+}
+
 .evento-toast-enter {
   animation: evento-toast-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -359,6 +400,42 @@ html.dark .shadow-cocoa-900\/15 {
 
 .marquee-track {
   animation: marquee-left 28s linear infinite;
+}
+
+.interest-icon-card {
+  animation: interest-card-breathe 5.2s ease-in-out infinite;
+}
+
+.interest-icon-card::before {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border-radius: 8px;
+  background: radial-gradient(circle at 50% 30%, rgba(244, 90, 44, 0.16), transparent 58%);
+  opacity: 0;
+  transition: opacity 260ms ease;
+}
+
+.interest-icon-card:hover::before {
+  opacity: 1;
+}
+
+.interest-icon-orbit {
+  border-style: dashed;
+  animation: interest-orbit-spin 7.5s linear infinite;
+}
+
+.interest-icon-glyph {
+  animation: interest-icon-float 4.2s ease-in-out infinite;
+  transition: transform 260ms ease, box-shadow 260ms ease;
+}
+
+.interest-icon-card:hover .interest-icon-glyph {
+  box-shadow: 0 16px 34px rgba(244, 90, 44, 0.22);
+}
+
+.interest-icon-spark {
+  animation: interest-spark-pop 2.2s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

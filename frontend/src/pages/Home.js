@@ -702,10 +702,10 @@ const Home = () => {
                 Explore by interest
               </span>
               <h2 className="text-3xl font-extrabold text-cocoa-900 sm:text-4xl">
-                Choose a category and jump straight into matching events.
+                Tap an icon to explore matching events.
               </h2>
               <p className="mt-3 max-w-2xl text-cocoa-500">
-                These interests match the live event filters, so every card opens the right results page.
+                Clean, fast interest shortcuts that open the right event filter instantly.
               </p>
             </div>
             <Link to="/events" className="btn-secondary w-full sm:w-auto">
@@ -719,7 +719,7 @@ const Home = () => {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.25 }}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9"
           >
             {homeCategories.map((categoryName, index) => {
               const category = getInterestDetails(categoryName);
@@ -728,23 +728,18 @@ const Home = () => {
                 <motion.div key={category.label} variants={revealItem} whileHover={{ y: -7 }} whileTap={{ scale: 0.98 }}>
                   <Link
                     to={`/events?category=${encodeURIComponent(category.label)}`}
-                    className="group relative block h-full overflow-hidden rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-cocoa-900/10"
+                    className="interest-icon-card group relative flex aspect-square items-center justify-center overflow-hidden rounded-lg border border-white bg-white shadow-xl shadow-cocoa-900/5 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-cocoa-900/10"
+                    aria-label={`Browse ${category.label} events`}
+                    title={`Browse ${category.label}`}
+                    style={{ animationDelay: `${index * 130}ms` }}
                   >
-                    <span className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${category.color}`} />
-                    <div className="flex items-start justify-between gap-4">
-                      <span className={`flex h-12 w-12 items-center justify-center rounded-lg border ${category.tint}`}>
-                        <category.icon className="h-6 w-6 transition-transform group-hover:scale-110" />
-                      </span>
-                      <span className="rounded-full bg-[#fbf8f4] px-3 py-1 text-xs font-extrabold uppercase text-cocoa-400">
-                        0{index + 1}
-                      </span>
-                    </div>
-                    <span className="mt-5 block text-xl font-extrabold text-cocoa-900">{category.label}</span>
-                    <span className="mt-2 block leading-7 text-cocoa-500">{category.description}</span>
-                    <span className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-primary-600">
-                      Browse {category.label}
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <span className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${category.color}`} />
+                    <span className="interest-icon-orbit absolute h-16 w-16 rounded-full border border-primary-200/70" />
+                    <span className="interest-icon-spark absolute right-4 top-4 h-2 w-2 rounded-full bg-primary-400" />
+                    <span className={`interest-icon-glyph relative z-10 flex h-14 w-14 items-center justify-center rounded-lg border ${category.tint}`}>
+                      <category.icon className="h-7 w-7" />
                     </span>
+                    <span className="sr-only">{category.label}</span>
                   </Link>
                 </motion.div>
               );
