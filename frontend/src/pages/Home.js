@@ -24,7 +24,11 @@ import {
   BarChart3,
   MessageCircle,
   Star,
-  Quote
+  Quote,
+  Sparkles,
+  Radio,
+  MousePointerClick,
+  BellRing
 } from 'lucide-react';
 
 const AnimatedCounter = ({ value, duration = 1.7 }) => {
@@ -152,6 +156,80 @@ const comments = [
   }
 ];
 
+const activityTicker = [
+  { icon: Ticket, label: 'Tickets verified in seconds' },
+  { icon: BellRing, label: 'Real-time event updates' },
+  { icon: Radio, label: 'Live host broadcasts' },
+  { icon: MousePointerClick, label: 'One-click event discovery' },
+  { icon: Sparkles, label: 'Polished attendee experience' }
+];
+
+const operationHighlights = [
+  {
+    icon: Search,
+    label: 'Discover',
+    title: 'Find the right room',
+    description: 'Search by interest, date, city, or event style before you commit.'
+  },
+  {
+    icon: Ticket,
+    label: 'Book',
+    title: 'Keep tickets tidy',
+    description: 'Booking status, ticket count, and event details stay together.'
+  },
+  {
+    icon: MessageCircle,
+    label: 'Connect',
+    title: 'Hear from the host',
+    description: 'Broadcasts and community updates keep guests in the loop.'
+  },
+  {
+    icon: BarChart3,
+    label: 'Manage',
+    title: 'Run the event calmly',
+    description: 'Hosts can track momentum, bookings, attendee counts, and revenue.'
+  }
+];
+
+const heroActivity = [
+  {
+    icon: Ticket,
+    title: '432 tickets',
+    detail: 'verified today',
+    className: 'right-8 top-7'
+  },
+  {
+    icon: BellRing,
+    title: 'Live updates',
+    detail: 'sent instantly',
+    className: '-left-5 top-24'
+  },
+  {
+    icon: Users,
+    title: '2.8k guests',
+    detail: 'checked in',
+    className: 'right-12 bottom-20'
+  }
+];
+
+const revealContainer = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.08
+    }
+  }
+};
+
+const revealItem = {
+  hidden: { opacity: 0, y: 24 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] }
+  }
+};
+
 const Home = () => {
   const [featuredEvents, setFeaturedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -182,7 +260,7 @@ const Home = () => {
 
   return (
     <div className="overflow-x-hidden bg-[#fbf8f4]">
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-[#fff8f2] to-[#fbf8f4]">
+      <section className="subtle-grid relative overflow-hidden bg-gradient-to-br from-primary-50 via-[#fff8f2] to-[#fbf8f4]">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-16 lg:min-h-[620px] lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
           <div>
             <motion.div
@@ -280,14 +358,46 @@ const Home = () => {
             transition={{ delay: 0.2, duration: 0.65 }}
             className="relative"
           >
-            <div className="overflow-hidden rounded-lg bg-white shadow-2xl shadow-cocoa-900/15">
+            <motion.div
+              whileHover={{ y: -6, scale: 1.01 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 22 }}
+              className="group relative overflow-hidden rounded-lg bg-white shadow-2xl shadow-cocoa-900/15"
+            >
               <img
                 src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1400&q=85"
                 alt="Audience enjoying a live event"
-                className="h-[300px] w-full object-cover sm:h-[400px]"
+                className="h-[300px] w-full object-cover transition-transform duration-700 group-hover:scale-105 sm:h-[400px]"
               />
-            </div>
-            <div className="absolute -bottom-7 left-6 flex items-center gap-4 rounded-lg bg-white px-5 py-4 shadow-2xl shadow-cocoa-900/15">
+              <span className="image-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-white/20" />
+            </motion.div>
+
+            {heroActivity.map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  y: [0, -8, 0]
+                }}
+                transition={{
+                  opacity: { delay: 0.45 + index * 0.1, duration: 0.35 },
+                  scale: { delay: 0.45 + index * 0.1, duration: 0.35 },
+                  y: { delay: index * 0.2, duration: 4.5, repeat: Infinity, ease: 'easeInOut' }
+                }}
+                className={`absolute hidden items-center gap-3 rounded-lg border border-white bg-white/95 px-4 py-3 shadow-2xl shadow-cocoa-900/12 backdrop-blur lg:flex ${item.className}`}
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+                  <item.icon className="h-5 w-5" />
+                </span>
+                <span>
+                  <span className="block text-sm font-extrabold text-cocoa-900">{item.title}</span>
+                  <span className="block text-xs font-bold text-cocoa-400">{item.detail}</span>
+                </span>
+              </motion.div>
+            ))}
+
+            <div className="float-soft absolute -bottom-7 left-6 flex items-center gap-4 rounded-lg bg-white px-5 py-4 shadow-2xl shadow-cocoa-900/15">
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                 <CalendarDays className="h-6 w-6" />
               </span>
@@ -302,12 +412,33 @@ const Home = () => {
 
       <section className="border-b border-cocoa-100 bg-white">
         <div className="mx-auto grid max-w-7xl gap-4 px-4 py-5 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-          {trustItems.map((item) => (
-            <div key={item.label} className="flex items-center gap-3">
+          {trustItems.map((item, index) => (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ duration: 0.45, delay: index * 0.06 }}
+              className="flex items-center gap-3"
+            >
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
                 <item.icon className="h-5 w-5" />
               </span>
               <span className="text-sm font-extrabold text-cocoa-700">{item.label}</span>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      <section className="overflow-hidden border-b border-cocoa-100 bg-[#fffdfb] py-4">
+        <div className="marquee-track flex w-max gap-4">
+          {[...activityTicker, ...activityTicker].map((item, index) => (
+            <div
+              key={`${item.label}-${index}`}
+              className="flex items-center gap-3 rounded-full border border-primary-100 bg-primary-50 px-5 py-2.5 text-sm font-extrabold text-primary-700"
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
             </div>
           ))}
         </div>
@@ -364,11 +495,17 @@ const Home = () => {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <motion.div
+              variants={revealContainer}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.2 }}
+              className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
+            >
               {featuredEvents.slice(0, 3).map((event, index) => (
                 <EventCard key={event._id} event={event} index={index} />
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
       </section>
@@ -398,18 +535,85 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <motion.div
+              variants={revealContainer}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.25 }}
+              className="grid gap-4 sm:grid-cols-2"
+            >
               {featureCards.map((feature) => (
-                <div key={feature.title} className="surface-panel p-6">
+                <motion.div
+                  key={feature.title}
+                  variants={revealItem}
+                  whileHover={{ y: -6, scale: 1.015 }}
+                  transition={{ type: 'spring', stiffness: 240, damping: 20 }}
+                  className="surface-panel motion-surface p-6"
+                >
                   <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-lg ${feature.color}`}>
                     <feature.icon className="h-6 w-6" />
                   </div>
                   <h3 className="text-lg font-extrabold text-cocoa-900">{feature.title}</h3>
                   <p className="mt-2 leading-7 text-cocoa-500">{feature.description}</p>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden bg-cocoa-900 py-20 text-white">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(244,90,44,0.18),transparent_42%,rgba(244,63,103,0.14))]" aria-hidden="true" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold uppercase text-primary-100">
+                <Sparkles className="h-3.5 w-3.5" />
+                Event journey
+              </span>
+              <h2 className="mt-4 text-3xl font-extrabold sm:text-4xl">
+                Every section feels connected, from first search to final check-in.
+              </h2>
+            </div>
+            <p className="text-lg leading-8 text-cocoa-100">
+              The experience is designed as one flow: guests discover with confidence, hosts keep control, and important updates never get buried.
+            </p>
+          </div>
+
+          <motion.div
+            variants={revealContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.25 }}
+            className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+          >
+            {operationHighlights.map((item, index) => (
+              <motion.div
+                key={item.title}
+                variants={revealItem}
+                whileHover={{ y: -8, scale: 1.015 }}
+                className="rounded-lg border border-white/10 bg-white/[0.07] p-6 shadow-2xl shadow-black/10 backdrop-blur"
+              >
+                <div className="mb-8 flex items-center justify-between">
+                  <span className="text-sm font-extrabold uppercase text-primary-100">{item.label}</span>
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-primary-600">
+                    <item.icon className="h-5 w-5" />
+                  </span>
+                </div>
+                <h3 className="text-xl font-extrabold">{item.title}</h3>
+                <p className="mt-3 leading-7 text-cocoa-100">{item.description}</p>
+                <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <motion.span
+                    initial={{ scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2 + index * 0.08, duration: 0.75, ease: 'easeOut' }}
+                    className="block h-full origin-left rounded-full bg-gradient-to-r from-primary-400 to-secondary-400"
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
@@ -425,18 +629,26 @@ const Home = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <motion.div
+            variants={revealContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.25 }}
+            className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6"
+          >
             {categories.map((category) => (
-              <Link
+              <motion.div key={category.label} variants={revealItem} whileHover={{ y: -7 }} whileTap={{ scale: 0.98 }}>
+                <Link
                 key={category.label}
                 to={`/events?category=${category.label.toLowerCase()}`}
                 className={`group rounded-lg border bg-white p-6 text-center shadow-xl shadow-cocoa-900/5 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-cocoa-900/10 ${category.color}`}
-              >
-                <category.icon className="mx-auto h-8 w-8 transition-transform group-hover:scale-110" />
-                <span className="mt-4 block text-base font-extrabold">{category.label}</span>
-              </Link>
+                >
+                  <category.icon className="mx-auto h-8 w-8 transition-transform group-hover:scale-110" />
+                  <span className="mt-4 block text-base font-extrabold">{category.label}</span>
+                </Link>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -452,9 +664,20 @@ const Home = () => {
             </h2>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <motion.div
+            variants={revealContainer}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.25 }}
+            className="grid gap-6 md:grid-cols-3"
+          >
             {steps.map((step, index) => (
-              <div key={step.title} className="surface-panel p-6">
+              <motion.div
+                key={step.title}
+                variants={revealItem}
+                whileHover={{ y: -6, rotate: index === 1 ? 0.35 : -0.35 }}
+                className="surface-panel motion-surface p-6"
+              >
                 <div className="mb-6 flex items-center justify-between">
                   <span className="text-sm font-extrabold uppercase text-cocoa-300">
                     Step {index + 1}
@@ -465,9 +688,9 @@ const Home = () => {
                 </div>
                 <h3 className="text-xl font-extrabold text-cocoa-900">{step.title}</h3>
                 <p className="mt-3 leading-7 text-cocoa-500">{step.description}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -518,6 +741,7 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.25 }}
                 transition={{ duration: 0.45, delay: index * 0.08 }}
+                whileHover={{ y: -6, scale: 1.01 }}
                 className="surface-panel p-6"
               >
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">

@@ -5,22 +5,29 @@ const PageTransition = ({ children, className = '' }) => {
   const pageVariants = {
     initial: {
       opacity: 0,
-      y: 20,
+      y: 18,
+      scale: 0.992,
+      filter: 'blur(8px)',
     },
     in: {
       opacity: 1,
       y: 0,
+      scale: 1,
+      filter: 'blur(0px)',
     },
     out: {
       opacity: 0,
-      y: -20,
+      y: -14,
+      scale: 0.998,
+      filter: 'blur(6px)',
     },
   };
 
   const pageTransition = {
-    type: 'tween',
-    ease: 'anticipate',
-    duration: 0.5,
+    type: 'spring',
+    stiffness: 120,
+    damping: 22,
+    mass: 0.6,
   };
 
   return (

@@ -1,8 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, resolveValue, toast } from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { CheckCircle2, Info, Loader2, X, XCircle } from 'lucide-react';
 
 // Components
 import Navbar from './components/Navbar';
@@ -24,6 +25,81 @@ import AdminPanel from './pages/AdminPanel';
 import CreateEvent from './pages/CreateEvent';
 import BookingConfirmation from './pages/BookingConfirmation';
 import EventChatPage from './pages/EventChatPage';
+
+const toastTone = {
+  success: {
+    title: 'Success',
+    icon: CheckCircle2,
+    shell: 'border-emerald-100 bg-white',
+    iconWrap: 'bg-emerald-50 text-emerald-600',
+    progress: 'bg-emerald-500'
+  },
+  error: {
+    title: 'Action needed',
+    icon: XCircle,
+    shell: 'border-red-100 bg-white',
+    iconWrap: 'bg-red-50 text-red-600',
+    progress: 'bg-red-500'
+  },
+  loading: {
+    title: 'Working',
+    icon: Loader2,
+    shell: 'border-primary-100 bg-white',
+    iconWrap: 'bg-primary-50 text-primary-600',
+    progress: 'bg-primary-500',
+    spin: true
+  },
+  blank: {
+    title: 'Evento update',
+    icon: Info,
+    shell: 'border-cocoa-100 bg-white',
+    iconWrap: 'bg-primary-50 text-primary-600',
+    progress: 'bg-primary-500'
+  }
+};
+
+const EventoToast = (toastItem) => {
+  const tone = toastTone[toastItem.type] || toastTone.blank;
+  const Icon = tone.icon;
+  const duration = typeof toastItem.duration === 'number' && toastItem.duration > 0
+    ? toastItem.duration
+    : 4000;
+
+  return (
+    <div
+      className={`evento-toast ${toastItem.visible ? 'evento-toast-enter' : 'evento-toast-exit'} ${tone.shell}`}
+      role="status"
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        <span className={`mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${tone.iconWrap}`}>
+          <Icon className={`h-5 w-5 ${tone.spin ? 'animate-spin' : ''}`} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-extrabold text-cocoa-900">{tone.title}</p>
+          <div className="mt-1 text-sm font-semibold leading-5 text-cocoa-500">
+            {resolveValue(toastItem.message, toastItem)}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => toast.dismiss(toastItem.id)}
+          className="rounded-md p-1 text-cocoa-300 transition hover:bg-[#f3eee9] hover:text-cocoa-700"
+          aria-label="Dismiss notification"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      {toastItem.type !== 'loading' && (
+        <span className="mt-4 block h-1 overflow-hidden rounded-full bg-cocoa-100">
+          <span
+            className={`block h-full origin-left rounded-full ${tone.progress} evento-toast-progress`}
+            style={{ animationDuration: `${duration}ms` }}
+          />
+        </span>
+      )}
+    </div>
+  );
+};
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false, hostOnly = false, allowHosts = false, allowAdmins = false }) => {
@@ -223,31 +299,28 @@ function AppContent() {
       {!hideFooter && <Footer />}
       <Toaster 
         position="top-right"
+        gutter={14}
+        containerStyle={{
+          top: 88,
+          right: 20
+        }}
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#3a271d',
-            color: '#fff',
-            borderRadius: '8px',
-            padding: '16px',
-            boxShadow: '0 20px 45px rgba(58, 39, 29, 0.18)',
+            background: 'transparent',
+            boxShadow: 'none',
+            padding: 0,
           },
           success: {
-            duration: 3000,
-            iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
-            },
+            duration: 3200,
           },
           error: {
-            duration: 4000,
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
+            duration: 4500,
           },
         }}
-      />
+      >
+        {EventoToast}
+      </Toaster>
     </div>
   );
 }

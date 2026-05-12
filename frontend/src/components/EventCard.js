@@ -63,11 +63,16 @@ const EventCard = ({ event, index = 0 }) => {
   return (
     <motion.article
       initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
       transition={{
         duration: 0.45,
         delay: index * 0.06,
         ease: [0.25, 0.46, 0.45, 0.94]
+      }}
+      whileHover={{
+        y: -8,
+        boxShadow: '0 28px 60px -28px rgba(58, 39, 29, 0.32)'
       }}
       className="card group flex h-full flex-col"
     >
@@ -97,9 +102,11 @@ const EventCard = ({ event, index = 0 }) => {
           )}
         </div>
 
-        <button
+        <motion.button
           type="button"
           onClick={handleWishlist}
+          whileHover={{ scale: 1.08, rotate: inWishlist ? 0 : -5 }}
+          whileTap={{ scale: 0.94 }}
           className={`absolute right-4 top-4 rounded-lg p-2.5 shadow-sm transition-all ${
             inWishlist
               ? 'bg-red-500 text-white'
@@ -108,7 +115,7 @@ const EventCard = ({ event, index = 0 }) => {
           aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
         >
           <Heart className="h-4 w-4" fill={inWishlist ? 'currentColor' : 'none'} />
-        </button>
+        </motion.button>
       </div>
 
       <div className="flex flex-1 flex-col p-5">
@@ -165,7 +172,7 @@ const EventCard = ({ event, index = 0 }) => {
           </span>
         </div>
 
-        <Link to={`/events/${event._id}`} className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-primary-600">
+        <Link to={`/events/${event._id}`} className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-primary-600 transition-colors hover:text-primary-700">
           View details
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </Link>
