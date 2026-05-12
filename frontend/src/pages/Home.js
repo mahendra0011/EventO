@@ -16,6 +16,9 @@ import {
   Briefcase,
   Heart,
   Coffee,
+  Palette,
+  Laptop,
+  Trophy,
   CreditCard,
   Mail,
   BadgeCheck,
@@ -98,14 +101,73 @@ const featureCards = [
   }
 ];
 
-const categories = [
-  { icon: Music, label: 'Music', color: 'bg-rose-50 text-rose-700 border-rose-100' },
-  { icon: Gamepad2, label: 'Gaming', color: 'bg-violet-50 text-violet-700 border-violet-100' },
-  { icon: Briefcase, label: 'Business', color: 'bg-blue-50 text-blue-700 border-blue-100' },
-  { icon: Heart, label: 'Wellness', color: 'bg-pink-50 text-pink-700 border-pink-100' },
-  { icon: Coffee, label: 'Food', color: 'bg-amber-50 text-amber-700 border-amber-100' },
-  { icon: CalendarDays, label: 'Sports', color: 'bg-emerald-50 text-emerald-700 border-emerald-100' }
-];
+const defaultInterests = ['Music', 'Sports', 'Technology', 'Food', 'Gaming', 'Business', 'Workshops', 'Art', 'Other'];
+
+const interestStyles = {
+  Music: {
+    icon: Music,
+    description: 'Concerts, festivals, and live performances.',
+    color: 'from-rose-400 to-pink-500',
+    tint: 'bg-rose-50 text-rose-700 border-rose-100'
+  },
+  Sports: {
+    icon: Trophy,
+    description: 'Matches, fan zones, and active experiences.',
+    color: 'from-emerald-400 to-teal-500',
+    tint: 'bg-emerald-50 text-emerald-700 border-emerald-100'
+  },
+  Technology: {
+    icon: Laptop,
+    description: 'Summits, product talks, and innovation meetups.',
+    color: 'from-blue-400 to-cyan-500',
+    tint: 'bg-blue-50 text-blue-700 border-blue-100'
+  },
+  Food: {
+    icon: Coffee,
+    description: 'Tastings, pop-ups, and culinary gatherings.',
+    color: 'from-amber-400 to-orange-500',
+    tint: 'bg-amber-50 text-amber-700 border-amber-100'
+  },
+  Gaming: {
+    icon: Gamepad2,
+    description: 'Tournaments, launches, and community nights.',
+    color: 'from-violet-400 to-indigo-500',
+    tint: 'bg-violet-50 text-violet-700 border-violet-100'
+  },
+  Business: {
+    icon: Briefcase,
+    description: 'Networking, conferences, and founder sessions.',
+    color: 'from-sky-400 to-blue-600',
+    tint: 'bg-sky-50 text-sky-700 border-sky-100'
+  },
+  Workshops: {
+    icon: Sparkles,
+    description: 'Hands-on learning, craft sessions, and classes.',
+    color: 'from-purple-400 to-fuchsia-500',
+    tint: 'bg-purple-50 text-purple-700 border-purple-100'
+  },
+  Art: {
+    icon: Palette,
+    description: 'Exhibitions, maker fairs, and cultural programs.',
+    color: 'from-orange-400 to-rose-500',
+    tint: 'bg-orange-50 text-orange-700 border-orange-100'
+  },
+  Other: {
+    icon: Heart,
+    description: 'Unique local experiences worth discovering.',
+    color: 'from-primary-400 to-secondary-500',
+    tint: 'bg-primary-50 text-primary-700 border-primary-100'
+  }
+};
+
+const getInterestDetails = (category) => {
+  const details = interestStyles[category] || interestStyles.Other;
+
+  return {
+    ...details,
+    label: category
+  };
+};
 
 const steps = [
   {
@@ -232,12 +294,14 @@ const revealItem = {
 
 const Home = () => {
   const [featuredEvents, setFeaturedEvents] = useState([]);
+  const [homeCategories, setHomeCategories] = useState(defaultInterests);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchFeaturedEvents();
+    fetchHomeCategories();
   }, []);
 
   const fetchFeaturedEvents = async () => {
@@ -249,6 +313,18 @@ const Home = () => {
       setFeaturedEvents([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchHomeCategories = async () => {
+    try {
+      const res = await api.get('/events/categories');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setHomeCategories(res.data.filter(Boolean).slice(0, 9));
+      }
+    } catch (error) {
+      console.error('Error fetching home categories:', error);
+      setHomeCategories(defaultInterests);
     }
   };
 
@@ -619,14 +695,23 @@ const Home = () => {
 
       <section className="bg-[#f7f3ee] py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-10 text-center">
-            <span className="section-kicker">
-              <Search className="h-3.5 w-3.5" />
-              Explore by interest
-            </span>
-            <h2 className="text-3xl font-extrabold text-cocoa-900 sm:text-4xl">
-              Find the category that fits your calendar.
-            </h2>
+          <div className="mb-10 flex flex-col justify-between gap-5 md:flex-row md:items-end">
+            <div>
+              <span className="section-kicker">
+                <Search className="h-3.5 w-3.5" />
+                Explore by interest
+              </span>
+              <h2 className="text-3xl font-extrabold text-cocoa-900 sm:text-4xl">
+                Choose a category and jump straight into matching events.
+              </h2>
+              <p className="mt-3 max-w-2xl text-cocoa-500">
+                These interests match the live event filters, so every card opens the right results page.
+              </p>
+            </div>
+            <Link to="/events" className="btn-secondary w-full sm:w-auto">
+              View all interests
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
 
           <motion.div
@@ -634,20 +719,36 @@ const Home = () => {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.25 }}
-            className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
-            {categories.map((category) => (
-              <motion.div key={category.label} variants={revealItem} whileHover={{ y: -7 }} whileTap={{ scale: 0.98 }}>
-                <Link
-                key={category.label}
-                to={`/events?category=${category.label.toLowerCase()}`}
-                className={`group rounded-lg border bg-white p-6 text-center shadow-xl shadow-cocoa-900/5 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-cocoa-900/10 ${category.color}`}
-                >
-                  <category.icon className="mx-auto h-8 w-8 transition-transform group-hover:scale-110" />
-                  <span className="mt-4 block text-base font-extrabold">{category.label}</span>
-                </Link>
-              </motion.div>
-            ))}
+            {homeCategories.map((categoryName, index) => {
+              const category = getInterestDetails(categoryName);
+
+              return (
+                <motion.div key={category.label} variants={revealItem} whileHover={{ y: -7 }} whileTap={{ scale: 0.98 }}>
+                  <Link
+                    to={`/events?category=${encodeURIComponent(category.label)}`}
+                    className="group relative block h-full overflow-hidden rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5 transition-all hover:-translate-y-1 hover:shadow-2xl hover:shadow-cocoa-900/10"
+                  >
+                    <span className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${category.color}`} />
+                    <div className="flex items-start justify-between gap-4">
+                      <span className={`flex h-12 w-12 items-center justify-center rounded-lg border ${category.tint}`}>
+                        <category.icon className="h-6 w-6 transition-transform group-hover:scale-110" />
+                      </span>
+                      <span className="rounded-full bg-[#fbf8f4] px-3 py-1 text-xs font-extrabold uppercase text-cocoa-400">
+                        0{index + 1}
+                      </span>
+                    </div>
+                    <span className="mt-5 block text-xl font-extrabold text-cocoa-900">{category.label}</span>
+                    <span className="mt-2 block leading-7 text-cocoa-500">{category.description}</span>
+                    <span className="mt-5 inline-flex items-center gap-2 text-sm font-extrabold text-primary-600">
+                      Browse {category.label}
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </Link>
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </section>
