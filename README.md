@@ -75,7 +75,7 @@ Create `backend/.env` for local development:
 NODE_ENV=development
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/evento
-MONGODB_DB_NAME=
+MONGODB_DB_NAME=evento
 JWT_SECRET=replace-with-a-long-random-secret
 FRONTEND_URL=http://localhost:3000
 
@@ -92,6 +92,16 @@ ADMIN_RESET_PASSWORD=false
 
 PLATFORM_FEE_RATE=0.1
 ```
+
+## Database Migration
+
+To copy the existing Atlas `test` database into a new `evento` database, run this from `backend/` with the Atlas connection string set in `MONGODB_URI`:
+
+```powershell
+npm run migrate:db -- --from test --to evento --drop-target
+```
+
+MongoDB creates the `evento` database when the script writes the copied collections. The script refuses to run against `localhost` unless `--allow-local` is passed.
 
 Frontend variables are optional because React uses the development proxy in `frontend/package.json`:
 

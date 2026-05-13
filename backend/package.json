@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "dev:local": "node --watch server.js"
+    "dev:local": "node --watch server.js",
+    "migrate:db": "node scripts/copy-database.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
