@@ -129,6 +129,14 @@ cd backend
 npm run dev
 ```
 
+Seed demo data:
+
+```bash
+npm run seed
+```
+
+The seed creates demo users, hosts, categories, locations, events, bookings, reviews, messages, notifications, support tickets, and activity logs. It is idempotent for its own sample records.
+
 In another terminal, run the frontend:
 
 ```bash
@@ -149,6 +157,7 @@ Backend:
 ```bash
 npm run dev
 npm run dev:local
+npm run seed
 npm start
 ```
 

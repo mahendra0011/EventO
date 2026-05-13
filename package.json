@@ -2,6 +2,9 @@
   "name": "evento",
   "version": "1.0.0",
   "private": true,
+  "scripts": {
+    "seed": "npm run seed --workspace backend"
+  },
   "workspaces": [
     "backend",
     "frontend"

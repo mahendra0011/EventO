@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "node server.js",
     "dev:local": "node --watch server.js",
+    "seed": "node scripts/seed-sample-data.js",
     "migrate:db": "node scripts/copy-database.js"
   },
   "dependencies": {
