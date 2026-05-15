@@ -1,106 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const DEFAULT_HOST_PACKAGE_PRICING = [
-  {
-    key: 'starter',
-    name: 'Starter',
-    description: 'Entry package',
-    price: 0,
-    isActive: true
-  },
-  {
-    key: 'standard',
-    name: 'Standard',
-    description: 'Most booked package',
-    price: 0,
-    isActive: true
-  },
-  {
-    key: 'premium',
-    name: 'Premium',
-    description: 'High touch package',
-    price: 0,
-    isActive: true
-  }
-];
-
-const hostPackagePricingSchema = new mongoose.Schema({
-  key: {
-    type: String,
-    trim: true
-  },
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 60
-  },
-  description: {
-    type: String,
-    trim: true,
-    maxlength: 160,
-    default: ''
-  },
-  price: {
-    type: Number,
-    min: 0,
-    default: 0
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  }
-}, { _id: false });
-
-const hostSettingsSchema = new mongoose.Schema({
-  notificationPreferences: {
-    newBookings: {
-      type: Boolean,
-      default: true
-    },
-    bookingDecisions: {
-      type: Boolean,
-      default: true
-    },
-    eventReminders: {
-      type: Boolean,
-      default: true
-    },
-    communityMessages: {
-      type: Boolean,
-      default: true
-    }
-  },
-  hostPreferences: {
-    autoConfirmFreeEvents: {
-      type: Boolean,
-      default: false
-    },
-    showRevenueCards: {
-      type: Boolean,
-      default: true
-    },
-    requireQrAtEntry: {
-      type: Boolean,
-      default: true
-    },
-    weeklyDigest: {
-      type: Boolean,
-      default: true
-    }
-  },
-  defaultEventVisibility: {
-    type: String,
-    enum: ['public', 'draft', 'review'],
-    default: 'public'
-  },
-  packagePricing: {
-    type: [hostPackagePricingSchema],
-    default: () => DEFAULT_HOST_PACKAGE_PRICING.map(pkg => ({ ...pkg }))
-  }
-}, { _id: false });
-
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -155,10 +55,6 @@ const userSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
-  hostSettings: {
-    type: hostSettingsSchema,
-    default: () => ({})
-  },
   isVerified: {
     type: Boolean,
     default: false

@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import api, {
-  broadcastToEventBookers,
-  changeHostKeyword,
-  changePassword,
-  getHostSettings,
-  getNotifications,
-  updateHostSettings
-} from '../utils/api';
+import api, { broadcastToEventBookers, changeHostKeyword, changePassword, getNotifications } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -49,48 +42,6 @@ import {
 
 const hostDashboardTabs = ['overview', 'analytics', 'bookings', 'events', 'communications', 'notifications', 'community', 'settings'];
 
-const defaultNotificationPreferences = {
-  newBookings: true,
-  bookingDecisions: true,
-  eventReminders: true,
-  communityMessages: true
-};
-
-const defaultHostPreferences = {
-  autoConfirmFreeEvents: false,
-  showRevenueCards: true,
-  requireQrAtEntry: true,
-  weeklyDigest: true
-};
-
-const defaultPackagePricing = [
-  {
-    key: 'starter',
-    name: 'Starter',
-    description: 'Entry package',
-    price: 0,
-    isActive: true
-  },
-  {
-    key: 'standard',
-    name: 'Standard',
-    description: 'Most booked package',
-    price: 0,
-    isActive: true
-  },
-  {
-    key: 'premium',
-    name: 'Premium',
-    description: 'High touch package',
-    price: 0,
-    isActive: true
-  }
-];
-
-const clonePackagePricing = (packages = defaultPackagePricing) => (
-  packages.map((pkg) => ({ ...pkg }))
-);
-
 const AdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get('tab');
@@ -129,14 +80,21 @@ const AdminDashboard = () => {
      currentKeyword: '',
      newKeyword: ''
    });
-   const [notificationPreferences, setNotificationPreferences] = useState(defaultNotificationPreferences);
-   const [hostPreferences, setHostPreferences] = useState(defaultHostPreferences);
-   const [defaultEventVisibility, setDefaultEventVisibility] = useState('public');
-   const [packagePricing, setPackagePricing] = useState(clonePackagePricing());
+   const [notificationPreferences, setNotificationPreferences] = useState({
+     newBookings: true,
+     bookingDecisions: true,
+     eventReminders: true,
+     communityMessages: true
+   });
+   const [hostPreferences, setHostPreferences] = useState({
+     autoConfirmFreeEvents: false,
+     showRevenueCards: true,
+     requireQrAtEntry: true,
+     weeklyDigest: true
+   });
    const [updatingProfile, setUpdatingProfile] = useState(false);
    const [savingPassword, setSavingPassword] = useState(false);
    const [savingKeyword, setSavingKeyword] = useState(false);
-   const [savingHostSettings, setSavingHostSettings] = useState(false);
 
     // Notification states
     const [notifications, setNotifications] = useState([]);
@@ -194,100 +152,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const applyHostSettings = (settings = {}) => {
-    setNotificationPreferences({
-      ...defaultNotificationPreferences,
-      ...(settings.notificationPreferences || {})
-    });
-    setHostPreferences({
-      ...defaultHostPreferences,
-      ...(settings.hostPreferences || {})
-    });
-    setDefaultEventVisibility(settings.defaultEventVisibility || 'public');
-    setPackagePricing(
-      clonePackagePricing(
-        Array.isArray(settings.packagePricing) && settings.packagePricing.length > 0
-          ? settings.packagePricing
-          : defaultPackagePricing
-      )
-    );
-  };
-
-  const updatePackagePricing = (index, field, value) => {
-    setPackagePricing((prev) => prev.map((pkg, pkgIndex) => (
-      pkgIndex === index ? { ...pkg, [field]: value } : pkg
-    )));
-  };
-
-  const addPackagePricingRow = () => {
-    setPackagePricing((prev) => {
-      if (prev.length >= 8) {
-        toast.error('You can add up to 8 packages');
-        return prev;
-      }
-
-      return [
-        ...prev,
-        {
-          key: `package-${Date.now()}`,
-          name: '',
-          description: '',
-          price: 0,
-          isActive: true
-        }
-      ];
-    });
-  };
-
-  const removePackagePricingRow = (index) => {
-    setPackagePricing((prev) => (
-      prev.length > 1 ? prev.filter((_, pkgIndex) => pkgIndex !== index) : prev
-    ));
-  };
-
-  const buildPackagePricingPayload = () => (
-    packagePricing
-      .map((pkg, index) => ({
-        key: pkg.key || `package-${index + 1}`,
-        name: String(pkg.name || '').trim(),
-        description: String(pkg.description || '').trim(),
-        price: Number(pkg.price),
-        isActive: Boolean(pkg.isActive)
-      }))
-      .filter((pkg) => pkg.name)
-  );
-
-  const handleSaveHostSettings = async () => {
-    const cleanedPackages = buildPackagePricingPayload();
-
-    if (cleanedPackages.length === 0) {
-      toast.error('Add at least one package name');
-      return;
-    }
-
-    if (cleanedPackages.some((pkg) => !Number.isFinite(pkg.price) || pkg.price < 0)) {
-      toast.error('Package prices must be 0 or higher');
-      return;
-    }
-
-    setSavingHostSettings(true);
-    try {
-      const res = await updateHostSettings({
-        notificationPreferences,
-        hostPreferences,
-        defaultEventVisibility,
-        packagePricing: cleanedPackages
-      });
-
-      applyHostSettings(res.settings);
-      toast.success('Host settings saved successfully');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to save host settings');
-    } finally {
-      setSavingHostSettings(false);
-    }
-  };
-
   const toggleNotificationPreference = (key) => {
     setNotificationPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -342,17 +206,15 @@ const AdminDashboard = () => {
 
    const fetchDashboardData = async () => {
      try {
-       const [statsRes, bookingsRes, eventsRes, settingsRes] = await Promise.all([
+       const [statsRes, bookingsRes, eventsRes] = await Promise.all([
          api.get('/host/dashboard'),
          api.get('/bookings/all'),
-         api.get('/events/organizer'),
-         getHostSettings()
+         api.get('/events/organizer')
        ]);
 
        setStats(statsRes.data);
        setBookings(bookingsRes.data.bookings);
        setEvents(eventsRes.data);
-       applyHostSettings(settingsRes.settings);
      } catch (error) {
        console.error('Error fetching dashboard data:', error);
        toast.error('Failed to load dashboard data');
@@ -1614,91 +1476,6 @@ const AdminDashboard = () => {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="flex items-start gap-3">
-                      <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
-                        <IndianRupee className="h-5 w-5" />
-                      </span>
-                      <div>
-                        <h3 className="text-xl font-extrabold text-cocoa-900">Package pricing</h3>
-                        <p className="text-sm text-cocoa-500">Set prices for the packages your host profile offers.</p>
-                      </div>
-                    </div>
-                    <button type="button" onClick={addPackagePricingRow} className="btn-secondary">
-                      <Plus className="h-4 w-4" />
-                      Add package
-                    </button>
-                  </div>
-
-                  <div className="mt-5 space-y-4">
-                    {packagePricing.map((pkg, index) => (
-                      <div key={pkg.key || index} className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4">
-                        <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr_0.7fr_auto]">
-                          <div>
-                            <label className="label">Package name</label>
-                            <input
-                              type="text"
-                              value={pkg.name}
-                              onChange={(e) => updatePackagePricing(index, 'name', e.target.value)}
-                              className="input-field bg-white"
-                              placeholder="Package title"
-                              maxLength={60}
-                            />
-                          </div>
-                          <div>
-                            <label className="label">Description</label>
-                            <input
-                              type="text"
-                              value={pkg.description}
-                              onChange={(e) => updatePackagePricing(index, 'description', e.target.value)}
-                              className="input-field bg-white"
-                              placeholder="Short package note"
-                              maxLength={160}
-                            />
-                          </div>
-                          <div>
-                            <label className="label">Price (INR)</label>
-                            <div className="relative">
-                              <IndianRupee className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cocoa-400" />
-                              <input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={pkg.price}
-                                onChange={(e) => updatePackagePricing(index, 'price', e.target.value)}
-                                className="input-field bg-white pl-10"
-                                placeholder="0"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex items-end gap-3">
-                            <label className="flex h-[46px] items-center gap-2 rounded-lg border border-cocoa-100 bg-white px-3 text-sm font-bold text-cocoa-700">
-                              <input
-                                type="checkbox"
-                                checked={Boolean(pkg.isActive)}
-                                onChange={(e) => updatePackagePricing(index, 'isActive', e.target.checked)}
-                                className="h-4 w-4 rounded border-cocoa-200 text-primary-600 focus:ring-primary-500"
-                              />
-                              Active
-                            </label>
-                            {packagePricing.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removePackagePricingRow(index)}
-                                className="flex h-[46px] w-[46px] items-center justify-center rounded-lg border border-red-100 bg-white text-red-600 transition hover:bg-red-50"
-                                aria-label={`Remove ${pkg.name || 'package'}`}
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
                 <div className="grid gap-6 lg:grid-cols-2">
                   <div className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
                     <h3 className="text-xl font-extrabold text-cocoa-900">Notification controls</h3>
@@ -1766,24 +1543,13 @@ const AdminDashboard = () => {
                         <Globe className="h-4 w-4 text-primary-600" />
                         Default event visibility
                       </label>
-                      <select
-                        value={defaultEventVisibility}
-                        onChange={(e) => setDefaultEventVisibility(e.target.value)}
-                        className="input-field"
-                      >
-                        <option value="public">Public after publishing</option>
-                        <option value="draft">Private draft first</option>
-                        <option value="review">Manual review before listing</option>
+                      <select className="input-field">
+                        <option>Public after publishing</option>
+                        <option>Private draft first</option>
+                        <option>Manual review before listing</option>
                       </select>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <button type="button" onClick={handleSaveHostSettings} disabled={savingHostSettings} className="btn-primary">
-                    <Save className="h-4 w-4" />
-                    {savingHostSettings ? 'Saving settings...' : 'Save settings'}
-                  </button>
                 </div>
 
                 <div className="rounded-lg border border-red-100 bg-red-50 p-6">

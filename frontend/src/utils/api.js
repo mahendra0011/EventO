@@ -159,16 +159,6 @@ export const getHostDashboardStats = async () => {
   return res.data;
 };
 
-export const getHostSettings = async () => {
-  const res = await api.get('/host/settings');
-  return res.data;
-};
-
-export const updateHostSettings = async (settings) => {
-  const res = await api.put('/host/settings', settings);
-  return res.data;
-};
-
 // Broadcast message to all users who booked an event
 export const broadcastToEventBookers = async (eventId, subject, content) => {
   const res = await api.post('/messages/broadcast', { eventId, subject, content });
