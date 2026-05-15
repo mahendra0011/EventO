@@ -1,13 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import api from '../utils/api';
-import CircularGallery from '../components/CircularGallery';
-import ElectricBorder from '../components/ElectricBorder';
 import EventCard from '../components/EventCard';
-import FlowingMenu from '../components/FlowingMenu';
-import ScrollFloat from '../components/ScrollFloat';
-import ScrollVelocity from '../components/ScrollVelocity';
 import {
   Search,
   CalendarDays,
@@ -281,56 +276,6 @@ const heroActivity = [
   }
 ];
 
-const defaultGalleryItems = [
-  {
-    image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=85',
-    text: 'Live nights'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=85',
-    text: 'Meetups'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=85',
-    text: 'Festivals'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1515169067865-5387ec356754?auto=format&fit=crop&w=1200&q=85',
-    text: 'Workshops'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=85',
-    text: 'Campus events'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=85',
-    text: 'Conferences'
-  }
-];
-
-const defaultFlowingMenuItems = [
-  {
-    link: '/events?category=Music',
-    text: 'Music',
-    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=900&q=85'
-  },
-  {
-    link: '/events?category=Technology',
-    text: 'Technology',
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=900&q=85'
-  },
-  {
-    link: '/events?category=Sports',
-    text: 'Sports',
-    image: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=900&q=85'
-  },
-  {
-    link: '/events?category=Workshops',
-    text: 'Workshops',
-    image: 'https://images.unsplash.com/photo-1515169067865-5387ec356754?auto=format&fit=crop&w=900&q=85'
-  }
-];
-
 const revealContainer = {
   hidden: {},
   show: {
@@ -403,18 +348,6 @@ const Home = () => {
       setHomeCategories(defaultInterests);
     }
   };
-
-  const circularGalleryItems = useMemo(() => {
-    const eventItems = featuredEvents
-      .filter((event) => event?.image && event?.title)
-      .slice(0, 8)
-      .map((event) => ({
-        image: event.image,
-        text: event.title
-      }));
-
-    return eventItems.length >= 4 ? eventItems : defaultGalleryItems;
-  }, [featuredEvents]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -776,102 +709,6 @@ const Home = () => {
             </div>
           ))}
         </div>
-      </section>
-
-      <section className="relative overflow-hidden bg-cocoa-900 py-20 text-white">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(244,90,44,0.16),transparent_45%,rgba(244,63,103,0.12))]" aria-hidden="true" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold uppercase text-primary-100">
-                <Sparkles className="h-3.5 w-3.5" />
-                Gallery preview
-              </span>
-              <ScrollFloat
-                containerClassName="mt-4 max-w-3xl"
-                textClassName="home-scroll-float-title"
-                animationDuration={0.9}
-                ease="back.inOut(1.8)"
-                scrollStart="top bottom-=8%"
-                scrollEnd="bottom center"
-                stagger={0.016}
-              >
-                A cinematic pass through what is happening next.
-              </ScrollFloat>
-              <p className="mt-3 max-w-2xl text-cocoa-100">
-                Featured moments from the catalog, shaped into an interactive circular gallery.
-              </p>
-            </div>
-            <Link to="/events" className="btn-secondary w-full border-white/20 bg-white/10 text-white hover:bg-white/15 sm:w-auto">
-              Browse catalog
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <ElectricBorder
-            color="#f45a2c"
-            speed={0.85}
-            chaos={0.055}
-            thickness={1.4}
-            borderRadius={18}
-            className="shadow-2xl shadow-black/20"
-            style={{ borderRadius: 18 }}
-          >
-            <div className="relative h-[420px] overflow-hidden rounded-[18px] border border-white/10 bg-white/[0.06] sm:h-[520px] lg:h-[600px]">
-              <CircularGallery
-                items={circularGalleryItems}
-                bend={2.4}
-                textColor="#fff8f2"
-                borderRadius={0.045}
-                scrollSpeed={1.9}
-                scrollEase={0.035}
-              />
-            </div>
-          </ElectricBorder>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden bg-cocoa-900 pb-20 text-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-7 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold uppercase text-primary-100">
-                <MousePointerClick className="h-3.5 w-3.5" />
-                Choose a vibe
-              </span>
-              <h2 className="mt-4 max-w-3xl text-3xl font-extrabold sm:text-4xl">
-                Hover a lane and jump straight into discovery.
-              </h2>
-            </div>
-            <p className="max-w-md text-sm font-semibold leading-6 text-cocoa-100 md:text-right">
-              Fast category paths for guests who already know the kind of night they want.
-            </p>
-          </div>
-
-          <div className="relative h-[420px] overflow-hidden rounded-lg border border-white/10 shadow-2xl shadow-black/20 sm:h-[500px]">
-            <FlowingMenu
-              items={defaultFlowingMenuItems}
-              speed={17}
-              textColor="#fff8f2"
-              bgColor="#120f0d"
-              marqueeBgColor="#f45a2c"
-              marqueeTextColor="#fff8f2"
-              borderColor="rgba(255, 248, 242, 0.16)"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="overflow-hidden border-y border-primary-500/20 bg-cocoa-900 py-8 text-primary-100">
-        <ScrollVelocity
-          texts={['Discover live moments', 'Book seats with confidence']}
-          velocity={62}
-          className="scroll-velocity-copy"
-          damping={42}
-          stiffness={320}
-          numCopies={5}
-          velocityMapping={{ input: [0, 1000], output: [0, 3.6] }}
-        />
       </section>
 
       <section className="bg-[#fbf8f4] py-20">
