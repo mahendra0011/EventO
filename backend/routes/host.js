@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const {
   getDashboardStats,
+  getHostSettings,
+  updateHostSettings,
   getAllUsers,
   updateUserRole,
   getEventAnalytics
@@ -12,6 +14,16 @@ const { hostAuth } = require('../middleware/auth');
 // @desc    Get dashboard statistics
 // @access  Private/Host
 router.get('/dashboard', hostAuth, getDashboardStats);
+
+// @route   GET /api/host/settings
+// @desc    Get host settings
+// @access  Private/Host
+router.get('/settings', hostAuth, getHostSettings);
+
+// @route   PUT /api/host/settings
+// @desc    Update host settings
+// @access  Private/Host
+router.put('/settings', hostAuth, updateHostSettings);
 
 // @route   GET /api/host/users
 // @desc    Get all users
