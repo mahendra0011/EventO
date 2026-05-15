@@ -1,11 +1,18 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import api from '../utils/api';
+import CircularGallery from '../components/CircularGallery';
+import ElectricBorder from '../components/ElectricBorder';
 import EventCard from '../components/EventCard';
+import FlowingMenu from '../components/FlowingMenu';
+import ScrollFloat from '../components/ScrollFloat';
+import ScrollVelocity from '../components/ScrollVelocity';
 import {
   Search,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Users,
   ShieldCheck,
   ArrowRight,
@@ -274,6 +281,56 @@ const heroActivity = [
   }
 ];
 
+const defaultGalleryItems = [
+  {
+    image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=1200&q=85',
+    text: 'Live nights'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=85',
+    text: 'Meetups'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=85',
+    text: 'Festivals'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1515169067865-5387ec356754?auto=format&fit=crop&w=1200&q=85',
+    text: 'Workshops'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=85',
+    text: 'Campus events'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=85',
+    text: 'Conferences'
+  }
+];
+
+const defaultFlowingMenuItems = [
+  {
+    link: '/events?category=Music',
+    text: 'Music',
+    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=900&q=85'
+  },
+  {
+    link: '/events?category=Technology',
+    text: 'Technology',
+    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=900&q=85'
+  },
+  {
+    link: '/events?category=Sports',
+    text: 'Sports',
+    image: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=900&q=85'
+  },
+  {
+    link: '/events?category=Workshops',
+    text: 'Workshops',
+    image: 'https://images.unsplash.com/photo-1515169067865-5387ec356754?auto=format&fit=crop&w=900&q=85'
+  }
+];
+
 const revealContainer = {
   hidden: {},
   show: {
@@ -299,6 +356,10 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [browseTransition, setBrowseTransition] = useState(false);
   const [edgePullProgress, setEdgePullProgress] = useState(0);
+  const [railProgress, setRailProgress] = useState(0);
+  const [activeRailItem, setActiveRailItem] = useState(1);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(true);
   const featuredRailRef = useRef(null);
   const edgePullProgressRef = useRef(0);
   const edgeResetTimeoutRef = useRef(null);
@@ -343,6 +404,18 @@ const Home = () => {
     }
   };
 
+  const circularGalleryItems = useMemo(() => {
+    const eventItems = featuredEvents
+      .filter((event) => event?.image && event?.title)
+      .slice(0, 8)
+      .map((event) => ({
+        image: event.image,
+        text: event.title
+      }));
+
+    return eventItems.length >= 4 ? eventItems : defaultGalleryItems;
+  }, [featuredEvents]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     const query = searchQuery.trim();
@@ -350,6 +423,7 @@ const Home = () => {
   };
 
   const featuredCards = featuredEvents.slice(0, 6);
+  const totalRailItems = featuredCards.length + 1;
 
   const isFeaturedRailAtEnd = useCallback(() => {
     const rail = featuredRailRef.current;
@@ -357,6 +431,25 @@ const Home = () => {
 
     return rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 8;
   }, []);
+
+  const updateRailMetrics = useCallback(() => {
+    const rail = featuredRailRef.current;
+    if (!rail) return;
+
+    const maxScroll = Math.max(rail.scrollWidth - rail.clientWidth, 0);
+    const nextProgress = maxScroll > 0 ? rail.scrollLeft / maxScroll : 0;
+    const cards = Array.from(rail.children);
+    const nearestIndex = cards.reduce((nearest, card, index) => {
+      const currentDistance = Math.abs(card.offsetLeft - rail.scrollLeft);
+      const nearestDistance = Math.abs(cards[nearest]?.offsetLeft - rail.scrollLeft);
+      return currentDistance < nearestDistance ? index : nearest;
+    }, 0);
+
+    setRailProgress(Math.min(1, Math.max(0, nextProgress)));
+    setActiveRailItem(Math.min(totalRailItems, nearestIndex + 1));
+    setCanScrollPrev(rail.scrollLeft > 6);
+    setCanScrollNext(rail.scrollLeft < maxScroll - 6);
+  }, [totalRailItems]);
 
   const openBrowseEvents = useCallback(() => {
     if (browseTransition) return;
@@ -411,10 +504,12 @@ const Home = () => {
   }, [addEdgePull, browseTransition, edgePullProgress, featuredCards.length, isFeaturedRailAtEnd, resetEdgePull]);
 
   const handleFeaturedScroll = useCallback(() => {
+    updateRailMetrics();
+
     if (!isFeaturedRailAtEnd() && edgePullProgress > 0) {
       resetEdgePull();
     }
-  }, [edgePullProgress, isFeaturedRailAtEnd, resetEdgePull]);
+  }, [edgePullProgress, isFeaturedRailAtEnd, resetEdgePull, updateRailMetrics]);
 
   const handleFeaturedTouchStart = useCallback((event) => {
     touchStartXRef.current = event.touches[0]?.clientX ?? null;
@@ -435,28 +530,65 @@ const Home = () => {
     touchStartedAtEndRef.current = false;
   }, [addEdgePull, browseTransition, isFeaturedRailAtEnd]);
 
+  const scrollFeaturedRail = useCallback((direction) => {
+    const rail = featuredRailRef.current;
+    if (!rail) return;
+
+    resetEdgePull();
+    rail.scrollBy({
+      left: direction * Math.min(rail.clientWidth * 0.86, 430),
+      behavior: 'smooth'
+    });
+  }, [resetEdgePull]);
+
+  useEffect(() => {
+    if (featuredCards.length === 0) return undefined;
+
+    const frameId = requestAnimationFrame(updateRailMetrics);
+    window.addEventListener('resize', updateRailMetrics);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', updateRailMetrics);
+    };
+  }, [featuredCards.length, updateRailMetrics]);
+
   return (
     <div className="overflow-x-hidden bg-[#fbf8f4]">
       <AnimatePresence>
         {browseTransition && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, clipPath: 'inset(0 0 0 100%)' }}
+            animate={{ opacity: 1, clipPath: 'inset(0 0 0 0%)' }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[90] flex items-center justify-center bg-[#fbf8f4]/95 backdrop-blur-xl"
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-[#fbf8f4] dark:bg-[#120f0d]"
             aria-live="polite"
           >
             <motion.div
-              initial={{ opacity: 0, x: 42, scale: 0.97 }}
+              initial={{ opacity: 0, x: 56, scale: 0.97 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
-              transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
-              className="flex items-center gap-4 rounded-lg border border-white bg-white px-6 py-5 shadow-2xl shadow-cocoa-900/15"
+              transition={{ delay: 0.08, duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+              className="w-[min(90vw,420px)] rounded-lg border border-white bg-white p-5 shadow-2xl shadow-cocoa-900/15"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-500 text-white">
-                <Search className="h-6 w-6" />
-              </span>
-              <span className="text-lg font-extrabold text-cocoa-900">Browse events</span>
-              <ArrowRight className="h-5 w-5 text-primary-600" />
+              <div className="flex items-center gap-4">
+                <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-500 text-white shadow-lg shadow-primary-500/20">
+                  <Search className="h-6 w-6" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-lg font-extrabold text-cocoa-900">Opening Browse Events</p>
+                  <p className="text-sm font-semibold text-cocoa-400">Taking you to the full catalog</p>
+                </div>
+                <ArrowRight className="ml-auto h-5 w-5 flex-shrink-0 text-primary-600" />
+              </div>
+              <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-primary-50">
+                <motion.span
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.36, ease: 'easeOut' }}
+                  className="block h-full origin-left rounded-full bg-gradient-to-r from-primary-500 to-secondary-500"
+                />
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -646,6 +778,102 @@ const Home = () => {
         </div>
       </section>
 
+      <section className="relative overflow-hidden bg-cocoa-900 py-20 text-white">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(244,90,44,0.16),transparent_45%,rgba(244,63,103,0.12))]" aria-hidden="true" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold uppercase text-primary-100">
+                <Sparkles className="h-3.5 w-3.5" />
+                Gallery preview
+              </span>
+              <ScrollFloat
+                containerClassName="mt-4 max-w-3xl"
+                textClassName="home-scroll-float-title"
+                animationDuration={0.9}
+                ease="back.inOut(1.8)"
+                scrollStart="top bottom-=8%"
+                scrollEnd="bottom center"
+                stagger={0.016}
+              >
+                A cinematic pass through what is happening next.
+              </ScrollFloat>
+              <p className="mt-3 max-w-2xl text-cocoa-100">
+                Featured moments from the catalog, shaped into an interactive circular gallery.
+              </p>
+            </div>
+            <Link to="/events" className="btn-secondary w-full border-white/20 bg-white/10 text-white hover:bg-white/15 sm:w-auto">
+              Browse catalog
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <ElectricBorder
+            color="#f45a2c"
+            speed={0.85}
+            chaos={0.055}
+            thickness={1.4}
+            borderRadius={18}
+            className="shadow-2xl shadow-black/20"
+            style={{ borderRadius: 18 }}
+          >
+            <div className="relative h-[420px] overflow-hidden rounded-[18px] border border-white/10 bg-white/[0.06] sm:h-[520px] lg:h-[600px]">
+              <CircularGallery
+                items={circularGalleryItems}
+                bend={2.4}
+                textColor="#fff8f2"
+                borderRadius={0.045}
+                scrollSpeed={1.9}
+                scrollEase={0.035}
+              />
+            </div>
+          </ElectricBorder>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden bg-cocoa-900 pb-20 text-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-7 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-bold uppercase text-primary-100">
+                <MousePointerClick className="h-3.5 w-3.5" />
+                Choose a vibe
+              </span>
+              <h2 className="mt-4 max-w-3xl text-3xl font-extrabold sm:text-4xl">
+                Hover a lane and jump straight into discovery.
+              </h2>
+            </div>
+            <p className="max-w-md text-sm font-semibold leading-6 text-cocoa-100 md:text-right">
+              Fast category paths for guests who already know the kind of night they want.
+            </p>
+          </div>
+
+          <div className="relative h-[420px] overflow-hidden rounded-lg border border-white/10 shadow-2xl shadow-black/20 sm:h-[500px]">
+            <FlowingMenu
+              items={defaultFlowingMenuItems}
+              speed={17}
+              textColor="#fff8f2"
+              bgColor="#120f0d"
+              marqueeBgColor="#f45a2c"
+              marqueeTextColor="#fff8f2"
+              borderColor="rgba(255, 248, 242, 0.16)"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-hidden border-y border-primary-500/20 bg-cocoa-900 py-8 text-primary-100">
+        <ScrollVelocity
+          texts={['Discover live moments', 'Book seats with confidence']}
+          velocity={62}
+          className="scroll-velocity-copy"
+          damping={42}
+          stiffness={320}
+          numCopies={5}
+          velocityMapping={{ input: [0, 1000], output: [0, 3.6] }}
+        />
+      </section>
+
       <section className="bg-[#fbf8f4] py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-10 flex flex-col justify-between gap-5 md:flex-row md:items-end">
@@ -661,10 +889,31 @@ const Home = () => {
                 A quick look at the events guests are discovering first.
               </p>
             </div>
-            <Link to="/events" className="btn-secondary w-full sm:w-auto">
-              Browse all events
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+              <Link to="/events" className="btn-secondary w-full sm:w-auto">
+                Browse all events
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <div className="hidden items-center gap-2 sm:flex">
+                <button
+                  type="button"
+                  onClick={() => scrollFeaturedRail(-1)}
+                  disabled={!canScrollPrev}
+                  className="flex h-11 w-11 items-center justify-center rounded-lg border border-cocoa-100 bg-white text-cocoa-700 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 disabled:pointer-events-none disabled:opacity-35"
+                  aria-label="Previous featured events"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => (canScrollNext ? scrollFeaturedRail(1) : openBrowseEvents())}
+                  className="flex h-11 w-11 items-center justify-center rounded-lg border border-cocoa-100 bg-white text-cocoa-700 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600"
+                  aria-label={canScrollNext ? 'Next featured events' : 'Open Browse Events'}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
           </div>
 
           {loading ? (
@@ -732,41 +981,59 @@ const Home = () => {
                       event.preventDefault();
                       openBrowseEvents();
                     }}
-                    className="group relative flex h-full min-h-[470px] flex-col justify-between overflow-hidden rounded-lg border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-6 shadow-xl shadow-cocoa-900/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-cocoa-900/10"
+                    className="group relative flex h-full min-h-[470px] flex-col overflow-hidden rounded-lg border border-primary-100 bg-white shadow-xl shadow-cocoa-900/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-cocoa-900/10"
                   >
                     <span className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-secondary-500" />
-                    <span className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-primary-200/35 blur-2xl" />
-                    <span className="absolute -bottom-14 -left-10 h-32 w-32 rounded-full bg-secondary-200/35 blur-2xl" />
-
-                    <span className="relative z-10">
-                      <span className="mb-5 flex h-14 w-14 items-center justify-center rounded-lg bg-white text-primary-600 shadow-lg shadow-primary-500/10">
-                        <ArrowRight className="h-7 w-7 transition-transform duration-300 group-hover:translate-x-1" />
-                      </span>
-                      <span className="block text-2xl font-extrabold text-cocoa-900">
-                        Browse all events
-                      </span>
-                      <span className="mt-3 block leading-7 text-cocoa-500">
-                        See every live listing with filters, search, and ticket details.
+                    <span className="relative block h-48 overflow-hidden">
+                      <img
+                        src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=85"
+                        alt="Crowd at a live event"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                      <span className="absolute inset-0 bg-gradient-to-t from-cocoa-900/65 via-cocoa-900/10 to-transparent" />
+                      <span className="absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-extrabold uppercase text-primary-600 shadow-lg shadow-cocoa-900/10">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Full catalog
                       </span>
                     </span>
 
-                    <span className="relative z-10 mt-10 flex items-center justify-between border-t border-primary-100 pt-5">
-                      <span className="text-sm font-extrabold uppercase text-primary-600">Open catalog</span>
-                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg shadow-primary-500/20">
-                        <Search className="h-5 w-5" />
+                    <span className="relative z-10 flex flex-1 flex-col justify-between p-6">
+                      <span>
+                        <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+                          <ArrowRight className="h-6 w-6 transition-transform duration-300 group-hover:translate-x-1" />
+                        </span>
+                        <span className="block text-2xl font-extrabold text-cocoa-900">
+                          Browse all events
+                        </span>
+                        <span className="mt-3 block leading-7 text-cocoa-500">
+                          See every live listing with filters, search, and ticket details.
+                        </span>
+                      </span>
+
+                      <span className="mt-8 flex items-center justify-between border-t border-primary-100 pt-5">
+                        <span className="text-sm font-extrabold uppercase text-primary-600">Open catalog</span>
+                        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg shadow-primary-500/20 transition-transform duration-300 group-hover:translate-x-1">
+                          <ChevronRight className="h-5 w-5" />
+                        </span>
                       </span>
                     </span>
                   </Link>
                 </motion.div>
               </motion.div>
 
-              <div className="mt-1 flex items-center justify-end">
-                <span className="h-1 w-28 overflow-hidden rounded-full bg-cocoa-100" aria-hidden="true">
+              <div className="mt-3 flex items-center justify-between gap-4">
+                <span className="min-w-[56px] text-xs font-extrabold uppercase tracking-[0.18em] text-cocoa-400">
+                  {String(activeRailItem).padStart(2, '0')} / {String(totalRailItems).padStart(2, '0')}
+                </span>
+                <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-cocoa-100" aria-hidden="true">
                   <motion.span
                     className="block h-full origin-left rounded-full bg-gradient-to-r from-primary-500 to-secondary-500"
-                    animate={{ scaleX: edgePullProgress / 100 }}
-                    transition={{ duration: 0.18 }}
+                    animate={{ scaleX: Math.max(railProgress, edgePullProgress / 100) }}
+                    transition={{ duration: 0.22 }}
                   />
+                </span>
+                <span className="hidden text-xs font-extrabold uppercase tracking-[0.18em] text-cocoa-400 sm:inline">
+                  Catalog
                 </span>
               </div>
             </div>

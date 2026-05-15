@@ -413,6 +413,10 @@ html.dark .shadow-cocoa-900\/15 {
   display: none;
 }
 
+.event-rail-scroll > * {
+  scroll-snap-stop: always;
+}
+
 .interest-icon-card {
   animation: interest-card-breathe 5.2s ease-in-out infinite;
 }

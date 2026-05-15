@@ -1,0 +1,28 @@
+.scroll-float {
+  margin: 0;
+  overflow: hidden;
+}
+
+.scroll-float-text {
+  display: inline-block;
+  font-size: clamp(1.6rem, 8vw, 10rem);
+  font-weight: 900;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.scroll-float-text.home-scroll-float-title {
+  font-size: clamp(1.875rem, 3.4vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.12;
+  text-align: left;
+}
+
+.scroll-float-char {
+  display: inline-block;
+}
+
+.scroll-float-word {
+  display: inline-block;
+  white-space: nowrap;
+}

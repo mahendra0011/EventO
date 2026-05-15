@@ -1,0 +1,43 @@
+.scroll-velocity-root {
+  position: relative;
+  overflow: hidden;
+}
+
+.scroll-velocity-root .parallax {
+  position: relative;
+  overflow: hidden;
+}
+
+.scroll-velocity-root .scroller {
+  display: flex;
+  font-family: inherit;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 2.45rem;
+  letter-spacing: 0;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.12));
+}
+
+.scroll-velocity-root .scroller span {
+  flex-shrink: 0;
+}
+
+.scroll-velocity-copy {
+  display: inline-flex;
+  align-items: center;
+  padding-right: 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .scroll-velocity-root .scroller {
+    font-size: 4rem;
+    line-height: 4.5rem;
+  }
+
+  .scroll-velocity-copy {
+    padding-right: 3rem;
+  }
+}
