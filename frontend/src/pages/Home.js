@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, useInView } from 'framer-motion';
+import { AnimatePresence, motion, useInView } from 'framer-motion';
 import api from '../utils/api';
 import EventCard from '../components/EventCard';
 import {
@@ -297,12 +297,27 @@ const Home = () => {
   const [homeCategories, setHomeCategories] = useState(defaultInterests);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [browseTransition, setBrowseTransition] = useState(false);
+  const [edgePullProgress, setEdgePullProgress] = useState(0);
+  const featuredRailRef = useRef(null);
+  const edgePullProgressRef = useRef(0);
+  const edgeResetTimeoutRef = useRef(null);
+  const browseTransitionTimeoutRef = useRef(null);
+  const touchStartXRef = useRef(null);
+  const touchStartedAtEndRef = useRef(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchFeaturedEvents();
     fetchHomeCategories();
   }, []);
+
+  useEffect(() => (
+    () => {
+      clearTimeout(edgeResetTimeoutRef.current);
+      clearTimeout(browseTransitionTimeoutRef.current);
+    }
+  ), []);
 
   const fetchFeaturedEvents = async () => {
     try {
@@ -334,8 +349,119 @@ const Home = () => {
     navigate(query ? `/events?search=${encodeURIComponent(query)}` : '/events');
   };
 
+  const featuredCards = featuredEvents.slice(0, 6);
+
+  const isFeaturedRailAtEnd = useCallback(() => {
+    const rail = featuredRailRef.current;
+    if (!rail) return false;
+
+    return rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 8;
+  }, []);
+
+  const openBrowseEvents = useCallback(() => {
+    if (browseTransition) return;
+
+    setBrowseTransition(true);
+    browseTransitionTimeoutRef.current = setTimeout(() => {
+      navigate('/events');
+    }, 420);
+  }, [browseTransition, navigate]);
+
+  const resetEdgePull = useCallback(() => {
+    clearTimeout(edgeResetTimeoutRef.current);
+    edgePullProgressRef.current = 0;
+    setEdgePullProgress(0);
+  }, []);
+
+  const addEdgePull = useCallback((amount) => {
+    clearTimeout(edgeResetTimeoutRef.current);
+    const next = Math.min(100, edgePullProgressRef.current + amount);
+
+    edgePullProgressRef.current = next;
+    setEdgePullProgress(next);
+
+    if (next >= 100) {
+      openBrowseEvents();
+    }
+
+    edgeResetTimeoutRef.current = setTimeout(() => {
+      edgePullProgressRef.current = 0;
+      setEdgePullProgress(0);
+    }, 700);
+  }, [openBrowseEvents]);
+
+  const handleFeaturedWheel = useCallback((event) => {
+    if (browseTransition || featuredCards.length === 0) return;
+
+    const horizontalDelta = Math.abs(event.deltaX) >= Math.abs(event.deltaY)
+      ? event.deltaX
+      : event.shiftKey
+        ? event.deltaY
+        : 0;
+
+    if (horizontalDelta <= 0) {
+      if (edgePullProgress > 0) resetEdgePull();
+      return;
+    }
+
+    if (isFeaturedRailAtEnd()) {
+      event.preventDefault();
+      addEdgePull(Math.min(42, 14 + Math.abs(horizontalDelta) * 0.4));
+    }
+  }, [addEdgePull, browseTransition, edgePullProgress, featuredCards.length, isFeaturedRailAtEnd, resetEdgePull]);
+
+  const handleFeaturedScroll = useCallback(() => {
+    if (!isFeaturedRailAtEnd() && edgePullProgress > 0) {
+      resetEdgePull();
+    }
+  }, [edgePullProgress, isFeaturedRailAtEnd, resetEdgePull]);
+
+  const handleFeaturedTouchStart = useCallback((event) => {
+    touchStartXRef.current = event.touches[0]?.clientX ?? null;
+    touchStartedAtEndRef.current = isFeaturedRailAtEnd();
+  }, [isFeaturedRailAtEnd]);
+
+  const handleFeaturedTouchEnd = useCallback((event) => {
+    if (!touchStartedAtEndRef.current || touchStartXRef.current === null || browseTransition) return;
+
+    const touchEndX = event.changedTouches[0]?.clientX ?? touchStartXRef.current;
+    const draggedLeft = touchStartXRef.current - touchEndX;
+
+    if (draggedLeft > 70 && isFeaturedRailAtEnd()) {
+      addEdgePull(100);
+    }
+
+    touchStartXRef.current = null;
+    touchStartedAtEndRef.current = false;
+  }, [addEdgePull, browseTransition, isFeaturedRailAtEnd]);
+
   return (
     <div className="overflow-x-hidden bg-[#fbf8f4]">
+      <AnimatePresence>
+        {browseTransition && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-[#fbf8f4]/95 backdrop-blur-xl"
+            aria-live="polite"
+          >
+            <motion.div
+              initial={{ opacity: 0, x: 42, scale: 0.97 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
+              className="flex items-center gap-4 rounded-lg border border-white bg-white px-6 py-5 shadow-2xl shadow-cocoa-900/15"
+            >
+              <span className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary-500 text-white">
+                <Search className="h-6 w-6" />
+              </span>
+              <span className="text-lg font-extrabold text-cocoa-900">Browse events</span>
+              <ArrowRight className="h-5 w-5 text-primary-600" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <section className="subtle-grid relative overflow-hidden bg-gradient-to-br from-primary-50 via-[#fff8f2] to-[#fbf8f4]">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-16 lg:min-h-[620px] lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
           <div>
@@ -571,17 +697,79 @@ const Home = () => {
               </div>
             </div>
           ) : (
-            <motion.div
-              variants={revealContainer}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, amount: 0.2 }}
-              className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
-            >
-              {featuredEvents.slice(0, 3).map((event, index) => (
-                <EventCard key={event._id} event={event} index={index} />
-              ))}
-            </motion.div>
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 z-10 hidden w-16 bg-gradient-to-r from-[#fbf8f4] to-transparent dark:from-[#120f0d] sm:block" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 z-10 hidden w-20 bg-gradient-to-l from-[#fbf8f4] to-transparent dark:from-[#120f0d] sm:block" />
+              <motion.div
+                ref={featuredRailRef}
+                variants={revealContainer}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.18 }}
+                onWheel={handleFeaturedWheel}
+                onScroll={handleFeaturedScroll}
+                onTouchStart={handleFeaturedTouchStart}
+                onTouchEnd={handleFeaturedTouchEnd}
+                className="event-rail-scroll -mx-4 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth px-4 pb-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+              >
+                {featuredCards.map((event, index) => (
+                  <motion.div
+                    key={event._id}
+                    variants={revealItem}
+                    className="w-[min(84vw,360px)] flex-none snap-start md:w-[360px] lg:w-[380px]"
+                  >
+                    <EventCard event={event} index={index} />
+                  </motion.div>
+                ))}
+
+                <motion.div
+                  variants={revealItem}
+                  className="w-[min(84vw,360px)] flex-none snap-start md:w-[360px] lg:w-[380px]"
+                >
+                  <Link
+                    to="/events"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      openBrowseEvents();
+                    }}
+                    className="group relative flex h-full min-h-[470px] flex-col justify-between overflow-hidden rounded-lg border border-primary-100 bg-gradient-to-br from-primary-50 via-white to-secondary-50 p-6 shadow-xl shadow-cocoa-900/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-cocoa-900/10"
+                  >
+                    <span className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary-500 to-secondary-500" />
+                    <span className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-primary-200/35 blur-2xl" />
+                    <span className="absolute -bottom-14 -left-10 h-32 w-32 rounded-full bg-secondary-200/35 blur-2xl" />
+
+                    <span className="relative z-10">
+                      <span className="mb-5 flex h-14 w-14 items-center justify-center rounded-lg bg-white text-primary-600 shadow-lg shadow-primary-500/10">
+                        <ArrowRight className="h-7 w-7 transition-transform duration-300 group-hover:translate-x-1" />
+                      </span>
+                      <span className="block text-2xl font-extrabold text-cocoa-900">
+                        Browse all events
+                      </span>
+                      <span className="mt-3 block leading-7 text-cocoa-500">
+                        See every live listing with filters, search, and ticket details.
+                      </span>
+                    </span>
+
+                    <span className="relative z-10 mt-10 flex items-center justify-between border-t border-primary-100 pt-5">
+                      <span className="text-sm font-extrabold uppercase text-primary-600">Open catalog</span>
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg shadow-primary-500/20">
+                        <Search className="h-5 w-5" />
+                      </span>
+                    </span>
+                  </Link>
+                </motion.div>
+              </motion.div>
+
+              <div className="mt-1 flex items-center justify-end">
+                <span className="h-1 w-28 overflow-hidden rounded-full bg-cocoa-100" aria-hidden="true">
+                  <motion.span
+                    className="block h-full origin-left rounded-full bg-gradient-to-r from-primary-500 to-secondary-500"
+                    animate={{ scaleX: edgePullProgress / 100 }}
+                    transition={{ duration: 0.18 }}
+                  />
+                </span>
+              </div>
+            </div>
           )}
         </div>
       </section>

@@ -402,6 +402,17 @@ html.dark .shadow-cocoa-900\/15 {
   animation: marquee-left 28s linear infinite;
 }
 
+.event-rail-scroll {
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: 1rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.event-rail-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .interest-icon-card {
   animation: interest-card-breathe 5.2s ease-in-out infinite;
 }
