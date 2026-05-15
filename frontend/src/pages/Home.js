@@ -784,8 +784,6 @@ const Home = () => {
             </div>
           ) : (
             <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 z-10 hidden w-16 bg-gradient-to-r from-[#fbf8f4] to-transparent dark:from-[#120f0d] sm:block" />
-              <div className="pointer-events-none absolute inset-y-0 right-0 z-10 hidden w-20 bg-gradient-to-l from-[#fbf8f4] to-transparent dark:from-[#120f0d] sm:block" />
               <motion.div
                 ref={featuredRailRef}
                 variants={revealContainer}

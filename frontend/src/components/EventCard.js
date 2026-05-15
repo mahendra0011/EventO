@@ -90,7 +90,7 @@ const EventCard = ({ event, index = 0 }) => {
         </Link>
 
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-          <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-extrabold text-primary-600 shadow-sm backdrop-blur">
+          <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-extrabold text-primary-600 shadow-sm">
             {event.category}
           </span>
           {isLowStock && (
