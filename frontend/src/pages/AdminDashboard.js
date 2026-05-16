@@ -32,15 +32,55 @@ import {
     Globe,
     Smartphone,
     CreditCard,
-    Target,
     Activity,
     MessageSquare,
     Send,
     Megaphone,
     Users
   } from 'lucide-react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from 'recharts';
 
 const hostDashboardTabs = ['overview', 'analytics', 'bookings', 'events', 'communications', 'notifications', 'community', 'settings'];
+const statusPalette = {
+  confirmed: '#10b981',
+  pending: '#f59e0b',
+  cancelled: '#ef4444'
+};
+
+const formatMoney = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
+
+const AnalyticsTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  const title = payload[0]?.payload?.name || label || payload[0]?.name;
+
+  return (
+    <div className="rounded-lg border border-cocoa-100 bg-white px-3 py-2 shadow-xl shadow-cocoa-900/10">
+      {title && <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-cocoa-400">{title}</p>}
+      <div className="space-y-1">
+        {payload.map((entry) => (
+          <p key={entry.dataKey || entry.name} className="flex items-center gap-2 text-sm font-bold text-cocoa-700">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
+            <span>{entry.name}: {entry.name === 'Revenue' ? formatMoney(entry.value) : Number(entry.value || 0).toLocaleString('en-IN')}</span>
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const AdminDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -340,16 +380,74 @@ const AdminDashboard = () => {
   const pendingRate = totalBookings ? Math.round((pendingBookings / totalBookings) * 100) : 0;
   const avgBookingValue = totalBookings ? Math.round(totalRevenue / totalBookings) : 0;
   const activeEvents = events.filter((event) => new Date(event.date) >= new Date()).length;
-  const topRevenueEvent = stats?.topEvents?.[0];
   const maxTopRevenue = Math.max(...(stats?.topEvents || []).map((item) => Number(item.revenue || 0)), 1);
   const maxStatusCount = Math.max(...(stats?.bookingsByStatus || []).map((item) => Number(item.count || 0)), 1);
-  const revenueGoal = Math.max(50000, Math.ceil((totalRevenue || 1) / 50000) * 50000);
-  const revenueGoalProgress = Math.min(100, Math.round((totalRevenue / revenueGoal) * 100));
+  const topEventsChartData = (stats?.topEvents || []).slice(0, 6).map((item, index) => ({
+    name: item.title || item._id?.title || `Event ${index + 1}`,
+    shortName: (item.title || item._id?.title || `Event ${index + 1}`).length > 16
+      ? `${(item.title || item._id?.title || `Event ${index + 1}`).slice(0, 16)}...`
+      : item.title || item._id?.title || `Event ${index + 1}`,
+    revenue: Number(item.revenue || 0),
+    bookings: Number(item.bookings || 0)
+  }));
+  const eventCapacityChartData = events
+    .map((event, index) => {
+      const capacity = Number(event.totalTickets || 0);
+      const available = Math.max(0, Number(event.availableTickets || 0));
+      const sold = Math.max(0, capacity - available);
+      const name = event.title || `Event ${index + 1}`;
+
+      return {
+        name,
+        shortName: name.length > 16 ? `${name.slice(0, 16)}...` : name,
+        sold,
+        available,
+        capacity,
+        fillRate: capacity ? Math.round((sold / capacity) * 100) : 0
+      };
+    })
+    .sort((a, b) => b.sold - a.sold)
+    .slice(0, 6);
+  const revenueLeader = topEventsChartData[0];
+  const revenueLeaderShare = totalRevenue && revenueLeader
+    ? Math.round((Number(revenueLeader.revenue || 0) / totalRevenue) * 100)
+    : 0;
+  const strongestCapacityEvent = eventCapacityChartData.reduce((best, item) => {
+    if (!best || item.fillRate > best.fillRate) return item;
+    return best;
+  }, null);
+  const bookingStatusData = (stats?.bookingsByStatus || [])
+    .filter((item) => Number(item.count || 0) > 0)
+    .map((item) => ({
+      name: item._id || 'unknown',
+      value: Number(item.count || 0),
+      color: statusPalette[item._id] || '#976f59'
+    }));
+  const insightCards = [
+    {
+      label: 'Revenue leader',
+      value: revenueLeader?.name || 'No revenue yet',
+      detail: revenueLeader ? `${formatMoney(revenueLeader.revenue)} • ${revenueLeaderShare}% of total revenue` : 'Confirmed paid bookings will appear here.',
+      icon: TrendingUp
+    },
+    {
+      label: 'Strongest fill rate',
+      value: strongestCapacityEvent?.name || 'No capacity data',
+      detail: strongestCapacityEvent ? `${strongestCapacityEvent.fillRate}% sold • ${strongestCapacityEvent.sold}/${strongestCapacityEvent.capacity} tickets` : 'Ticket capacity will appear after events are created.',
+      icon: Ticket
+    },
+    {
+      label: 'Action queue',
+      value: pendingBookings > 0 ? `${pendingBookings} pending` : 'All clear',
+      detail: pendingBookings > 0 ? 'Review pending requests to keep conversion moving.' : 'No pending booking requests right now.',
+      icon: ShieldCheck
+    }
+  ];
   const analyticsCards = [
     {
       label: 'Total Revenue',
       value: `₹${totalRevenue.toLocaleString('en-IN')}`,
-      detail: `${revenueGoalProgress}% of ₹${revenueGoal.toLocaleString('en-IN')} goal`,
+      detail: `${confirmedBookings} confirmed paid bookings`,
       icon: IndianRupee,
       color: 'from-primary-500 to-secondary-500'
     },
@@ -1066,28 +1164,31 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                       <div className="rounded-lg border border-white/10 bg-white/10 p-5">
-                        <div className="mb-4 flex items-center justify-between">
+                        <div className="mb-4 flex items-start justify-between gap-4">
                           <div>
-                            <p className="text-sm text-primary-50/75">Revenue goal</p>
-                            <p className="text-2xl font-extrabold">₹{revenueGoal.toLocaleString('en-IN')}</p>
+                            <p className="text-sm text-primary-50/75">Revenue by event</p>
+                            <p className="mt-1 text-2xl font-extrabold">{formatMoney(totalRevenue)}</p>
+                            <p className="mt-1 text-xs font-semibold text-primary-50/60">Confirmed ticket revenue</p>
                           </div>
-                          <Target className="h-10 w-10 text-primary-200" />
+                          <BarChart3 className="h-10 w-10 text-primary-200" />
                         </div>
-                        <div className="h-3 overflow-hidden rounded-full bg-white/15">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-primary-300 to-secondary-300"
-                            style={{ width: `${revenueGoalProgress}%` }}
-                          />
-                        </div>
-                        <p className="mt-3 text-sm text-primary-50/75">
-                          ₹{totalRevenue.toLocaleString('en-IN')} earned so far.
-                        </p>
-                        <div className="mt-5 rounded-lg bg-white p-4 text-cocoa-900">
-                          <p className="text-xs font-bold uppercase text-cocoa-400">Best event</p>
-                          <p className="mt-1 font-extrabold">{topRevenueEvent?.title || 'No event data yet'}</p>
-                          <p className="mt-1 text-sm text-cocoa-500">
-                            ₹{Number(topRevenueEvent?.revenue || 0).toLocaleString('en-IN')} revenue
-                          </p>
+                        <div className="h-64">
+                          {topEventsChartData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={topEventsChartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+                                <CartesianGrid stroke="rgba(255,255,255,0.12)" vertical={false} />
+                                <XAxis dataKey="shortName" tick={{ fill: '#fff2ec', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                <YAxis tickFormatter={(value) => `₹${Number(value) / 1000}k`} tick={{ fill: '#fff2ec', fontSize: 11 }} axisLine={false} tickLine={false} width={42} />
+                                <Tooltip content={<AnalyticsTooltip />} cursor={{ fill: 'rgba(255,255,255,0.08)' }} />
+                                <Bar dataKey="revenue" name="Revenue" radius={[8, 8, 0, 0]} fill="#ff9a72" />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="flex h-full flex-col items-center justify-center rounded-lg border border-white/10 bg-white/5 text-center">
+                              <BarChart3 className="h-10 w-10 text-primary-100/70" />
+                              <p className="mt-3 text-sm font-bold text-primary-50/80">Charts will appear after bookings start.</p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1111,6 +1212,89 @@ const AdminDashboard = () => {
                         </div>
                       );
                     })}
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-3">
+                    {insightCards.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div key={item.label} className="rounded-lg border border-white bg-white p-5 shadow-xl shadow-cocoa-900/5">
+                          <div className="flex items-start gap-3">
+                            <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+                              <Icon className="h-5 w-5" />
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-xs font-extrabold uppercase tracking-wide text-cocoa-400">{item.label}</p>
+                              <p className="mt-2 truncate text-lg font-extrabold text-cocoa-900">{item.value}</p>
+                              <p className="mt-1 text-sm leading-5 text-cocoa-500">{item.detail}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="grid gap-6 xl:grid-cols-2">
+                    <div className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
+                      <div className="mb-6 flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-xl font-extrabold text-cocoa-900">Revenue and bookings mix</h3>
+                          <p className="mt-1 text-sm text-cocoa-500">Compare earning power with actual booking movement.</p>
+                        </div>
+                        <TrendingUp className="h-5 w-5 text-primary-500" />
+                      </div>
+                      <div className="h-80">
+                        {topEventsChartData.length > 0 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={topEventsChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                              <CartesianGrid stroke="#f4eee6" vertical={false} />
+                              <XAxis dataKey="shortName" tick={{ fill: '#76523f', fontSize: 11 }} axisLine={false} tickLine={false} />
+                              <YAxis yAxisId="revenue" tickFormatter={(value) => `₹${Number(value) / 1000}k`} tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} width={48} />
+                              <YAxis yAxisId="bookings" orientation="right" tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+                              <Tooltip content={<AnalyticsTooltip />} />
+                              <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={{ color: '#583d2f', fontSize: 12, fontWeight: 700 }} />
+                              <Line yAxisId="revenue" type="monotone" dataKey="revenue" name="Revenue" stroke="#f45a2c" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                              <Line yAxisId="bookings" type="monotone" dataKey="bookings" name="Bookings" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4] text-center">
+                            <TrendingUp className="h-10 w-10 text-cocoa-300" />
+                            <p className="mt-3 text-sm font-bold text-cocoa-500">Revenue and booking trends will appear here.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
+                      <div className="mb-6 flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-xl font-extrabold text-cocoa-900">Ticket capacity by event</h3>
+                          <p className="mt-1 text-sm text-cocoa-500">Sold versus available tickets for your most active events.</p>
+                        </div>
+                        <Ticket className="h-5 w-5 text-primary-500" />
+                      </div>
+                      <div className="h-80">
+                        {eventCapacityChartData.length > 0 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={eventCapacityChartData} layout="vertical" margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+                              <CartesianGrid stroke="#f4eee6" horizontal={false} />
+                              <XAxis type="number" tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} />
+                              <YAxis type="category" dataKey="shortName" tick={{ fill: '#76523f', fontSize: 11 }} axisLine={false} tickLine={false} width={96} />
+                              <Tooltip content={<AnalyticsTooltip />} />
+                              <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={{ color: '#583d2f', fontSize: 12, fontWeight: 700 }} />
+                              <Bar dataKey="sold" name="Sold" stackId="tickets" fill="#f45a2c" radius={[0, 0, 0, 0]} />
+                              <Bar dataKey="available" name="Available" stackId="tickets" fill="#e6d8ca" radius={[0, 8, 8, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4] text-center">
+                            <Ticket className="h-10 w-10 text-cocoa-300" />
+                            <p className="mt-3 text-sm font-bold text-cocoa-500">Ticket capacity data will appear after events are created.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
@@ -1161,18 +1345,54 @@ const AdminDashboard = () => {
 
                     <div className="space-y-6">
                       <div className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
-                        <h3 className="text-xl font-extrabold text-cocoa-900">Booking health</h3>
-                        <div className="mt-5 space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h3 className="text-xl font-extrabold text-cocoa-900">Booking health</h3>
+                            <p className="mt-1 text-sm text-cocoa-500">Status distribution across all event bookings.</p>
+                          </div>
+                          <Activity className="h-5 w-5 text-primary-500" />
+                        </div>
+                        <div className="mt-5 h-64">
+                          {bookingStatusData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Tooltip content={<AnalyticsTooltip />} />
+                                <Pie
+                                  data={bookingStatusData}
+                                  dataKey="value"
+                                  nameKey="name"
+                                  innerRadius={58}
+                                  outerRadius={92}
+                                  paddingAngle={4}
+                                >
+                                  {bookingStatusData.map((entry) => (
+                                    <Cell key={entry.name} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                              </PieChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="flex h-full flex-col items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4] text-center">
+                              <Activity className="h-10 w-10 text-cocoa-300" />
+                              <p className="mt-3 text-sm font-bold text-cocoa-500">No booking data yet</p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-3">
                           {(stats?.bookingsByStatus || []).map((item) => {
+                            const status = item._id || 'unknown';
                             const width = Math.max(5, Math.round((Number(item.count || 0) / maxStatusCount) * 100));
                             return (
-                              <div key={item._id}>
-                                <div className="mb-2 flex items-center justify-between text-sm">
-                                  <span className="font-bold capitalize text-cocoa-700">{item._id}</span>
-                                  <span className="text-cocoa-400">{item.count}</span>
+                              <div key={status} className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-3">
+                                <div className="mb-2 flex items-center justify-between gap-2 text-sm">
+                                  <span className="flex items-center gap-2 font-bold capitalize text-cocoa-700">
+                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: statusPalette[status] || '#976f59' }} />
+                                    {status}
+                                  </span>
+                                  <span className="font-extrabold text-cocoa-900">{item.count}</span>
                                 </div>
-                                <div className="h-2 rounded-full bg-cocoa-100">
-                                  <div className="h-2 rounded-full bg-primary-500" style={{ width: `${width}%` }} />
+                                <div className="h-1.5 rounded-full bg-cocoa-100">
+                                  <div className="h-1.5 rounded-full" style={{ width: `${width}%`, backgroundColor: statusPalette[status] || '#976f59' }} />
                                 </div>
                               </div>
                             );
