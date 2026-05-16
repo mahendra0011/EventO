@@ -4,7 +4,7 @@ const Event = require('../models/Event');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
-const { sendHostMessageEmail, sendImportantNotificationEmail } = require('../utils/email');
+const { sendHostMessageEmail, sendImportantNotificationEmail, sendBroadcastEmail } = require('../utils/email');
 
 // Send message from user or host
 exports.sendMessage = async (req, res) => {
@@ -317,9 +317,7 @@ exports.broadcastMessage = async (req, res) => {
       return res.status(400).json({ message: 'No attendees with email addresses found for this event' });
     }
 
-    // Send message to each user
     const sentMessages = [];
-    const failedEmails = [];
     const failedMessages = [];
 
     for (const user of uniqueUsers) {
@@ -337,24 +335,6 @@ exports.broadcastMessage = async (req, res) => {
         await message.save();
         sentMessages.push(message);
 
-        // Send email notification
-        try {
-          const emailResult = await sendImportantNotificationEmail(
-            user.email,
-            user.name,
-            `Broadcast for ${event.title}`,
-            `${trimmedSubject}\n\n${trimmedContent}`,
-            '/dashboard?tab=broadcasts'
-          );
-          if (!emailResult?.success) {
-            failedEmails.push(user.email);
-          }
-        } catch (emailErr) {
-          console.error(`Failed to send email to ${user.email}:`, emailErr);
-          failedEmails.push(user.email);
-        }
-
-        // Create notification
         await Notification.create({
           user: user._id,
           title: `Broadcast: ${event.title}`,
@@ -368,16 +348,50 @@ exports.broadcastMessage = async (req, res) => {
       }
     }
 
-    // Populate messages for response
-    await Promise.all(sentMessages.map(msg => msg.populate('sender').populate('receiver').populate('event')));
+    if (sentMessages.length === 0) {
+      return res.status(500).json({
+        message: 'Could not send broadcast to attendees',
+        data: {
+          totalSent: 0,
+          failedMessages: failedMessages.length,
+          recipients: uniqueUsers.length,
+          emailsQueued: 0
+        }
+      });
+    }
+
+    const emailRecipients = sentMessages
+      .map((message) => {
+        const user = uniqueUsers.find((item) => item._id.toString() === message.receiver.toString());
+        return user?.email ? user : null;
+      })
+      .filter(Boolean);
 
     res.status(201).json({
       message: `Broadcast sent to ${sentMessages.length} users`,
       data: {
         totalSent: sentMessages.length,
-        failedEmails: failedEmails.length,
         failedMessages: failedMessages.length,
-        recipients: uniqueUsers.length
+        recipients: uniqueUsers.length,
+        emailsQueued: emailRecipients.length
+      }
+    });
+
+    setImmediate(async () => {
+      const senderName = req.user?.name || 'Evento host';
+      const results = await Promise.allSettled(
+        emailRecipients.map((user) =>
+          sendBroadcastEmail(user.email, user.name, trimmedSubject, trimmedContent, event.title, senderName)
+        )
+      );
+
+      const failedEmails = results
+        .map((result, index) => ({ result, user: emailRecipients[index] }))
+        .filter(({ result }) => result.status === 'rejected' || !result.value?.success)
+        .map(({ user }) => user.email);
+
+      if (failedEmails.length > 0) {
+        console.warn(`Broadcast email failed for ${failedEmails.length}/${emailRecipients.length} recipients:`, failedEmails);
       }
     });
   } catch (error) {

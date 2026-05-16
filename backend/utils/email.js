@@ -275,6 +275,23 @@ exports.sendImportantNotificationEmail = async (email, name, title, message, lin
   return sendEmail({ to: email, subject, html, tags: ['important-notification'] });
 };
 
+exports.sendBroadcastEmail = async (email, name, broadcastSubject, content, eventTitle, hostName = '') => {
+  const subject = `Evento broadcast: ${broadcastSubject}`;
+  const actionUrl = createAbsoluteUrl('/dashboard?tab=broadcasts');
+  const html = createEmailShell(subject, `
+    <p>Hello ${escapeHtml(name || 'there')},</p>
+    <p style="margin:0 0 12px 0;"><strong>Event:</strong> ${escapeHtml(eventTitle || 'Event update')}</p>
+    ${hostName ? `<p style="margin:0 0 12px 0;"><strong>From:</strong> ${escapeHtml(hostName)}</p>` : ''}
+    <div style="margin:18px 0; padding:16px; border-left:4px solid #0369a1; background:#f0f9ff; border-radius:8px;">
+      <p style="margin:0 0 8px 0; font-weight:700; color:#0f172a;">${escapeHtml(broadcastSubject)}</p>
+      <p style="margin:0;">${escapeHtml(content).replace(/\n/g, '<br>')}</p>
+    </div>
+    ${actionUrl ? createActionButton('Open broadcast center', actionUrl) : ''}
+  `);
+
+  return sendEmail({ to: email, subject, html, tags: ['broadcast'] });
+};
+
 exports.sendHostMessageEmail = async (email, name, subject, content, eventTitle, hostName) => {
   const emailSubject = `Message from ${hostName}: ${subject}`;
   const html = createEmailShell(emailSubject, `

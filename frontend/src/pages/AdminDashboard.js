@@ -301,14 +301,20 @@ const AdminDashboard = () => {
     setBroadcastSending(true);
     try {
       const result = await broadcastToEventBookers(broadcastSelectedEvent, broadcastSubject, broadcastContent);
-      const data = result.data || {};
-      const failedEmailText = data.failedEmails ? ` (${data.failedEmails} email failed)` : '';
-      toast.success(`Broadcast sent to ${data.totalSent || data.recipients || 0} attendee(s)${failedEmailText}`);
+      const data = result.data || result || {};
+      const totalSent = data.totalSent || data.recipients || 0;
+      const emailText = typeof data.emailsQueued === 'number'
+        ? ` Email delivery started for ${data.emailsQueued} attendee(s).`
+        : '';
+      toast.success(`Broadcast sent to ${totalSent} attendee(s).${emailText}`);
       setBroadcastSubject('');
       setBroadcastContent('');
       setBroadcastSelectedEvent('');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to send broadcast');
+      const serverMessage = error.response?.data?.message;
+      toast.error(serverMessage && serverMessage !== 'Server error'
+        ? serverMessage
+        : 'Broadcast status could not be confirmed. Please refresh before trying again.');
     } finally {
       setBroadcastSending(false);
     }
