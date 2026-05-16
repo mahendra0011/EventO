@@ -137,6 +137,7 @@ const CommunityChat = () => {
   const chatEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const autoScrollRef = useRef(true);
+  const pendingScrollRef = useRef('auto');
   const prevMessagesLengthRef = useRef(0);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
@@ -174,6 +175,7 @@ const CommunityChat = () => {
    // Reset auto-scroll when event/tab changes
    useEffect(() => {
      autoScrollRef.current = true;
+     pendingScrollRef.current = 'auto';
    }, [selectedEvent, activeTab]);
 
    // Reset reply when switching chats
@@ -201,9 +203,15 @@ const CommunityChat = () => {
 
    // Scroll to bottom when new messages arrive (if auto-scroll enabled)
    useEffect(() => {
-     if (autoScrollRef.current) {
-       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-     }
+     const container = messagesContainerRef.current;
+     if (!container || !autoScrollRef.current) return;
+
+     const behavior = pendingScrollRef.current || 'auto';
+     pendingScrollRef.current = null;
+     container.scrollTo({
+       top: container.scrollHeight,
+       behavior
+     });
    }, [messages]);
 
    // Handler functions
@@ -312,6 +320,8 @@ const CommunityChat = () => {
    const handleSendMessage = (e) => {
      e.preventDefault();
      if (!newMessage.trim()) return;
+     autoScrollRef.current = true;
+     pendingScrollRef.current = 'smooth';
      
      const msgData = {
       id: Date.now().toString(),
@@ -907,7 +917,7 @@ const CommunityChat = () => {
           {selectedEvent && activeTab === "community" && activeRole === "user" && (
             <motion.button initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0 }}
               className='fixed bottom-6 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-cocoa-900 shadow-lg shadow-amber-500/30 flex items-center justify-center hover:scale-110 transition-all'
-              onClick={() => document.querySelector("form[onSubmit*='handleSendMessage']")?.scrollIntoView({ behavior: "smooth" })}>
+              onClick={scrollToBottom}>
               <Send className='w-5 h-5' />
             </motion.button>
           )}

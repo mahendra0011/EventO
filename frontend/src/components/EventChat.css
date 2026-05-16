@@ -4,6 +4,28 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.event-chat-messages {
+  min-height: 0;
+  scroll-behavior: auto;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+  background-image:
+    linear-gradient(rgba(244, 90, 44, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 90, 44, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.event-chat-messages * {
+  overflow-anchor: none;
+}
+
+.event-chat-message-row {
+  contain: layout;
 }
 
 /* Custom scrollbar */
@@ -25,6 +47,11 @@
 }
 
 .chat-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: #e6d8ca transparent;
+}
+
+.participants-scroll {
   scrollbar-width: thin;
   scrollbar-color: #e6d8ca transparent;
 }
