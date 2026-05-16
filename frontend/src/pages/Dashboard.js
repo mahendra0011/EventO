@@ -6,7 +6,7 @@ import api, { getWishlist, getNotifications, getBroadcastMessages, markMessageAs
 import toast from 'react-hot-toast';
 import {
   Calendar, Ticket, Clock, CheckCircle, XCircle, AlertCircle, User, Mail, Phone,
-  Edit3, Heart, CreditCard, Star, MessageCircle, MessageSquare, Calendar as CalendarIcon, Bell, Eye, Users, MapPin, HelpCircle, Megaphone
+  Edit3, Heart, CreditCard, Star, MessageCircle, MessageSquare, Calendar as CalendarIcon, Bell, Eye, Users, MapPin, HelpCircle, Megaphone, RefreshCw
 } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, GradientText } from '../components/animated';
 
@@ -170,13 +170,29 @@ const Dashboard = () => {
     }
   }, [user]);
 
-  const handleCancelBooking = async (bookingId) => {
-    if (!window.confirm('Are you sure you want to cancel this booking?')) {
+  const canCancelBooking = (booking) => ['pending', 'confirmed'].includes(booking.status);
+
+  const willStartRefund = (booking) => booking.status === 'confirmed' && booking.paymentStatus === 'completed' && Number(booking.totalPrice || 0) > 0;
+
+  const handleCancelBooking = async (booking) => {
+    const refundCopy = willStartRefund(booking)
+      ? ' This will also start the refund process automatically.'
+      : '';
+
+    if (!window.confirm(`Are you sure you want to cancel this booking?${refundCopy}`)) {
       return;
     }
+
     try {
-      await api.put(`/bookings/${bookingId}/cancel`);
-      toast.success('Booking cancelled successfully');
+      const res = await api.put(`/bookings/${booking._id}/cancel`, {
+        reason: 'Cancelled by attendee from dashboard'
+      });
+      toast.success(res.data?.refundStatus === 'requested'
+        ? 'Booking cancelled. Refund process started.'
+        : 'Booking cancelled successfully');
+      if (res.data?.booking) {
+        setBookings(prev => prev.map(item => item._id === booking._id ? res.data.booking : item));
+      }
       fetchBookings();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to cancel booking');
@@ -203,6 +219,27 @@ const Dashboard = () => {
     };
     const config = statusConfig[status] || statusConfig.pending;
     const Icon = config.icon;
+    return (
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
+        <Icon className="h-4 w-4 mr-1" />
+        {config.text}
+      </span>
+    );
+  };
+
+  const getRefundBadge = (refundStatus) => {
+    if (!refundStatus || refundStatus === 'none') return null;
+
+    const refundConfig = {
+      requested: { color: 'bg-amber-100 text-amber-800', icon: RefreshCw, text: 'Refund requested' },
+      approved: { color: 'bg-blue-100 text-blue-800', icon: CheckCircle, text: 'Refund approved' },
+      rejected: { color: 'bg-red-100 text-red-800', icon: XCircle, text: 'Refund rejected' },
+      processed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: 'Refund processed' }
+    };
+
+    const config = refundConfig[refundStatus] || refundConfig.requested;
+    const Icon = config.icon;
+
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
         <Icon className="h-4 w-4 mr-1" />
@@ -598,16 +635,24 @@ const Dashboard = () => {
                                 <p className="text-cocoa-500 text-sm font-semibold">{booking.numberOfTickets} ticket(s) - ₹{booking.totalPrice?.toLocaleString('en-IN')}</p>
                               </div>
                             </div>
-                            <div className="mt-4 md:mt-0 flex flex-col items-end space-y-2">
+                            <div className="mt-4 md:mt-0 flex flex-col items-start space-y-2 md:items-end">
                               {getStatusBadge(booking.status)}
+                              {getRefundBadge(booking.refundStatus)}
                               <div className="flex space-x-2">
                                 <Link to={`/booking/${booking._id}/confirmation`} className="btn-outline text-sm">
                                   <Eye className="h-4 w-4 inline mr-1" />View Ticket
                                 </Link>
-                                {booking.status === 'pending' && (
-                                  <button onClick={() => handleCancelBooking(booking._id)} className="btn-danger text-sm">Cancel</button>
+                                {canCancelBooking(booking) && (
+                                  <button onClick={() => handleCancelBooking(booking)} className="btn-danger text-sm">
+                                    {willStartRefund(booking) ? 'Cancel & Refund' : 'Cancel'}
+                                  </button>
                                 )}
                               </div>
+                              {willStartRefund(booking) && (
+                                <p className="max-w-xs text-right text-xs font-semibold text-cocoa-400">
+                                  Refund request starts automatically after cancellation.
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -894,10 +939,10 @@ const Dashboard = () => {
               {activeTab === 'payments' && (
                 <motion.div key="payments" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <h3 className="text-lg font-semibold mb-4">Payment History</h3>
-                  {bookings.filter(b => b.paymentStatus === 'completed').length > 0 ? (
+                  {bookings.filter(b => ['completed', 'refunded'].includes(b.paymentStatus) || (b.refundStatus && b.refundStatus !== 'none')).length > 0 ? (
                     <div className="space-y-4">
                       {bookings
-                        .filter(b => b.paymentStatus === 'completed')
+                        .filter(b => ['completed', 'refunded'].includes(b.paymentStatus) || (b.refundStatus && b.refundStatus !== 'none'))
                         .map((booking) => (
                           <div key={booking._id} className="border border-cocoa-100 rounded-lg p-4 flex items-center bg-white">
                             <img src={booking.event?.image} alt={booking.event?.title} className="w-16 h-16 rounded-lg object-cover" />
@@ -908,10 +953,13 @@ const Dashboard = () => {
                             </div>
                             <div className="text-right">
                               <p className="text-xl font-bold text-green-600">₹{booking.totalPrice?.toLocaleString('en-IN')}</p>
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Paid
-                              </span>
+                              <div className="mt-1 flex flex-col items-end gap-1">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${booking.paymentStatus === 'refunded' ? 'bg-cocoa-100 text-cocoa-700' : 'bg-green-100 text-green-800'}`}>
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  {booking.paymentStatus === 'refunded' ? 'Refunded' : 'Paid'}
+                                </span>
+                                {getRefundBadge(booking.refundStatus)}
+                              </div>
                             </div>
                           </div>
                         ))

@@ -3,7 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { CheckCircle, Calendar, Clock, MapPin, Ticket, ArrowLeft, Sparkles } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { CheckCircle, Calendar, Clock, MapPin, Ticket, ArrowLeft, Sparkles, XCircle, RefreshCw } from 'lucide-react';
 import { QRCodeTicket, AnimatedButton, AnimatedContainer, GradientText } from '../components/animated';
 
 const BookingConfirmation = () => {
@@ -11,6 +12,7 @@ const BookingConfirmation = () => {
   const { user } = useAuth();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     fetchBooking();
@@ -36,6 +38,35 @@ const BookingConfirmation = () => {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const canCancelBooking = ['pending', 'confirmed'].includes(booking?.status);
+  const willStartRefund = booking?.status === 'confirmed' && booking?.paymentStatus === 'completed' && Number(booking?.totalPrice || 0) > 0;
+  const refundStarted = booking?.refundStatus && booking.refundStatus !== 'none';
+
+  const handleCancelBooking = async () => {
+    const refundCopy = willStartRefund
+      ? ' This will also start the refund process automatically.'
+      : '';
+
+    if (!window.confirm(`Are you sure you want to cancel this booking?${refundCopy}`)) {
+      return;
+    }
+
+    setCancelling(true);
+    try {
+      const res = await api.put(`/bookings/${booking._id}/cancel`, {
+        reason: 'Cancelled by attendee from booking confirmation'
+      });
+      setBooking(res.data?.booking || booking);
+      toast.success(res.data?.refundStatus === 'requested'
+        ? 'Booking cancelled. Refund process started.'
+        : 'Booking cancelled successfully');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to cancel booking');
+    } finally {
+      setCancelling(false);
+    }
   };
 
   if (loading) {
@@ -82,7 +113,7 @@ const BookingConfirmation = () => {
 
         {/* Success Header */}
         <AnimatedContainer className="mb-8">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-8 text-center text-white shadow-xl relative overflow-hidden">
+          <div className={`bg-gradient-to-r ${booking.status === 'cancelled' ? 'from-red-500 to-rose-600' : 'from-green-500 to-emerald-600'} rounded-lg p-8 text-center text-white shadow-xl relative overflow-hidden`}>
             {/* Decorative Elements */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-16 -translate-x-16"></div>
@@ -94,14 +125,16 @@ const BookingConfirmation = () => {
               className="relative z-10"
             >
               <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-full mb-4 backdrop-blur-sm">
-                <CheckCircle className="h-12 w-12" />
+                {booking.status === 'cancelled' ? <XCircle className="h-12 w-12" /> : <CheckCircle className="h-12 w-12" />}
               </div>
                <h1 className="text-4xl font-bold mb-2">
-                 <GradientText gradient="from-white to-green-100">Booking Confirmed!</GradientText>
+                 <GradientText gradient="from-white to-green-100">{booking.status === 'cancelled' ? 'Booking Cancelled' : 'Booking Confirmed!'}</GradientText>
                </h1>
-               <p className="text-green-100 text-lg">
-                 Your booking is confirmed. A confirmation has been sent to your email.
-               </p>
+               <p className="text-white/85 text-lg">
+                 {booking.status === 'cancelled'
+                   ? (refundStarted ? 'Your refund request has started automatically.' : 'Your booking has been cancelled.')
+                   : 'Your booking is confirmed. A confirmation has been sent to your email.'}
+                </p>
               
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -109,8 +142,8 @@ const BookingConfirmation = () => {
                 transition={{ delay: 0.3 }}
                 className="mt-6 inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full backdrop-blur-sm"
               >
-                <Sparkles className="h-5 w-5" />
-                <span className="font-semibold">Your e-ticket is ready!</span>
+                {booking.status === 'cancelled' ? <RefreshCw className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
+                <span className="font-semibold">{booking.status === 'cancelled' ? 'Refund status is now visible in payments' : 'Your e-ticket is ready!'}</span>
               </motion.div>
             </motion.div>
           </div>
@@ -200,6 +233,17 @@ const BookingConfirmation = () => {
                     <span className="text-cocoa-500">Price per Ticket</span>
                     <span className="font-semibold">₹{booking.event?.price?.toLocaleString('en-IN')}</span>
                   </div>
+                  {refundStarted && (
+                    <div className="border-t border-cocoa-100 pt-3 mt-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-cocoa-500">Refund Status</span>
+                        <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-sm font-bold capitalize text-amber-800">
+                          <RefreshCw className="mr-1 h-4 w-4" />
+                          {booking.refundStatus}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <div className="border-t border-cocoa-100 pt-3 mt-3">
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-semibold text-cocoa-900">Total Amount</span>
@@ -250,15 +294,15 @@ const BookingConfirmation = () => {
           <ul className="text-blue-800 space-y-2">
             <li className="flex items-start">
               <span className="mr-2 font-bold">1.</span>
-              <span>Your booking is confirmed!</span>
+              <span>{booking.status === 'cancelled' ? 'Your booking has been cancelled.' : 'Your booking is confirmed!'}</span>
             </li>
             <li className="flex items-start">
               <span className="mr-2 font-bold">2.</span>
-              <span>A confirmation has been sent to your email</span>
+              <span>{booking.status === 'cancelled' ? 'Any paid refund has been moved into the refund queue.' : 'A confirmation has been sent to your email'}</span>
             </li>
             <li className="flex items-start">
               <span className="mr-2 font-bold">3.</span>
-              <span>Present the QR code at the venue for entry</span>
+              <span>{booking.status === 'cancelled' ? 'Track refund progress from your dashboard payments tab.' : 'Present the QR code at the venue for entry'}</span>
             </li>
             <li className="flex items-start">
               <span className="mr-2 font-bold">4.</span>
@@ -284,6 +328,18 @@ const BookingConfirmation = () => {
               Browse More Events
             </Link>
           </AnimatedButton>
+          {canCancelBooking && (
+            <AnimatedButton
+              type="button"
+              variant="danger"
+              size="lg"
+              className="flex-1"
+              onClick={handleCancelBooking}
+              disabled={cancelling}
+            >
+              {cancelling ? 'Cancelling...' : (willStartRefund ? 'Cancel & Start Refund' : 'Cancel Booking')}
+            </AnimatedButton>
+          )}
         </motion.div>
       </div>
     </div>

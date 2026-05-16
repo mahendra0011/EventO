@@ -30,6 +30,14 @@ const QRCodeTicket = ({
     status: booking?.status || 'confirmed'
   });
 
+  const ticketStatus = booking?.status || 'confirmed';
+  const ticketStatusLabel = {
+    confirmed: 'Confirmed',
+    pending: 'Pending',
+    cancelled: 'Cancelled',
+    rejected: 'Rejected'
+  }[ticketStatus] || 'Pending';
+
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -100,7 +108,7 @@ const QRCodeTicket = ({
               transition={{ delay: 0.3 }}
               className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold backdrop-blur-sm"
             >
-              {booking?.status === 'confirmed' ? '✓ Confirmed' : 'Pending'}
+              {ticketStatusLabel}
             </motion.div>
           </div>
 
@@ -277,7 +285,9 @@ const QRCodeTicket = ({
             </span>
           </div>
           <p className="text-center text-sm text-cocoa-400">
-            Present this QR code at the venue for entry • Valid for {booking?.numberOfTickets || 1} person(s)
+            {ticketStatus === 'cancelled'
+              ? 'This ticket has been cancelled and is no longer valid for entry.'
+              : `Present this QR code at the venue for entry - Valid for ${booking?.numberOfTickets || 1} person(s)`}
           </p>
         </div>
       </div>

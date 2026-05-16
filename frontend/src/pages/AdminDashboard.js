@@ -36,7 +36,8 @@ import {
     MessageSquare,
     Send,
     Megaphone,
-    Users
+    Users,
+    RefreshCw
   } from 'lucide-react';
 import {
   Bar,
@@ -352,6 +353,26 @@ const AdminDashboard = () => {
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
         <Icon className="h-4 w-4 mr-1" />
+        {config.text}
+      </span>
+    );
+  };
+
+  const getRefundBadge = (refundStatus) => {
+    if (!refundStatus || refundStatus === 'none') return null;
+
+    const refundConfig = {
+      requested: { color: 'bg-amber-100 text-amber-800', text: 'Refund requested' },
+      approved: { color: 'bg-blue-100 text-blue-800', text: 'Refund approved' },
+      rejected: { color: 'bg-red-100 text-red-800', text: 'Refund rejected' },
+      processed: { color: 'bg-green-100 text-green-800', text: 'Refund processed' }
+    };
+
+    const config = refundConfig[refundStatus] || refundConfig.requested;
+
+    return (
+      <span className={`mt-1 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${config.color}`}>
+        <RefreshCw className="h-3 w-3 mr-1" />
         {config.text}
       </span>
     );
@@ -788,6 +809,7 @@ const AdminDashboard = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {getStatusBadge(booking.status)}
+                            <div>{getRefundBadge(booking.refundStatus)}</div>
                           </td>
                            <td className="px-6 py-4 whitespace-nowrap text-sm">
                              {/* Manual confirmation removed - bookings auto-confirm */}

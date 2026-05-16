@@ -11,7 +11,9 @@ import {
   Check,
   Paperclip,
   Image,
-  MoreVertical
+  MoreVertical,
+  Pencil,
+  Reply
 } from 'lucide-react';
 import {
   getCommunityMessages,
@@ -472,29 +474,34 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                             initial={{ opacity: 0, scale: 0.96 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.96 }}
-                            className={`absolute top-full z-50 mt-2 flex items-center gap-1 rounded-full border border-cocoa-100 bg-white px-2 py-1.5 shadow-xl ${isOwn ? 'right-0' : 'left-0'}`}
+                            className={`absolute top-full z-50 mt-2 w-44 rounded-lg border border-cocoa-100 bg-white p-1.5 text-cocoa-700 shadow-2xl shadow-cocoa-900/15 ${isOwn ? 'right-0' : 'left-0'}`}
                           >
-                            <button type="button" onClick={() => handleReply(msg)} className="rounded-full p-1.5 hover:bg-[#fbf8f4]" title="Reply">
-                              <MessageSquare className="h-4 w-4 text-cocoa-500" />
+                            <button type="button" onClick={() => handleReply(msg)} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-[#fbf8f4]" title="Reply">
+                              <Reply className="h-4 w-4 text-primary-500" />
+                              Reply
                             </button>
-                            <button type="button" onClick={() => setShowReactionPicker(showReactionPicker === msg._id ? null : msg._id)} className="rounded-full p-1.5 hover:bg-[#fbf8f4]" title="React">
-                              <Smile className="h-4 w-4 text-cocoa-500" />
+                            <button type="button" onClick={() => setShowReactionPicker(showReactionPicker === msg._id ? null : msg._id)} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-[#fbf8f4]" title="React">
+                              <Smile className="h-4 w-4 text-amber-500" />
+                              React
                             </button>
                             {isOwn && (
                               <>
-                                <button type="button" onClick={() => { setEditingId(msg._id); setEditContent(msg.content); setActiveMenu(null); }} className="rounded-full p-1.5 hover:bg-[#fbf8f4]" title="Edit">
-                                  <MessageSquare className="h-4 w-4 text-cocoa-500" />
+                                <button type="button" onClick={() => { setEditingId(msg._id); setEditContent(msg.content); setActiveMenu(null); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-[#fbf8f4]" title="Edit">
+                                  <Pencil className="h-4 w-4 text-cocoa-500" />
+                                  Edit
                                 </button>
-                                <button type="button" onClick={() => handleDelete(msg._id)} className="rounded-full p-1.5 hover:bg-red-50" title="Delete">
+                                <button type="button" onClick={() => handleDelete(msg._id)} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold text-red-600 hover:bg-red-50" title="Delete">
                                   <Trash2 className="h-4 w-4 text-red-500" />
+                                  Delete
                                 </button>
                               </>
                             )}
-                            <button type="button" onClick={() => setActiveMenu(null)} className="rounded-full p-1 hover:bg-[#fbf8f4]" title="Close">
-                              <X className="h-3 w-3 text-cocoa-300" />
+                            <button type="button" onClick={() => setActiveMenu(null)} className="mt-1 flex w-full items-center justify-center gap-2 rounded-md border border-cocoa-100 px-3 py-1.5 text-xs font-bold text-cocoa-400 hover:bg-[#fbf8f4]" title="Close">
+                              <X className="h-3 w-3" />
+                              Close
                             </button>
                             {showReactionPicker === msg._id && (
-                              <div className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2">
+                              <div className={`absolute bottom-full mb-2 ${isOwn ? 'right-0' : 'left-0'}`}>
                                 <ReactionPicker onSelect={(emoji) => handleReaction(msg._id, emoji)} onClose={() => setShowReactionPicker(null)} />
                               </div>
                             )}
@@ -542,8 +549,9 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                             event.stopPropagation();
                             toggleActionMenu(msg._id);
                           }}
-                          className={`absolute -top-2 h-8 w-8 items-center justify-center rounded-full border border-cocoa-100 bg-white text-cocoa-500 opacity-0 shadow-sm transition-opacity hover:bg-[#fbf8f4] group-hover:flex group-hover:opacity-100 ${isOwn ? '-left-2' : '-right-2'}`}
+                          className={`absolute -top-2 flex h-8 w-8 items-center justify-center rounded-full border border-cocoa-100 bg-white text-cocoa-500 opacity-100 shadow-md shadow-cocoa-900/10 ring-1 ring-white/80 transition-all hover:bg-[#fbf8f4] hover:text-cocoa-900 sm:opacity-80 sm:group-hover:opacity-100 ${isOwn ? '-left-2' : '-right-2'}`}
                           title="Message actions"
+                          aria-label="Message actions"
                         >
                           <MoreVertical className="h-4 w-4" />
                         </button>

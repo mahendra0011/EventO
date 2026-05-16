@@ -335,6 +335,7 @@ exports.getBooking = async (req, res) => {
 
 exports.cancelBooking = async (req, res) => {
    try {
+     const { reason } = req.body || {};
      const booking = await Booking.findById(req.params.id).populate('event');
 
      if (!booking) {
@@ -345,48 +346,81 @@ exports.cancelBooking = async (req, res) => {
        return res.status(403).json({ message: 'Not authorized' });
      }
 
-     if (booking.status === 'confirmed') {
-       return res.status(400).json({ message: 'Cannot cancel confirmed booking' });
+     if (['cancelled', 'rejected'].includes(booking.status)) {
+       return res.status(400).json({ message: 'This booking is already closed' });
      }
+
+     const wasConfirmed = booking.status === 'confirmed';
+     const shouldStartRefund = booking.paymentStatus === 'completed' && Number(booking.totalPrice || 0) > 0;
 
      booking.status = 'cancelled';
      booking.cancelledAt = new Date();
+
+     if (shouldStartRefund) {
+       booking.refundStatus = 'requested';
+       booking.refundReason = reason?.trim() || 'Booking cancelled by attendee';
+       booking.refundRequestedAt = new Date();
+     }
+
      await booking.save();
 
      const event = await Event.findById(booking.event._id).populate('organizer', 'name email');
 
+     if (wasConfirmed) {
+       event.availableTickets = Math.min(event.totalTickets, event.availableTickets + booking.numberOfTickets);
+       await event.save();
+     }
+
      await Notification.create({
        user: booking.user,
-       title: 'Booking Cancelled',
-       message: `Your booking for "${event.title}" was cancelled`,
+       title: shouldStartRefund ? 'Booking Cancelled - Refund Started' : 'Booking Cancelled',
+       message: shouldStartRefund
+         ? `Your booking for "${event.title}" was cancelled and your refund request has started.`
+         : `Your booking for "${event.title}" was cancelled.`,
        type: 'booking',
        link: '/dashboard'
      });
 
      sendImportantEmail(
        req.user,
-       'Booking cancelled',
-       `Your booking for "${event.title}" was cancelled.`,
+       shouldStartRefund ? 'Booking cancelled - refund started' : 'Booking cancelled',
+       shouldStartRefund
+         ? `Your booking for "${event.title}" was cancelled. Your refund request has started automatically.`
+         : `Your booking for "${event.title}" was cancelled.`,
        '/dashboard'
      );
 
      if (event.organizer) {
        await Notification.create({
          user: event.organizer._id,
-         title: 'Booking Cancelled',
-         message: `Booking for "${event.title}" was cancelled`,
+         title: shouldStartRefund ? 'Refund Requested' : 'Booking Cancelled',
+         message: shouldStartRefund
+           ? `${req.user.name}'s booking for "${event.title}" was cancelled and needs refund processing.`
+           : `Booking for "${event.title}" was cancelled.`,
          type: 'booking',
          link: '/host/bookings'
        });
        sendImportantEmail(
          event.organizer,
-         'Booking cancelled',
-         `${req.user.name}'s booking for "${event.title}" was cancelled.`,
+         shouldStartRefund ? 'Refund requested' : 'Booking cancelled',
+         shouldStartRefund
+           ? `${req.user.name}'s booking for "${event.title}" was cancelled. A refund request has been started automatically.`
+           : `${req.user.name}'s booking for "${event.title}" was cancelled.`,
          '/host/bookings'
        );
      }
 
-     res.json({ message: 'Booking cancelled successfully' });
+     const updatedBooking = await Booking.findById(booking._id)
+       .populate('event', 'title date time venue image price')
+       .populate('user', 'name email');
+
+     res.json({
+       message: shouldStartRefund
+         ? 'Booking cancelled and refund process started'
+         : 'Booking cancelled successfully',
+       refundStatus: booking.refundStatus,
+       booking: updatedBooking
+     });
    } catch (error) {
      console.error('Cancel booking error:', error);
      res.status(500).json({ message: 'Server error' });

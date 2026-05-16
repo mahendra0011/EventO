@@ -43,6 +43,12 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  refundRequestedAt: {
+    type: Date
+  },
+  refundProcessedAt: {
+    type: Date
+  },
   disputeStatus: {
     type: String,
     enum: ['none', 'open', 'under_review', 'resolved', 'rejected'],

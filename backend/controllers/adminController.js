@@ -587,6 +587,8 @@ exports.updateBooking = async (req, res) => {
         return res.status(400).json({ message: 'Invalid refund status' });
       }
       booking.refundStatus = refundStatus;
+      if (refundStatus === 'requested') booking.refundRequestedAt = booking.refundRequestedAt || new Date();
+      if (refundStatus === 'processed') booking.refundProcessedAt = new Date();
     }
     if (refundReason !== undefined) booking.refundReason = refundReason;
     if (disputeStatus) {
