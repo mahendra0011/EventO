@@ -8,7 +8,6 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || '';
 const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || FROM_EMAIL;
 const EMAIL_DIAGNOSTIC_TO = process.env.EMAIL_DIAGNOSTIC_TO || FROM_EMAIL;
-const EMAIL_LOGO_URL = process.env.EMAIL_LOGO_URL || '';
 const BRAND_PRIMARY = '#f45a2c';
 const BRAND_PRIMARY_DARK = '#bd2f15';
 const BRAND_SECONDARY = '#f43f67';
@@ -45,7 +44,30 @@ const createLogoMark = () => `
   <table role="presentation" cellspacing="0" cellpadding="0" border="0">
     <tr>
       <td width="44" height="44" align="center" valign="middle" style="width:44px; height:44px; border-radius:12px; background:${BRAND_PRIMARY}; background:linear-gradient(135deg, ${BRAND_PRIMARY} 0%, ${BRAND_SECONDARY} 100%); box-shadow:0 10px 24px rgba(244,90,44,0.22);">
-        <img src="${escapeHtml(EMAIL_LOGO_URL || createAbsoluteUrl('/favicon.svg'))}" width="44" height="44" alt="Evento logo" style="display:block; width:44px; height:44px; border:0; border-radius:12px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="26" style="width:26px; border-collapse:separate;">
+          <tr>
+            <td style="height:4px; font-size:0; line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="border:2px solid #ffffff; border-radius:5px; overflow:hidden;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td colspan="3" style="height:7px; border-bottom:2px solid #ffffff; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td align="center" style="width:33.33%; padding:4px 0 0 0; font-size:0; line-height:0;"><span style="display:block; width:3px; height:3px; border-radius:50%; background:#ffffff;">&nbsp;</span></td>
+                  <td align="center" style="width:33.33%; padding:4px 0 0 0; font-size:0; line-height:0;"><span style="display:block; width:3px; height:3px; border-radius:50%; background:#ffffff;">&nbsp;</span></td>
+                  <td align="center" style="width:33.33%; padding:4px 0 0 0; font-size:0; line-height:0;"><span style="display:block; width:3px; height:3px; border-radius:50%; background:#ffffff;">&nbsp;</span></td>
+                </tr>
+                <tr>
+                  <td align="center" style="width:33.33%; padding:3px 0 5px 0; font-size:0; line-height:0;"><span style="display:block; width:3px; height:3px; border-radius:50%; background:#ffffff;">&nbsp;</span></td>
+                  <td align="center" style="width:33.33%; padding:3px 0 5px 0; font-size:0; line-height:0;"><span style="display:block; width:3px; height:3px; border-radius:50%; background:#ffffff;">&nbsp;</span></td>
+                  <td align="center" style="width:33.33%; padding:3px 0 5px 0; font-size:0; line-height:0;"><span style="display:block; width:3px; height:3px; border-radius:50%; background:#ffffff;">&nbsp;</span></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </td>
       <td style="padding-left:12px; font-family:Arial, sans-serif;">
         <div style="font-size:24px; line-height:1; font-weight:900; letter-spacing:0.5px; text-transform:uppercase; color:${BRAND_COCOA};">Evento</div>
@@ -130,7 +152,7 @@ const getEmailDiagnostics = () => {
     replyToEmail: REPLY_TO_EMAIL || null,
     diagnosticTo: EMAIL_DIAGNOSTIC_TO || null,
     frontendUrl: FRONTEND_URL,
-    logoUrl: EMAIL_LOGO_URL || createAbsoluteUrl('/favicon.svg')
+    logo: 'inline-calendar-mark'
   };
 };
 
