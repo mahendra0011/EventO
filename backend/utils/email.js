@@ -8,6 +8,14 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || '';
 const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || FROM_EMAIL;
 const EMAIL_DIAGNOSTIC_TO = process.env.EMAIL_DIAGNOSTIC_TO || FROM_EMAIL;
+const EMAIL_LOGO_URL = process.env.EMAIL_LOGO_URL || '';
+const BRAND_PRIMARY = '#f45a2c';
+const BRAND_PRIMARY_DARK = '#bd2f15';
+const BRAND_SECONDARY = '#f43f67';
+const BRAND_CREAM = '#fff7f2';
+const BRAND_CREAM_DEEP = '#ffe2d5';
+const BRAND_COCOA = '#3a271d';
+const BRAND_COCOA_MUTED = '#976f59';
 
 const escapeHtml = (value = '') => String(value)
   .replace(/&/g, '&amp;')
@@ -26,8 +34,22 @@ const createTextFromHtml = (html = '') => html
 const createActionButton = (label, url) => `
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 8px 0;">
     <tr>
-      <td style="border-radius:8px; background:#0369a1;">
-        <a href="${escapeHtml(url)}" style="display:inline-block; padding:12px 20px; font-family:Arial, sans-serif; font-size:14px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:8px;">${escapeHtml(label)}</a>
+      <td style="border-radius:10px; background:${BRAND_PRIMARY}; background:linear-gradient(135deg, ${BRAND_PRIMARY} 0%, ${BRAND_SECONDARY} 100%);">
+        <a href="${escapeHtml(url)}" style="display:inline-block; padding:13px 22px; font-family:Arial, sans-serif; font-size:14px; font-weight:800; color:#ffffff; text-decoration:none; border-radius:10px;">${escapeHtml(label)}</a>
+      </td>
+    </tr>
+  </table>
+`;
+
+const createLogoMark = () => `
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+    <tr>
+      <td width="44" height="44" align="center" valign="middle" style="width:44px; height:44px; border-radius:12px; background:${BRAND_PRIMARY}; background:linear-gradient(135deg, ${BRAND_PRIMARY} 0%, ${BRAND_SECONDARY} 100%); box-shadow:0 10px 24px rgba(244,90,44,0.22);">
+        <img src="${escapeHtml(EMAIL_LOGO_URL || createAbsoluteUrl('/favicon.svg'))}" width="44" height="44" alt="Evento logo" style="display:block; width:44px; height:44px; border:0; border-radius:12px;">
+      </td>
+      <td style="padding-left:12px; font-family:Arial, sans-serif;">
+        <div style="font-size:24px; line-height:1; font-weight:900; letter-spacing:0.5px; text-transform:uppercase; color:${BRAND_COCOA};">Evento</div>
+        <div style="padding-top:5px; font-size:11px; line-height:1; font-weight:800; letter-spacing:1.3px; text-transform:uppercase; color:${BRAND_COCOA_MUTED};">Events made easy</div>
       </td>
     </tr>
   </table>
@@ -38,26 +60,21 @@ const createEmailShell = (title, bodyHtml) => {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${safeTitle}</title></head>
-<body style="margin:0; padding:0; background:#f3f6fb; color:#111827;">
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f3f6fb;">
+<body style="margin:0; padding:0; background:${BRAND_CREAM}; color:${BRAND_COCOA};">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${BRAND_CREAM};">
     <tr>
       <td align="center" style="padding:32px 12px;">
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;">
           <tr>
-            <td style="padding:0 0 14px 0;">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
-                <tr>
-                  <td width="42" height="42" align="center" style="width:42px; height:42px; border-radius:10px; background:#0369a1; color:#ffffff; font-family:Arial, sans-serif; font-size:22px; font-weight:800;">E</td>
-                  <td style="padding-left:10px; font-family:Arial, sans-serif; font-size:24px; line-height:1; font-weight:800; color:#0f172a;">Evento</td>
-                </tr>
-              </table>
+            <td style="padding:0 0 16px 0;">
+              ${createLogoMark()}
             </td>
           </tr>
           <tr>
-            <td style="background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; padding:28px; font-family:Arial, sans-serif; font-size:16px; line-height:1.6; color:#111827;">
-      <h1 style="font-size:24px; line-height:1.3; margin:0 0 18px 0; color:#0f172a;">${safeTitle}</h1>
+            <td style="background:#ffffff; border:1px solid ${BRAND_CREAM_DEEP}; border-radius:14px; padding:30px; font-family:Arial, sans-serif; font-size:16px; line-height:1.6; color:${BRAND_COCOA}; box-shadow:0 20px 45px rgba(58,39,29,0.08);">
+      <h1 style="font-size:24px; line-height:1.3; margin:0 0 18px 0; color:${BRAND_COCOA};">${safeTitle}</h1>
       ${bodyHtml}
-      <p style="margin:24px 0 0 0; padding-top:18px; border-top:1px solid #e5e7eb; font-size:13px; color:#6b7280;">Evento keeps your events, tickets, and updates in one place.</p>
+      <p style="margin:24px 0 0 0; padding-top:18px; border-top:1px solid ${BRAND_CREAM_DEEP}; font-size:13px; color:${BRAND_COCOA_MUTED};">Evento keeps your events, tickets, and updates in one place.</p>
             </td>
           </tr>
         </table>
@@ -91,10 +108,10 @@ const createOtpHtml = (title, body, otp, eventTitle = '', name = '', expiryMinut
   return createEmailShell(title, `
     <p style="margin:0 0 16px 0;">Hello ${safeName},</p>
     <p style="margin:0 0 18px 0;">${safeBody}</p>
-    ${safeOtp ? `<p style="margin:0 0 8px 0; font-size:14px; color:#374151;">Verification code:</p>
-    <div style="display:inline-block; background:#eef6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px 18px; font-family:'Courier New', monospace; font-size:30px; line-height:1.2; letter-spacing:6px; font-weight:bold; margin:0 0 20px 0; color:#075985;">${safeOtp}</div>` : ''}
-    ${safeEventTitle ? `<p style="margin:0 0 16px 0; font-size:14px; color:#374151;"><strong>Event:</strong> ${safeEventTitle}</p>` : ''}
-    <p style="margin:0 0 10px 0; font-size:14px; color:#374151;">This code is valid for ${expiryMinutes} minutes and can only be used once.</p>
+    ${safeOtp ? `<p style="margin:0 0 8px 0; font-size:14px; color:${BRAND_COCOA_MUTED};">Verification code:</p>
+    <div style="display:inline-block; background:${BRAND_CREAM}; border:1px solid ${BRAND_CREAM_DEEP}; border-radius:12px; padding:13px 18px; font-family:'Courier New', monospace; font-size:30px; line-height:1.2; letter-spacing:6px; font-weight:bold; margin:0 0 20px 0; color:${BRAND_PRIMARY_DARK}; box-shadow:0 10px 24px rgba(244,90,44,0.12);">${safeOtp}</div>` : ''}
+    ${safeEventTitle ? `<p style="margin:0 0 16px 0; font-size:14px; color:${BRAND_COCOA_MUTED};"><strong>Event:</strong> ${safeEventTitle}</p>` : ''}
+    <p style="margin:0 0 10px 0; font-size:14px; color:${BRAND_COCOA_MUTED};">This code is valid for ${expiryMinutes} minutes and can only be used once.</p>
   `);
 };
 
@@ -112,7 +129,8 @@ const getEmailDiagnostics = () => {
     fromEmail: FROM_EMAIL || null,
     replyToEmail: REPLY_TO_EMAIL || null,
     diagnosticTo: EMAIL_DIAGNOSTIC_TO || null,
-    frontendUrl: FRONTEND_URL
+    frontendUrl: FRONTEND_URL,
+    logoUrl: EMAIL_LOGO_URL || createAbsoluteUrl('/favicon.svg')
   };
 };
 
@@ -241,10 +259,10 @@ exports.sendBookingConfirmationEmail = async (email, name, eventTitle, bookingDe
   const html = createEmailShell(subject, `
     <p style="margin:0 0 16px 0;">Hello ${escapeHtml(name)},</p>
     <p style="margin:0 0 18px 0;">Your booking for <strong>${escapeHtml(eventTitle)}</strong> is confirmed.</p>
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; margin:0 0 18px 0;">
-      <tr><td style="padding:14px 16px; color:#475569;">Tickets</td><td align="right" style="padding:14px 16px; font-weight:700; color:#0f172a;">${bookingDetails.numberOfTickets}</td></tr>
-      <tr><td style="padding:14px 16px; color:#475569; border-top:1px solid #e5e7eb;">Total amount</td><td align="right" style="padding:14px 16px; border-top:1px solid #e5e7eb; font-weight:700; color:#0f172a;">INR ${amount}</td></tr>
-      <tr><td style="padding:14px 16px; color:#475569; border-top:1px solid #e5e7eb;">Booking ID</td><td align="right" style="padding:14px 16px; border-top:1px solid #e5e7eb; font-weight:700; color:#0f172a;">${escapeHtml(bookingDetails.bookingId)}</td></tr>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${BRAND_CREAM}; border:1px solid ${BRAND_CREAM_DEEP}; border-radius:12px; margin:0 0 18px 0;">
+      <tr><td style="padding:14px 16px; color:${BRAND_COCOA_MUTED};">Tickets</td><td align="right" style="padding:14px 16px; font-weight:800; color:${BRAND_COCOA};">${bookingDetails.numberOfTickets}</td></tr>
+      <tr><td style="padding:14px 16px; color:${BRAND_COCOA_MUTED}; border-top:1px solid ${BRAND_CREAM_DEEP};">Total amount</td><td align="right" style="padding:14px 16px; border-top:1px solid ${BRAND_CREAM_DEEP}; font-weight:800; color:${BRAND_PRIMARY_DARK};">INR ${amount}</td></tr>
+      <tr><td style="padding:14px 16px; color:${BRAND_COCOA_MUTED}; border-top:1px solid ${BRAND_CREAM_DEEP};">Booking ID</td><td align="right" style="padding:14px 16px; border-top:1px solid ${BRAND_CREAM_DEEP}; font-weight:800; color:${BRAND_COCOA};">${escapeHtml(bookingDetails.bookingId)}</td></tr>
     </table>
   `);
   return sendEmail({ to: email, subject, html, tags: ['booking-confirmation'] });
@@ -270,7 +288,7 @@ exports.sendImportantNotificationEmail = async (email, name, title, message, lin
   const html = createEmailShell(subject, `
     <p>Hello ${escapeHtml(name)},</p>
     <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
-    ${actionUrl ? `<p style="margin:18px 0 0 0;"><a href="${escapeHtml(actionUrl)}" style="color:#2563eb; font-weight:bold;">Open in Evento</a></p>` : ''}
+    ${actionUrl ? createActionButton('Open in Evento', actionUrl) : ''}
   `);
   return sendEmail({ to: email, subject, html, tags: ['important-notification'] });
 };
@@ -282,8 +300,8 @@ exports.sendBroadcastEmail = async (email, name, broadcastSubject, content, even
     <p>Hello ${escapeHtml(name || 'there')},</p>
     <p style="margin:0 0 12px 0;"><strong>Event:</strong> ${escapeHtml(eventTitle || 'Event update')}</p>
     ${hostName ? `<p style="margin:0 0 12px 0;"><strong>From:</strong> ${escapeHtml(hostName)}</p>` : ''}
-    <div style="margin:18px 0; padding:16px; border-left:4px solid #0369a1; background:#f0f9ff; border-radius:8px;">
-      <p style="margin:0 0 8px 0; font-weight:700; color:#0f172a;">${escapeHtml(broadcastSubject)}</p>
+    <div style="margin:18px 0; padding:16px; border-left:4px solid ${BRAND_PRIMARY}; background:${BRAND_CREAM}; border-radius:10px;">
+      <p style="margin:0 0 8px 0; font-weight:800; color:${BRAND_COCOA};">${escapeHtml(broadcastSubject)}</p>
       <p style="margin:0;">${escapeHtml(content).replace(/\n/g, '<br>')}</p>
     </div>
     ${actionUrl ? createActionButton('Open broadcast center', actionUrl) : ''}
