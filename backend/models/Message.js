@@ -10,6 +10,31 @@ const reactionSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const mediaSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: ['image', 'video'],
+    required: true
+  },
+  url: {
+    type: String,
+    required: true
+  },
+  mimeType: {
+    type: String,
+    required: true
+  },
+  name: {
+    type: String,
+    trim: true,
+    maxlength: [180, 'File name cannot exceed 180 characters']
+  },
+  size: {
+    type: Number,
+    min: 0
+  }
+}, { _id: true });
+
 const messageSchema = new mongoose.Schema({
   sender: {
     type: mongoose.Schema.Types.ObjectId,
@@ -46,9 +71,19 @@ const messageSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: [true, 'Message content is required'],
+    required: [
+      function requireMessageContent() {
+        return !Array.isArray(this.media) || this.media.length === 0;
+      },
+      'Message content or media is required'
+    ],
+    default: '',
     trim: true,
     maxlength: [2000, 'Message cannot exceed 2000 characters']
+  },
+  media: {
+    type: [mediaSchema],
+    default: []
   },
   // Reply reference
   replyTo: {

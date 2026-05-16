@@ -181,8 +181,10 @@ export const getEventBookers = async (eventId) => {
 };
 
 // Community Chat
-export const postCommunityMessage = async (eventId, content, replyTo = null) => {
-  const payload = replyTo ? { eventId, content, replyTo } : { eventId, content };
+export const postCommunityMessage = async (eventId, content, replyTo = null, media = []) => {
+  const payload = { eventId, content };
+  if (replyTo) payload.replyTo = replyTo;
+  if (media.length > 0) payload.media = media;
   const res = await api.post('/messages/community', payload);
   return res.data;
 };

@@ -6,6 +6,77 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { sendHostMessageEmail, sendImportantNotificationEmail, sendBroadcastEmail } = require('../utils/email');
 
+const MAX_COMMUNITY_MEDIA_ITEMS = 3;
+const MAX_COMMUNITY_MEDIA_BYTES = 8 * 1024 * 1024;
+const MAX_COMMUNITY_MEDIA_TOTAL_BYTES = 9 * 1024 * 1024;
+const DATA_URL_PATTERN = /^data:([^;]+);base64,([A-Za-z0-9+/=]+)$/;
+const ALLOWED_COMMUNITY_MEDIA_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'video/mp4',
+  'video/webm',
+  'video/ogg',
+  'video/quicktime'
+]);
+
+const getBase64ByteSize = (base64 = '') => {
+  const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
+  return Math.floor((base64.length * 3) / 4) - padding;
+};
+
+const normalizeCommunityMedia = (media = []) => {
+  if (!Array.isArray(media)) {
+    const error = new Error('Media must be an array');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (media.length > MAX_COMMUNITY_MEDIA_ITEMS) {
+    const error = new Error(`You can attach up to ${MAX_COMMUNITY_MEDIA_ITEMS} media files`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  let totalSize = 0;
+
+  return media.map((item, index) => {
+    const match = typeof item?.url === 'string' ? item.url.match(DATA_URL_PATTERN) : null;
+    const mimeType = match?.[1] || item?.mimeType || '';
+    const mediaType = item?.type || mimeType.split('/')[0];
+
+    if (!match || !['image', 'video'].includes(mediaType) || !mimeType.startsWith(`${mediaType}/`) || !ALLOWED_COMMUNITY_MEDIA_TYPES.has(mimeType)) {
+      const error = new Error(`Attachment ${index + 1} must be a JPG, PNG, GIF, WebP, MP4, WebM, OGG, or MOV file`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const size = getBase64ByteSize(match[2]);
+    totalSize += size;
+
+    if (size > MAX_COMMUNITY_MEDIA_BYTES) {
+      const error = new Error(`Attachment ${index + 1} must be 8MB or smaller`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (totalSize > MAX_COMMUNITY_MEDIA_TOTAL_BYTES) {
+      const error = new Error('Attachments must be 9MB or smaller in total');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return {
+      type: mediaType,
+      url: item.url,
+      mimeType,
+      name: String(item.name || `community-${mediaType}-${index + 1}`).slice(0, 180),
+      size
+    };
+  });
+};
+
 // Send message from user or host
 exports.sendMessage = async (req, res) => {
   try {
@@ -111,9 +182,16 @@ exports.sendMessage = async (req, res) => {
 // Post public message for community chat (event attendees)
 exports.postCommunityMessage = async (req, res) => {
   try {
-    const { eventId, content, replyTo } = req.body;
+    const { eventId, content, replyTo, media } = req.body;
+    const trimmedContent = typeof content === 'string' ? content.trim() : '';
+    const mediaItems = normalizeCommunityMedia(media || []);
+    const messagePreview = trimmedContent || `[${mediaItems.length} media attachment${mediaItems.length === 1 ? '' : 's'}]`;
 
-    console.log(`[postCommunityMessage] User ${req.user.id} (${req.user.role}) posting to event ${eventId}: "${content.substring(0, 50)}"`);
+    if (!trimmedContent && mediaItems.length === 0) {
+      return res.status(400).json({ message: 'Message content or media is required' });
+    }
+
+    console.log(`[postCommunityMessage] User ${req.user.id} (${req.user.role}) posting to event ${eventId}: "${messagePreview.substring(0, 50)}"`);
 
     // Validate event exists
     const event = await Event.findById(eventId);
@@ -165,7 +243,8 @@ exports.postCommunityMessage = async (req, res) => {
       event: eventId,
       booking: booking ? booking._id : null, // Hosts have no booking
       subject: 'Community Chat',
-      content,
+      content: trimmedContent,
+      media: mediaItems,
       replyTo: replyToMessage ? replyToMessage._id : null,
       isPublic: true
     });
@@ -178,13 +257,14 @@ exports.postCommunityMessage = async (req, res) => {
       sender: message.sender.name,
       event: message.event.title,
       isPublic: message.isPublic,
+      mediaCount: message.media.length,
       replyTo: message.replyTo
     });
 
     res.status(201).json({ message: 'Message posted to community chat', data: message });
   } catch (error) {
     console.error('Post community message error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(error.statusCode || 500).json({ message: error.statusCode ? error.message : 'Server error', error: error.message });
   }
 };
 
@@ -247,7 +327,7 @@ exports.getCommunityMessages = async (req, res) => {
 
     // Log message details for debugging
     messages.forEach((msg, idx) => {
-      console.log(`[getCommunityMessages] Message ${idx}: id=${msg._id}, sender=${msg.sender?.name}, content="${msg.content?.substring(0, 50)}", isPublic=${msg.isPublic}, createdAt=${msg.createdAt}`);
+      console.log(`[getCommunityMessages] Message ${idx}: id=${msg._id}, sender=${msg.sender?.name}, content="${msg.content?.substring(0, 50) || ''}", media=${msg.media?.length || 0}, isPublic=${msg.isPublic}, createdAt=${msg.createdAt}`);
     });
 
     const total = await Message.countDocuments({
@@ -777,10 +857,7 @@ exports.deleteMessage = async (req, res) => {
 exports.editMessage = async (req, res) => {
   try {
     const { content } = req.body;
-
-    if (!content || !content.trim()) {
-      return res.status(400).json({ message: 'Message content is required' });
-    }
+    const trimmedContent = typeof content === 'string' ? content.trim() : '';
 
     const message = await Message.findOne({
       _id: req.params.id,
@@ -796,7 +873,11 @@ exports.editMessage = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    message.content = content.trim();
+    if (!trimmedContent && (!message.media || message.media.length === 0)) {
+      return res.status(400).json({ message: 'Message content is required' });
+    }
+
+    message.content = trimmedContent;
     message.isEdited = true;
     message.editedAt = new Date();
 

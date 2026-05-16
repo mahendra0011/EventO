@@ -28,6 +28,30 @@
   contain: layout;
 }
 
+.event-chat-media-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.event-chat-media-item {
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: rgba(31, 41, 55, 0.08);
+}
+
+.event-chat-media-item img,
+.event-chat-media-item video {
+  display: block;
+  width: 100%;
+  max-height: 18rem;
+  object-fit: cover;
+}
+
+.event-chat-media-item video {
+  background: #111827;
+}
+
 /* Custom scrollbar */
 .chat-scroll-container::-webkit-scrollbar {
   width: 6px;

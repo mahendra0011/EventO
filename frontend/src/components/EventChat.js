@@ -11,6 +11,7 @@ import {
   Check,
   Paperclip,
   Image,
+  Video,
   MoreVertical,
   Pencil,
   Reply
@@ -27,6 +28,22 @@ import ReactionPicker from './ReactionPicker';
 import './EventChat.css';
 
 const getReactionUserId = (reaction) => String(reaction?.user?._id || reaction?.user || '');
+const MAX_MEDIA_ITEMS = 3;
+const MAX_MEDIA_FILE_BYTES = 8 * 1024 * 1024;
+const MAX_MEDIA_TOTAL_BYTES = 9 * 1024 * 1024;
+const ACCEPTED_MEDIA_TYPES = 'image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/ogg,video/quicktime';
+const ACCEPTED_IMAGE_TYPES = 'image/jpeg,image/png,image/gif,image/webp';
+const ACCEPTED_VIDEO_TYPES = 'video/mp4,video/webm,video/ogg,video/quicktime';
+const ACCEPTED_MEDIA_TYPE_SET = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'video/mp4',
+  'video/webm',
+  'video/ogg',
+  'video/quicktime'
+]);
 
 const getMessagesSignature = (items = []) =>
   items
@@ -35,19 +52,40 @@ const getMessagesSignature = (items = []) =>
         .map((reaction) => `${reaction.emoji}:${getReactionUserId(reaction)}`)
         .sort()
         .join(',');
+      const media = (msg.media || [])
+        .map((item) => `${item._id || item.name || ''}:${item.mimeType || ''}:${item.size || 0}`)
+        .join(',');
 
       return [
         msg._id,
         msg.content,
         msg.updatedAt || msg.editedAt || msg.createdAt,
         msg.isEdited ? 'edited' : 'live',
-        reactions
+        reactions,
+        media
       ].join('|');
     })
     .join('||');
 
 const getAttendeeUser = (attendee) => attendee?.user || attendee || {};
 const getInitial = (name) => String(name || 'G').trim().charAt(0).toUpperCase();
+const getMessageMedia = (message) => Array.isArray(message?.media) ? message.media : [];
+const getReplyPreviewText = (message) => {
+  if (message?.content) return message.content;
+  return getMessageMedia(message).length > 0 ? 'Media message' : 'Original message';
+};
+
+const formatFileSize = (bytes = 0) => {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = reject;
+  reader.readAsDataURL(file);
+});
 
 const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const [messages, setMessages] = useState([]);
@@ -62,9 +100,14 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const [typingUsers] = useState([]);
   const [showReactionPicker, setShowReactionPicker] = useState(null);
   const [activeMenu, setActiveMenu] = useState(null);
+  const [selectedMedia, setSelectedMedia] = useState([]);
+  const [mediaError, setMediaError] = useState('');
 
   const messagesContainerRef = useRef(null);
   const messageInputRef = useRef(null);
+  const mediaInputRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const videoInputRef = useRef(null);
   const autoScrollRef = useRef(true);
   const pendingScrollRef = useRef('auto');
   const messagesSignatureRef = useRef('');
@@ -124,6 +167,8 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     setEditContent('');
     setActiveMenu(null);
     setShowReactionPicker(null);
+    setSelectedMedia([]);
+    setMediaError('');
   }, [eventId]);
 
   useEffect(() => {
@@ -209,7 +254,8 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   };
 
   const handleEdit = async (messageId) => {
-    if (!editContent.trim()) return;
+    const message = messages.find((item) => item._id === messageId);
+    if (!editContent.trim() && getMessageMedia(message).length === 0) return;
 
     try {
       await editMessage(messageId, editContent.trim());
@@ -234,17 +280,91 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     }
   };
 
+  const appendMediaFiles = async (fileList, acceptedType = 'all') => {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return;
+
+    const availableSlots = MAX_MEDIA_ITEMS - selectedMedia.length;
+    if (availableSlots <= 0) {
+      setMediaError(`You can attach up to ${MAX_MEDIA_ITEMS} files.`);
+      return;
+    }
+
+    const nextFiles = files.slice(0, availableSlots);
+    const currentTotal = selectedMedia.reduce((sum, item) => sum + (item.size || 0), 0);
+    let runningTotal = currentTotal;
+    const nextMedia = [];
+    let nextError = files.length > availableSlots ? `Only ${MAX_MEDIA_ITEMS} files can be attached at once.` : '';
+
+    for (const file of nextFiles) {
+      const mediaType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : '';
+
+      if (!mediaType || (acceptedType !== 'all' && mediaType !== acceptedType) || !ACCEPTED_MEDIA_TYPE_SET.has(file.type)) {
+        nextError = 'Use JPG, PNG, GIF, WebP, MP4, WebM, OGG, or MOV files.';
+        continue;
+      }
+
+      if (file.size > MAX_MEDIA_FILE_BYTES) {
+        nextError = `${file.name} is larger than 8 MB.`;
+        continue;
+      }
+
+      if (runningTotal + file.size > MAX_MEDIA_TOTAL_BYTES) {
+        nextError = 'Selected attachments must be 9 MB or smaller in total.';
+        continue;
+      }
+
+      let url = '';
+      try {
+        url = await readFileAsDataUrl(file);
+      } catch {
+        nextError = `Could not read ${file.name}.`;
+        continue;
+      }
+
+      runningTotal += file.size;
+      nextMedia.push({
+        id: `${file.name}-${file.lastModified}-${file.size}-${Date.now()}-${nextMedia.length}`,
+        type: mediaType,
+        url,
+        mimeType: file.type,
+        name: file.name,
+        size: file.size
+      });
+    }
+
+    if (nextMedia.length > 0) {
+      setSelectedMedia((current) => [...current, ...nextMedia]);
+    }
+
+    setMediaError(nextError);
+  };
+
+  const handleMediaInputChange = async (event, acceptedType = 'all') => {
+    await appendMediaFiles(event.target.files, acceptedType);
+    event.target.value = '';
+  };
+
+  const removeSelectedMedia = (mediaId) => {
+    setSelectedMedia((current) => current.filter((item) => item.id !== mediaId));
+    setMediaError('');
+  };
+
   const handleSendMessage = async (event) => {
     event.preventDefault();
-    if (!newMessage.trim() || sending) return;
+    const trimmedMessage = newMessage.trim();
+    if ((!trimmedMessage && selectedMedia.length === 0) || sending) return;
 
     setSending(true);
     autoScrollRef.current = true;
     pendingScrollRef.current = 'smooth';
 
     try {
-      await postCommunityMessage(eventId, newMessage.trim(), replyTo?._id || null);
+      const mediaPayload = selectedMedia.map(({ id, ...item }) => item);
+      await postCommunityMessage(eventId, trimmedMessage, replyTo?._id || null, mediaPayload);
       setNewMessage('');
+      setSelectedMedia([]);
+      setMediaError('');
       setReplyTo(null);
       fetchMessages(true).catch(() => {});
     } catch (error) {
@@ -380,6 +500,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
             const currentSenderId = String(sender?._id || '');
             const showAvatar = index === 0 || previousSenderId !== currentSenderId;
             const showDate = index === 0 || new Date(messages[index - 1]?.createdAt).toDateString() !== new Date(msg.createdAt).toDateString();
+            const mediaItems = getMessageMedia(msg);
 
             return (
               <React.Fragment key={msg._id}>
@@ -454,7 +575,24 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                           </div>
                         ) : (
                           <>
-                            <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                            {msg.content && (
+                              <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+                            )}
+                            {mediaItems.length > 0 && (
+                              <div className={`event-chat-media-grid ${msg.content ? 'mt-2' : ''}`}>
+                                {mediaItems.map((item) => (
+                                  <div key={item._id || `${item.name || item.mimeType}-${item.size || 0}`} className="event-chat-media-item">
+                                    {item.type === 'image' ? (
+                                      <a href={item.url} target="_blank" rel="noreferrer" title={item.name || 'Open image'}>
+                                        <img src={item.url} alt={item.name || 'Community attachment'} />
+                                      </a>
+                                    ) : (
+                                      <video src={item.url} controls preload="metadata" title={item.name || 'Community video'} />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                             {msg.replyTo && (
                               <div className={`mt-2 border-t pt-2 ${isOwn ? 'border-white/20' : 'border-cocoa-100'}`}>
                                 <div className={`flex items-center gap-1 text-xs ${isOwn ? 'text-white/70' : 'text-cocoa-500'}`}>
@@ -462,7 +600,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                                   Replying to {msg.replyTo.sender?.name || 'user'}
                                 </div>
                                 <div className={`mt-0.5 truncate text-xs ${isOwn ? 'text-white/65' : 'text-cocoa-500'}`}>
-                                  {msg.replyTo.content || 'Original message'}
+                                  {getReplyPreviewText(msg.replyTo)}
                                 </div>
                               </div>
                             )}
@@ -486,7 +624,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
                             </button>
                             {isOwn && (
                               <>
-                                <button type="button" onClick={() => { setEditingId(msg._id); setEditContent(msg.content); setActiveMenu(null); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-[#fbf8f4]" title="Edit">
+                                <button type="button" onClick={() => { setEditingId(msg._id); setEditContent(msg.content || ''); setActiveMenu(null); }} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-bold hover:bg-[#fbf8f4]" title="Edit">
                                   <Pencil className="h-4 w-4 text-cocoa-500" />
                                   Edit
                                 </button>
@@ -567,12 +705,40 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
 
       <div className="flex-shrink-0 border-t border-cocoa-100 bg-white/95 p-3 sm:p-4">
         <form onSubmit={handleSendMessage} className="flex items-end gap-2 sm:gap-3">
-          <div className="hidden gap-1 pb-1 sm:flex">
-            <button type="button" className="rounded-lg p-2 text-cocoa-500 hover:bg-[#fbf8f4] hover:text-cocoa-900" title="Attach file">
+          <input
+            ref={mediaInputRef}
+            type="file"
+            accept={ACCEPTED_MEDIA_TYPES}
+            multiple
+            onChange={(event) => handleMediaInputChange(event)}
+            className="hidden"
+          />
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept={ACCEPTED_IMAGE_TYPES}
+            multiple
+            onChange={(event) => handleMediaInputChange(event, 'image')}
+            className="hidden"
+          />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept={ACCEPTED_VIDEO_TYPES}
+            multiple
+            onChange={(event) => handleMediaInputChange(event, 'video')}
+            className="hidden"
+          />
+
+          <div className="flex flex-shrink-0 gap-1 pb-1">
+            <button type="button" onClick={() => mediaInputRef.current?.click()} className="rounded-lg p-2 text-cocoa-500 hover:bg-[#fbf8f4] hover:text-cocoa-900" title="Attach image or video" aria-label="Attach image or video">
               <Paperclip className="h-5 w-5" />
             </button>
-            <button type="button" className="rounded-lg p-2 text-cocoa-500 hover:bg-[#fbf8f4] hover:text-cocoa-900" title="Add image">
+            <button type="button" onClick={() => imageInputRef.current?.click()} className="hidden rounded-lg p-2 text-cocoa-500 hover:bg-[#fbf8f4] hover:text-cocoa-900 sm:inline-flex" title="Add image" aria-label="Add image">
               <Image className="h-5 w-5" />
+            </button>
+            <button type="button" onClick={() => videoInputRef.current?.click()} className="hidden rounded-lg p-2 text-cocoa-500 hover:bg-[#fbf8f4] hover:text-cocoa-900 sm:inline-flex" title="Add video" aria-label="Add video">
+              <Video className="h-5 w-5" />
             </button>
           </div>
 
@@ -591,11 +757,38 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
               </div>
             )}
 
+            {selectedMedia.length > 0 && (
+              <div className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {selectedMedia.map((item) => (
+                  <div key={item.id} className="relative overflow-hidden rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                    <div className="aspect-video bg-cocoa-900/5">
+                      {item.type === 'image' ? (
+                        <img src={item.url} alt={item.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <video src={item.url} className="h-full w-full object-cover" muted preload="metadata" />
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+                      <span className="min-w-0 truncate text-[11px] font-bold text-cocoa-600">{item.name}</span>
+                      <span className="flex-shrink-0 text-[10px] font-semibold text-cocoa-400">{formatFileSize(item.size)}</span>
+                    </div>
+                    <button type="button" onClick={() => removeSelectedMedia(item.id)} className="absolute right-1.5 top-1.5 rounded-full bg-cocoa-900/75 p-1 text-white hover:bg-cocoa-900" title="Remove attachment" aria-label="Remove attachment">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {mediaError && (
+              <p className="mb-2 text-xs font-semibold text-red-500">{mediaError}</p>
+            )}
+
             <textarea
               ref={messageInputRef}
               value={newMessage}
               onChange={(event) => { setNewMessage(event.target.value); handleTyping(); }}
-              placeholder={replyTo ? 'Write a reply...' : 'Type your message...'}
+              placeholder={selectedMedia.length > 0 ? 'Add a caption...' : (replyTo ? 'Write a reply...' : 'Type your message...')}
               rows={1}
               className="block h-12 w-full resize-none rounded-lg border border-cocoa-100 bg-[#fbf8f4] px-4 py-3 text-sm leading-6 text-cocoa-900 outline-none transition-all placeholder:text-cocoa-300 focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-200"
             />
@@ -603,7 +796,7 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
 
           <button
             type="submit"
-            disabled={!newMessage.trim() || sending}
+            disabled={(!newMessage.trim() && selectedMedia.length === 0) || sending}
             className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-primary-500 to-secondary-500 text-sm font-bold text-white transition-all hover:shadow-lg hover:shadow-primary-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-5"
           >
             <Send className="h-4 w-4" />
