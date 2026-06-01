@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff, CalendarDays, Key, Shield, ArrowRight, CheckCircle } from 'lucide-react';
+import GoogleAuthButton, { hasGoogleClientId } from '../components/GoogleAuthButton';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -11,7 +12,8 @@ const Login = () => {
     const [hostKeyword, setHostKeyword] = useState('');
     const [isHost, setIsHost] = useState(false);
     const [loading, setLoading] = useState(false);
-    const { login, hostLogin } = useAuth();
+    const [googleLoading, setGoogleLoading] = useState(false);
+    const { login, hostLogin, googleLogin } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
@@ -20,6 +22,23 @@ const Login = () => {
             setIsHost(true);
         }
     }, [searchParams]);
+
+    const navigateAfterAuth = (authUser) => {
+        navigate(authUser?.role === 'admin' ? '/admin' : authUser?.role === 'host' ? '/host' : '/dashboard');
+    };
+
+    const handleGoogleCredential = async (credential) => {
+        setGoogleLoading(true);
+        try {
+            const response = await googleLogin(credential);
+            toast.success('Login successful!');
+            navigateAfterAuth(response.user);
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Google login failed');
+        } finally {
+            setGoogleLoading(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -48,7 +67,7 @@ const Login = () => {
                 }
             } else {
                 toast.success('Login successful!');
-                navigate(response.user?.role === 'admin' ? '/admin' : response.user?.role === 'host' ? '/host' : '/dashboard');
+                navigateAfterAuth(response.user);
             }
         } catch (error) {
             if (error.code === 'ECONNABORTED') {
@@ -130,6 +149,22 @@ const Login = () => {
                                     className="h-5 w-5 rounded border-cocoa-200 text-primary-600 focus:ring-primary-500"
                                 />
                             </label>
+
+                            {!isHost && hasGoogleClientId && (
+                                <div className="mb-5 space-y-5">
+                                    <GoogleAuthButton
+                                        disabled={loading || googleLoading}
+                                        onCredential={handleGoogleCredential}
+                                        onError={() => toast.error('Google login failed')}
+                                        text="signin_with"
+                                    />
+                                    <div className="flex items-center gap-3">
+                                        <span className="h-px flex-1 bg-cocoa-100" />
+                                        <span className="text-xs font-extrabold uppercase text-cocoa-300">or</span>
+                                        <span className="h-px flex-1 bg-cocoa-100" />
+                                    </div>
+                                </div>
+                            )}
 
                             <form onSubmit={handleSubmit} className="space-y-5">
                                 <div>

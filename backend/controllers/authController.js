@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
 const {
   sendEmailVerificationOTP,
   sendLoginNotificationEmail,
@@ -17,10 +18,19 @@ const generateToken = (userId) => {
 
 const PASSWORD_RESET_EXPIRY_MINUTES = 15;
 const PASSWORD_RESET_RATE_LIMIT_SECONDS = 60;
+const googleClient = new OAuth2Client();
+
 const hashResetToken = (token) => crypto
   .createHash('sha256')
   .update(token)
   .digest('hex');
+
+const getGoogleClientIds = () => (
+  process.env.GOOGLE_CLIENT_IDS || process.env.GOOGLE_CLIENT_ID || ''
+)
+  .split(',')
+  .map((clientId) => clientId.trim())
+  .filter(Boolean);
 
 const getEmailFailureMessage = (purpose) => (
   `Could not send ${purpose} email. Please check the Brevo API key, verified sender email, and Render environment variables.`
@@ -32,9 +42,32 @@ const buildAuthUser = (user) => ({
   email: user.email,
   role: user.role,
   phone: user.phone,
+  googlePicture: user.googlePicture,
+  organizerProfile: user.organizerProfile,
+  organizerDocuments: user.organizerDocuments,
   isBlocked: user.isBlocked,
   isVerified: user.isVerified
 });
+
+const buildOrganizerProfile = (body = {}) => {
+  const source = body.organizerProfile && typeof body.organizerProfile === 'object'
+    ? body.organizerProfile
+    : body;
+
+  return {
+    businessName: source.businessName,
+    businessType: source.businessType || 'individual',
+    gstNumber: source.gstNumber,
+    panNumber: source.panNumber,
+    bankAccountName: source.bankAccountName,
+    bankAccountNumber: source.bankAccountNumber,
+    bankIfsc: source.bankIfsc,
+    contactEmail: source.contactEmail || body.email,
+    contactPhone: source.contactPhone || body.phone,
+    address: source.businessAddress || source.address,
+    verificationStatus: 'pending'
+  };
+};
 
 const recordSuccessfulLogin = async (req, user) => {
   user.lastLoginAt = new Date();
@@ -75,6 +108,17 @@ const getVerificationOtp = (user) => ({
   otpExpires: user.otpExpiry || user.emailVerificationOtpExpires || user.loginOtpExpires,
   lastOtpSent: user.lastOtpSent || user.lastLoginOtpSent
 });
+
+const clearVerificationState = (user) => {
+  user.otp = undefined;
+  user.otpExpiry = undefined;
+  user.emailVerificationOtp = undefined;
+  user.emailVerificationOtpExpires = undefined;
+  user.loginOtp = undefined;
+  user.loginOtpExpires = undefined;
+  user.lastOtpSent = undefined;
+  user.lastLoginOtpSent = undefined;
+};
 
 const sendVerificationOtp = async (user, save = true) => {
   const otp = generateSecureOTP();
@@ -125,14 +169,7 @@ const buildUnverifiedResponse = (user, message, emailSent = true) => ({
 const completeVerification = async (user) => {
   user.isVerified = true;
   user.loginOtpVerified = true;
-  user.otp = undefined;
-  user.otpExpiry = undefined;
-  user.emailVerificationOtp = undefined;
-  user.emailVerificationOtpExpires = undefined;
-  user.loginOtp = undefined;
-  user.loginOtpExpires = undefined;
-  user.lastOtpSent = undefined;
-  user.lastLoginOtpSent = undefined;
+  clearVerificationState(user);
   await user.save();
 
   const token = generateToken(user._id);
@@ -165,7 +202,9 @@ exports.hostRegister = async (req, res) => {
       password,
       phone,
       role: 'host',
-      secretKeyword
+      secretKeyword,
+      organizerProfile: buildOrganizerProfile(req.body),
+      organizerDocuments: Array.isArray(req.body.organizerDocuments) ? req.body.organizerDocuments : []
     });
 
     const otpResult = await sendVerificationOtp(user, false);
@@ -277,6 +316,75 @@ exports.login = async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.googleLogin = async (req, res) => {
+  try {
+    const { credential } = req.body;
+    const audience = getGoogleClientIds();
+
+    if (!credential) {
+      return res.status(400).json({ message: 'Google credential is required' });
+    }
+
+    if (audience.length === 0) {
+      return res.status(500).json({ message: 'Google login is not configured' });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: audience.length === 1 ? audience[0] : audience
+    });
+    const payload = ticket.getPayload();
+    const email = payload?.email?.toLowerCase().trim();
+    const emailVerified = payload?.email_verified === true || payload?.email_verified === 'true';
+
+    if (!payload?.sub || !email || !emailVerified) {
+      return res.status(401).json({ message: 'Google account could not be verified' });
+    }
+
+    let user = await User.findOne({ email });
+
+    if (user?.isBlocked) {
+      return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
+    }
+
+    if (user?.googleId && user.googleId !== payload.sub) {
+      return res.status(409).json({ message: 'This email is already linked to a different Google account' });
+    }
+
+    if (!user) {
+      user = new User({
+        name: payload.name || email.split('@')[0],
+        email,
+        googleId: payload.sub,
+        googlePicture: payload.picture,
+        isVerified: true,
+        loginOtpVerified: true
+      });
+    } else {
+      user.googleId = user.googleId || payload.sub;
+      user.googlePicture = payload.picture || user.googlePicture;
+      user.name = user.name || payload.name || email.split('@')[0];
+      user.isVerified = true;
+      user.loginOtpVerified = true;
+      clearVerificationState(user);
+    }
+
+    const token = generateToken(user._id);
+    await recordSuccessfulLogin(req, user);
+
+    res.json({
+      success: true,
+      verified: true,
+      token,
+      role: user.role,
+      user: buildAuthUser(user)
+    });
+  } catch (error) {
+    console.error('Google login error:', error);
+    res.status(401).json({ message: 'Google login failed' });
   }
 };
 
@@ -545,7 +653,7 @@ exports.resetPassword = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id).select('-password -googleId');
     res.json(user);
   } catch (error) {
     console.error('Get me error:', error);
@@ -605,11 +713,19 @@ exports.hostLogin = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, phone } = req.body;
+    const { name, phone, organizerProfile } = req.body;
     const user = await User.findById(req.user.id);
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
+    if (user.role === 'host' && organizerProfile && typeof organizerProfile === 'object') {
+      const currentOrganizerProfile = user.organizerProfile?.toObject?.() || user.organizerProfile || {};
+      user.organizerProfile = {
+        ...currentOrganizerProfile,
+        ...buildOrganizerProfile({ ...organizerProfile, email: user.email, phone: phone || user.phone }),
+        verificationStatus: currentOrganizerProfile.verificationStatus || 'pending'
+      };
+    }
 
     await user.save();
 
@@ -619,7 +735,9 @@ exports.updateProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        phone: user.phone
+        phone: user.phone,
+        organizerProfile: user.organizerProfile,
+        organizerDocuments: user.organizerDocuments
       }
     });
   } catch (error) {
@@ -769,7 +887,9 @@ exports.hostKeywordRegister = async (req, res) => {
       password,
       phone,
       role: 'host',
-      secretKeyword
+      secretKeyword,
+      organizerProfile: buildOrganizerProfile(req.body),
+      organizerDocuments: Array.isArray(req.body.organizerDocuments) ? req.body.organizerDocuments : []
     });
 
     const otpResult = await sendVerificationOtp(user, false);

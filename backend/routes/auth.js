@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   register,
   login,
+  googleLogin,
   getMe,
   updateProfile,
   changePassword,
@@ -25,6 +26,8 @@ router.post('/register', register);
 router.post('/host-register', hostRegister);
 
 router.post('/login', login);
+
+router.post('/google', googleLogin);
 
 router.post('/forgot-password', forgotPassword);
 

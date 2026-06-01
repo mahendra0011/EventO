@@ -222,7 +222,7 @@ exports.getDashboardStats = async (req, res) => {
         .populate('user', 'name email')
         .sort({ bookingDate: -1 })
         .limit(8),
-      User.find().select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken').sort({ createdAt: -1 }).limit(8),
+      User.find().select('-password -googleId -otp -loginOtp -emailVerificationOtp -passwordResetToken').sort({ createdAt: -1 }).limit(8),
       ActivityLog.find().populate('actor', 'name email role').sort({ createdAt: -1 }).limit(8),
       SupportTicket.countDocuments({ status: { $in: ['open', 'in_progress'] } }),
       Location.countDocuments({ isActive: true }),
@@ -304,7 +304,7 @@ exports.getAllUsers = async (req, res) => {
     const pageSize = toInt(limit, 20);
     const [users, count] = await Promise.all([
       User.find(query)
-        .select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken')
+        .select('-password -googleId -otp -loginOtp -emailVerificationOtp -passwordResetToken')
         .sort({ createdAt: -1 })
         .limit(pageSize)
         .skip((pageNumber - 1) * pageSize),
@@ -363,7 +363,7 @@ exports.updateUser = async (req, res) => {
       metadata: { role: user.role, isBlocked: user.isBlocked, isVerified: user.isVerified }
     });
 
-    res.json(await User.findById(user._id).select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken'));
+    res.json(await User.findById(user._id).select('-password -googleId -otp -loginOtp -emailVerificationOtp -passwordResetToken'));
   } catch (error) {
     console.error('Update user error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -453,16 +453,31 @@ exports.updateEvent = async (req, res) => {
       'venue',
       'location',
       'category',
+      'eventType',
       'image',
       'price',
       'totalTickets',
       'availableTickets',
+      'ticketCategories',
+      'budget',
+      'termsAndConditions',
+      'venuePermissionUrl',
+      'licenseDetails',
+      'ownershipProofUrl',
+      'eventDocuments',
+      'onGroundContactName',
+      'onGroundContactPhone',
+      'crowdManagementPlan',
+      'gateInstructions',
       'isActive',
       'isFeatured',
       'isTrending',
       'moderationStatus',
       'moderationFlags',
       'moderationNotes',
+      'lifecycleStage',
+      'ticketSaleStatus',
+      'settlement',
       'tags'
     ];
 
@@ -474,6 +489,58 @@ exports.updateEvent = async (req, res) => {
     if (updates.date) updates.date = new Date(updates.date);
     if (updates.moderationStatus && !['pending', 'approved', 'rejected'].includes(updates.moderationStatus)) {
       return res.status(400).json({ message: 'Invalid moderation status' });
+    }
+    if (updates.lifecycleStage && !['planning', 'under_review', 'approved', 'live', 'completed', 'settlement_pending', 'settled', 'cancelled'].includes(updates.lifecycleStage)) {
+      return res.status(400).json({ message: 'Invalid lifecycle stage' });
+    }
+    if (updates.ticketSaleStatus && !['draft', 'pending_approval', 'live', 'paused', 'sold_out', 'completed'].includes(updates.ticketSaleStatus)) {
+      return res.status(400).json({ message: 'Invalid ticket sale status' });
+    }
+
+    if (updates.moderationStatus === 'approved') {
+      updates.isActive = updates.isActive !== undefined ? updates.isActive : true;
+      updates.ticketSaleStatus = updates.ticketSaleStatus || 'live';
+      updates.lifecycleStage = updates.lifecycleStage || 'live';
+    }
+
+    if (updates.moderationStatus === 'rejected') {
+      updates.isActive = false;
+      updates.ticketSaleStatus = 'paused';
+      updates.lifecycleStage = 'under_review';
+    }
+
+    if (updates.lifecycleStage === 'completed' && !updates.settlement) {
+      updates.ticketSaleStatus = 'completed';
+      updates.settlement = { status: 'pending' };
+    }
+
+    if (updates.settlement?.status === 'settled' && !updates.settlement.settledAt) {
+      updates.settlement = { ...updates.settlement, settledAt: new Date() };
+      updates.lifecycleStage = 'settled';
+      updates.ticketSaleStatus = 'completed';
+    }
+
+    if (updates.settlement || ['completed', 'settlement_pending', 'settled'].includes(updates.lifecycleStage)) {
+      const confirmedBookings = await Booking.find({
+        event: req.params.id,
+        status: 'confirmed',
+        paymentStatus: 'completed'
+      }).select('totalPrice');
+      const grossRevenue = confirmedBookings.reduce((sum, booking) => sum + Number(booking.totalPrice || 0), 0);
+      const platformFeeRate = Number(updates.settlement?.platformFeeRate ?? PLATFORM_FEE_RATE);
+      const taxRate = Number(updates.settlement?.taxRate ?? 0);
+      const platformFee = Math.round(grossRevenue * platformFeeRate);
+      const taxAmount = Math.round(grossRevenue * taxRate);
+
+      updates.settlement = {
+        ...(updates.settlement || {}),
+        platformFeeRate,
+        taxRate,
+        grossRevenue,
+        platformFee,
+        taxAmount,
+        netSettlement: Math.max(grossRevenue - platformFee - taxAmount, 0)
+      };
     }
 
     const event = await Event.findByIdAndUpdate(
@@ -557,7 +624,7 @@ exports.getAllBookings = async (req, res) => {
 exports.updateBooking = async (req, res) => {
   try {
     const { status, paymentStatus, paymentAttempts, refundStatus, refundReason, disputeStatus, notes } = req.body;
-    const booking = await Booking.findById(req.params.id).populate('event', 'title availableTickets');
+    const booking = await Booking.findById(req.params.id).populate('event', 'title availableTickets totalTickets ticketCategories');
 
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
@@ -606,7 +673,11 @@ exports.updateBooking = async (req, res) => {
       ['cancelled', 'rejected'].includes(booking.status) &&
       booking.event
     ) {
-      await Event.findByIdAndUpdate(booking.event._id, { $inc: { availableTickets: booking.numberOfTickets } });
+      const event = await Event.findById(booking.event._id);
+      if (event) {
+        event.adjustTicketInventory(booking.ticketCategoryId, booking.numberOfTickets);
+        await event.save();
+      }
     }
 
     await logActivity({
@@ -1395,7 +1466,7 @@ exports.exportReport = async (req, res) => {
     const { type } = req.params;
 
     if (type === 'users') {
-      const users = await User.find().select('-password -otp -loginOtp -emailVerificationOtp -passwordResetToken').sort({ createdAt: -1 });
+      const users = await User.find().select('-password -googleId -otp -loginOtp -emailVerificationOtp -passwordResetToken').sort({ createdAt: -1 });
       return sendCsv(res, 'evento-users.csv', [
         ['Name', 'Email', 'Role', 'Verified', 'Blocked', 'Phone', 'Created At', 'Last Login'],
         ...users.map((user) => [
@@ -1414,21 +1485,26 @@ exports.exportReport = async (req, res) => {
     if (type === 'events') {
       const events = await Event.find().populate('organizer', 'name email').sort({ createdAt: -1 });
       return sendCsv(res, 'evento-events.csv', [
-        ['Title', 'Category', 'Date', 'Venue', 'Location', 'Organizer', 'Price', 'Total Tickets', 'Available Tickets', 'Active', 'Featured', 'Trending', 'Moderation'],
+        ['Title', 'Type', 'Category', 'Date', 'Venue', 'Location', 'Organizer', 'Ticket Categories', 'Base Price', 'Total Tickets', 'Available Tickets', 'Active', 'Featured', 'Trending', 'Moderation', 'Lifecycle', 'Sales Status', 'Settlement Status'],
         ...events.map((event) => [
           event.title,
+          event.eventType || '',
           event.category,
           event.date?.toISOString?.() || '',
           event.venue,
           event.location,
           event.organizer?.email || '',
+          (event.ticketCategories || []).map((category) => `${category.name}:${category.price}x${category.quantity}`).join(' | '),
           event.price,
           event.totalTickets,
           event.availableTickets,
           event.isActive,
           event.isFeatured,
           event.isTrending,
-          event.moderationStatus
+          event.moderationStatus,
+          event.lifecycleStage || '',
+          event.ticketSaleStatus || '',
+          event.settlement?.status || ''
         ])
       ]);
     }
@@ -1436,13 +1512,15 @@ exports.exportReport = async (req, res) => {
     if (type === 'bookings') {
       const bookings = await Booking.find().populate('event', 'title').populate('user', 'name email').sort({ bookingDate: -1 });
       return sendCsv(res, 'evento-bookings.csv', [
-        ['Booking ID', 'User', 'User Email', 'Event', 'Tickets', 'Total Price', 'Status', 'Payment Status', 'Booking Date'],
+        ['Booking ID', 'User', 'User Email', 'Event', 'Ticket Category', 'Tickets', 'Ticket Price', 'Total Price', 'Status', 'Payment Status', 'Booking Date'],
         ...bookings.map((booking) => [
           booking._id,
           booking.user?.name || '',
           booking.user?.email || '',
           booking.event?.title || '',
+          booking.ticketCategoryName || 'General',
           booking.numberOfTickets,
+          booking.ticketPrice || '',
           booking.totalPrice,
           booking.status,
           booking.paymentStatus,
@@ -1454,10 +1532,11 @@ exports.exportReport = async (req, res) => {
     if (type === 'revenue') {
       const bookings = await Booking.find({ status: 'confirmed' }).populate('event', 'title organizer').sort({ confirmedAt: -1 });
       return sendCsv(res, 'evento-revenue.csv', [
-        ['Booking ID', 'Event', 'Tickets', 'Gross Revenue', 'Platform Earnings', 'Organizer Payout', 'Payment Status', 'Confirmed At'],
+        ['Booking ID', 'Event', 'Ticket Category', 'Tickets', 'Gross Revenue', 'Platform Earnings', 'Organizer Payout', 'Payment Status', 'Confirmed At'],
         ...bookings.map((booking) => [
           booking._id,
           booking.event?.title || '',
+          booking.ticketCategoryName || 'General',
           booking.numberOfTickets,
           booking.totalPrice,
           Math.round(booking.totalPrice * PLATFORM_FEE_RATE),

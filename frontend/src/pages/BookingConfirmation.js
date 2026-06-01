@@ -43,6 +43,8 @@ const BookingConfirmation = () => {
   const canCancelBooking = ['pending', 'confirmed'].includes(booking?.status);
   const willStartRefund = booking?.status === 'confirmed' && booking?.paymentStatus === 'completed' && Number(booking?.totalPrice || 0) > 0;
   const refundStarted = booking?.refundStatus && booking.refundStatus !== 'none';
+  const ticketCategoryName = booking?.ticketCategoryName || 'General';
+  const ticketPrice = Number(booking?.ticketPrice || booking?.event?.price || 0);
 
   const handleCancelBooking = async () => {
     const refundCopy = willStartRefund
@@ -230,8 +232,12 @@ const BookingConfirmation = () => {
                     <span className="font-semibold">{booking.numberOfTickets}</span>
                   </div>
                   <div className="flex items-center justify-between">
+                    <span className="text-cocoa-500">Ticket Category</span>
+                    <span className="font-semibold">{ticketCategoryName}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
                     <span className="text-cocoa-500">Price per Ticket</span>
-                    <span className="font-semibold">₹{booking.event?.price?.toLocaleString('en-IN')}</span>
+                    <span className="font-semibold">Rs. {ticketPrice.toLocaleString('en-IN')}</span>
                   </div>
                   {refundStarted && (
                     <div className="border-t border-cocoa-100 pt-3 mt-3">

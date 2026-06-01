@@ -9,7 +9,8 @@ const {
   confirmBooking,
   rejectBooking,
   verifyOTP,
-  resendOTP
+  resendOTP,
+  validateTicket
 } = require('../controllers/bookingController');
 const { auth, hostAuth } = require('../middleware/auth');
 
@@ -18,6 +19,8 @@ router.post('/', auth, createBooking);
 router.get('/user', auth, getUserBookings);
 
 router.get('/all', hostAuth, getAllBookings);
+
+router.post('/validate-ticket', auth, validateTicket);
 
 router.get('/:id', auth, getBooking);
 

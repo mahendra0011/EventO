@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Mail, Lock, Eye, EyeOff, User, Phone, CalendarDays, Key, Shield, ArrowRight, CheckCircle } from 'lucide-react';
+import GoogleAuthButton, { hasGoogleClientId } from '../components/GoogleAuthButton';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -12,11 +13,20 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     secretKeyword: '',
+    businessName: '',
+    businessType: 'individual',
+    gstNumber: '',
+    panNumber: '',
+    bankAccountName: '',
+    bankAccountNumber: '',
+    bankIfsc: '',
+    businessAddress: '',
     isHost: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { register, hostRegister } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { register, hostRegister, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const getErrorMessage = (error) => {
@@ -25,6 +35,23 @@ const Register = () => {
     }
 
     return error.response?.data?.message || 'Registration failed';
+  };
+
+  const navigateAfterAuth = (authUser) => {
+    navigate(authUser?.role === 'admin' ? '/admin' : authUser?.role === 'host' ? '/host' : '/dashboard');
+  };
+
+  const handleGoogleCredential = async (credential) => {
+    setGoogleLoading(true);
+    try {
+      const res = await googleLogin(credential);
+      toast.success('Google sign-in successful!');
+      navigateAfterAuth(res.user);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Google sign-in failed');
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const goToVerification = (email, res) => {
@@ -69,7 +96,25 @@ const Register = () => {
 
     try {
       if (formData.isHost) {
-        const res = await hostRegister(formData.name, formData.email, formData.password, formData.phone, formData.secretKeyword);
+        const res = await hostRegister(
+          formData.name,
+          formData.email,
+          formData.password,
+          formData.phone,
+          formData.secretKeyword,
+          {
+            businessName: formData.businessName,
+            businessType: formData.businessType,
+            gstNumber: formData.gstNumber,
+            panNumber: formData.panNumber,
+            bankAccountName: formData.bankAccountName,
+            bankAccountNumber: formData.bankAccountNumber,
+            bankIfsc: formData.bankIfsc,
+            businessAddress: formData.businessAddress,
+            contactEmail: formData.email,
+            contactPhone: formData.phone
+          }
+        );
         if (res.requiresVerification || res.requiresOTP) {
           goToVerification(formData.email, res);
         } else {
@@ -127,6 +172,22 @@ const Register = () => {
                   className="h-5 w-5 rounded border-cocoa-200 text-primary-600 focus:ring-primary-500"
                 />
               </label>
+
+              {!formData.isHost && hasGoogleClientId && (
+                <div className="mb-5 space-y-5">
+                  <GoogleAuthButton
+                    disabled={loading || googleLoading}
+                    onCredential={handleGoogleCredential}
+                    onError={() => toast.error('Google sign-in failed')}
+                    text="signup_with"
+                  />
+                  <div className="flex items-center gap-3">
+                    <span className="h-px flex-1 bg-cocoa-100" />
+                    <span className="text-xs font-extrabold uppercase text-cocoa-300">or</span>
+                    <span className="h-px flex-1 bg-cocoa-100" />
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
@@ -228,25 +289,75 @@ const Register = () => {
                 </div>
 
                 {formData.isHost && (
-                  <div>
-                    <label htmlFor="secretKeyword" className="label">
-                      <span className="flex items-center text-primary-700">
-                        <Key className="mr-2 h-4 w-4" />
-                        Host secret keyword
-                      </span>
-                    </label>
-                    <div className="relative">
-                      <Shield className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-cocoa-300" />
-                      <input
-                        id="secretKeyword"
-                        name="secretKeyword"
-                        type="password"
-                        value={formData.secretKeyword}
-                        onChange={handleChange}
-                        required={formData.isHost}
-                        className="input-field pl-10"
-                        placeholder="Enter host keyword"
-                      />
+                  <div className="space-y-5 rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-5">
+                    <div>
+                      <label htmlFor="secretKeyword" className="label">
+                        <span className="flex items-center text-primary-700">
+                          <Key className="mr-2 h-4 w-4" />
+                          Host secret keyword
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Shield className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-cocoa-300" />
+                        <input
+                          id="secretKeyword"
+                          name="secretKeyword"
+                          type="password"
+                          value={formData.secretKeyword}
+                          onChange={handleChange}
+                          required={formData.isHost}
+                          className="input-field pl-10"
+                          placeholder="Enter host keyword"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="businessName" className="label">Business / organizer name</label>
+                        <input id="businessName" name="businessName" value={formData.businessName} onChange={handleChange} required={formData.isHost} className="input-field" placeholder="Evento Productions" />
+                      </div>
+                      <div>
+                        <label htmlFor="businessType" className="label">Business type</label>
+                        <select id="businessType" name="businessType" value={formData.businessType} onChange={handleChange} className="input-field">
+                          <option value="individual">Individual</option>
+                          <option value="partnership">Partnership</option>
+                          <option value="company">Company</option>
+                          <option value="trust">Trust / NGO</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="gstNumber" className="label">GST number</label>
+                        <input id="gstNumber" name="gstNumber" value={formData.gstNumber} onChange={handleChange} className="input-field uppercase" placeholder="Optional" />
+                      </div>
+                      <div>
+                        <label htmlFor="panNumber" className="label">PAN number</label>
+                        <input id="panNumber" name="panNumber" value={formData.panNumber} onChange={handleChange} className="input-field uppercase" placeholder="Optional" />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-5 sm:grid-cols-3">
+                      <div className="sm:col-span-1">
+                        <label htmlFor="bankAccountName" className="label">Bank holder</label>
+                        <input id="bankAccountName" name="bankAccountName" value={formData.bankAccountName} onChange={handleChange} className="input-field" placeholder="Account name" />
+                      </div>
+                      <div>
+                        <label htmlFor="bankAccountNumber" className="label">Account number</label>
+                        <input id="bankAccountNumber" name="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleChange} className="input-field" placeholder="Settlement account" />
+                      </div>
+                      <div>
+                        <label htmlFor="bankIfsc" className="label">IFSC</label>
+                        <input id="bankIfsc" name="bankIfsc" value={formData.bankIfsc} onChange={handleChange} className="input-field uppercase" placeholder="IFSC" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="businessAddress" className="label">Business address</label>
+                      <textarea id="businessAddress" name="businessAddress" value={formData.businessAddress} onChange={handleChange} className="input-field" rows={3} placeholder="Registered address" />
                     </div>
                   </div>
                 )}

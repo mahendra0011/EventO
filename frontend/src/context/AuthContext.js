@@ -42,6 +42,15 @@ export const AuthProvider = ({ children }) => {
       return res.data;
     };
 
+    const googleLogin = async (credential) => {
+      const res = await api.post('/auth/google', { credential });
+      if (res.data.token) localStorage.setItem('token', res.data.token);
+      if (res.data.verified && !res.data.requiresVerification && !res.data.requiresOTP) {
+        setUser(res.data.user);
+      }
+      return res.data;
+    };
+
     const resendLoginOTP = async (email) => {
       const res = await api.post('/auth/resend-login-otp', { email });
       return res.data;
@@ -66,8 +75,8 @@ export const AuthProvider = ({ children }) => {
       return res.data;
     };
 
-const hostRegister = async (name, email, password, phone, secretKeyword) => {
-      const res = await api.post('/auth/host-keyword-register', { name, email, password, phone, secretKeyword });
+const hostRegister = async (name, email, password, phone, secretKeyword, organizerProfile = {}) => {
+      const res = await api.post('/auth/host-keyword-register', { name, email, password, phone, secretKeyword, organizerProfile });
       if (res.data.token) localStorage.setItem('token', res.data.token);
       if (!res.data.requiresVerification && !res.data.requiresOTP) {
         setUser(res.data.user);
@@ -115,6 +124,7 @@ const hostRegister = async (name, email, password, phone, secretKeyword) => {
       loading,
       login,
       register,
+      googleLogin,
       logout,
       updateProfile,
       hostLogin,

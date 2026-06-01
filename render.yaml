@@ -26,11 +26,16 @@ services:
         value: Evento
       - key: REPLY_TO_EMAIL
         sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
   - type: web
     name: evento-frontend
     runtime: static
     buildCommand: npm install --prefix frontend && npm run build --prefix frontend
     staticPublishPath: frontend/build
+    envVars:
+      - key: REACT_APP_GOOGLE_CLIENT_ID
+        sync: false
     routes:
       - type: rewrite
         source: /*

@@ -31,6 +31,7 @@ const EventDetail = () => {
     const [bookingCanResend, setBookingCanResend] = useState(false);
     const [bookingResendCountdown, setBookingResendCountdown] = useState(60);
     const [bookingOtpVerified, setBookingOtpVerified] = useState(false);
+    const [selectedTicketCategoryId, setSelectedTicketCategoryId] = useState('');
     const bookingTimerInterval = useRef(null);
     const bookingResendInterval = useRef(null);
 
@@ -53,6 +54,8 @@ const EventDetail = () => {
     try {
       const res = await api.get(`/events/${id}`);
       setEvent(res.data);
+      const firstActiveTicketCategory = (res.data.ticketCategories || []).find((category) => category.isActive !== false && Number(category.availableQuantity || 0) > 0);
+      setSelectedTicketCategoryId(firstActiveTicketCategory?._id || '');
 
       if (user) {
         try {
@@ -95,11 +98,16 @@ const EventDetail = () => {
             navigate('/login');
             return;
         }
+        if (!ticketSalesLive) {
+            toast.error('Ticket sales are not live for this event yet');
+            return;
+        }
 
         setBookingLoading(true);
         try {
             const res = await api.post('/bookings', {
                 eventId: event._id,
+                ticketCategoryId: selectedTicketCategoryId || undefined,
                 numberOfTickets,
                 attendeeDetails: [{
                     name: user.name,
@@ -309,11 +317,18 @@ const EventDetail = () => {
   }
 
   const detailImage = event.image || 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1400&q=85';
-  const availableTickets = Number(event.availableTickets || 0);
-  const totalTickets = Math.max(Number(event.totalTickets || 0), availableTickets);
+  const ticketCategories = (event.ticketCategories || []).filter((category) => category.isActive !== false);
+  const selectedTicketCategory = ticketCategories.find((category) => category._id === selectedTicketCategoryId) || ticketCategories[0];
+  const availableTickets = selectedTicketCategory
+    ? Number(selectedTicketCategory.availableQuantity || 0)
+    : Number(event.availableTickets || 0);
+  const totalTickets = selectedTicketCategory
+    ? Math.max(Number(selectedTicketCategory.quantity || 0), availableTickets)
+    : Math.max(Number(event.totalTickets || 0), availableTickets);
   const bookedTickets = Math.max(0, totalTickets - availableTickets);
   const ticketProgress = totalTickets ? Math.min(100, Math.round((bookedTickets / totalTickets) * 100)) : 0;
-  const eventPrice = Number(event.price || 0);
+  const eventPrice = Number(selectedTicketCategory?.price ?? event.price ?? 0);
+  const ticketSalesLive = event.isActive !== false && event.moderationStatus !== 'pending' && event.moderationStatus !== 'rejected' && !['pending_approval', 'paused', 'completed'].includes(event.ticketSaleStatus);
 
   return (
     <div className="subtle-grid min-h-screen bg-[#fbf8f4] py-10">
@@ -535,6 +550,36 @@ const EventDetail = () => {
                   <p className="text-cocoa-500 whitespace-pre-line">{event.description}</p>
                 </div>
 
+                {(event.eventType || event.termsAndConditions || event.gateInstructions || event.onGroundContactName) && (
+                  <div className="mt-6 grid gap-4 md:grid-cols-2">
+                    {event.eventType && (
+                      <div className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4">
+                        <p className="text-xs font-extrabold uppercase text-cocoa-400">Event type</p>
+                        <p className="mt-1 font-bold text-cocoa-900">{event.eventType}</p>
+                      </div>
+                    )}
+                    {event.onGroundContactName && (
+                      <div className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4">
+                        <p className="text-xs font-extrabold uppercase text-cocoa-400">On-ground support</p>
+                        <p className="mt-1 font-bold text-cocoa-900">{event.onGroundContactName}</p>
+                        {event.onGroundContactPhone && <p className="text-sm text-cocoa-500">{event.onGroundContactPhone}</p>}
+                      </div>
+                    )}
+                    {event.gateInstructions && (
+                      <div className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4 md:col-span-2">
+                        <p className="text-xs font-extrabold uppercase text-cocoa-400">Entry instructions</p>
+                        <p className="mt-1 whitespace-pre-line text-sm font-semibold text-cocoa-600">{event.gateInstructions}</p>
+                      </div>
+                    )}
+                    {event.termsAndConditions && (
+                      <div className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4 md:col-span-2">
+                        <p className="text-xs font-extrabold uppercase text-cocoa-400">Terms and conditions</p>
+                        <p className="mt-1 whitespace-pre-line text-sm font-semibold text-cocoa-600">{event.termsAndConditions}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {event.tags && event.tags.length > 0 && (
                   <div className="mt-6">
                     <h3 className="text-lg font-semibold mb-2">Tags</h3>
@@ -571,6 +616,29 @@ const EventDetail = () => {
               </div>
 
               <div className="space-y-4 mb-6">
+                {ticketCategories.length > 0 && (
+                  <div>
+                    <label className="label">Ticket Category</label>
+                    <select
+                      value={selectedTicketCategory?._id || ''}
+                      onChange={(e) => {
+                        setSelectedTicketCategoryId(e.target.value);
+                        setNumberOfTickets(1);
+                      }}
+                      className="input-field"
+                    >
+                      {ticketCategories.map((category) => (
+                        <option key={category._id} value={category._id} disabled={Number(category.availableQuantity || 0) <= 0}>
+                          {category.name} - ₹{Number(category.price || 0).toLocaleString('en-IN')} ({Number(category.availableQuantity || 0)} left)
+                        </option>
+                      ))}
+                    </select>
+                    {selectedTicketCategory?.description && (
+                      <p className="mt-2 text-sm font-semibold text-cocoa-400">{selectedTicketCategory.description}</p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between text-cocoa-500">
                   <span>Available Tickets</span>
                   <span className="font-semibold text-green-600">
@@ -628,7 +696,14 @@ const EventDetail = () => {
                 )}
               </div>
 
-              {availableTickets > 0 ? (
+              {!ticketSalesLive ? (
+                <button
+                  disabled
+                  className="w-full rounded-lg bg-cocoa-200 px-6 py-3 font-semibold text-cocoa-400 cursor-not-allowed"
+                >
+                  Ticket Sales Pending Approval
+                </button>
+              ) : availableTickets > 0 ? (
                 <div className="flex gap-2">
                   <button
                     onClick={handleBooking}

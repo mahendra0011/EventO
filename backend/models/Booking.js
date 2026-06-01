@@ -16,6 +16,17 @@ const bookingSchema = new mongoose.Schema({
     required: [true, 'Number of tickets is required'],
     min: 1
   },
+  ticketCategoryId: {
+    type: mongoose.Schema.Types.ObjectId
+  },
+  ticketCategoryName: {
+    type: String,
+    trim: true
+  },
+  ticketPrice: {
+    type: Number,
+    min: 0
+  },
   totalPrice: {
     type: Number,
     required: true
@@ -69,6 +80,22 @@ const bookingSchema = new mongoose.Schema({
   cancelledAt: {
     type: Date
   },
+  checkInStatus: {
+    type: String,
+    enum: ['not_checked_in', 'checked_in', 'denied'],
+    default: 'not_checked_in'
+  },
+  checkedInAt: {
+    type: Date
+  },
+  checkedInBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  checkInNotes: {
+    type: String,
+    trim: true
+  },
   notes: {
     type: String
   },
@@ -92,5 +119,6 @@ const bookingSchema = new mongoose.Schema({
 
 bookingSchema.index({ user: 1, status: 1 });
 bookingSchema.index({ event: 1, status: 1 });
+bookingSchema.index({ event: 1, checkInStatus: 1 });
 
 module.exports = mongoose.model('Booking', bookingSchema);

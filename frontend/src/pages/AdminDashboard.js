@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api, { broadcastToEventBookers, changeHostKeyword, changePassword, getNotifications } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { QRCodeScanner } from '../components/animated';
 import {
     Calendar,
     Ticket,
@@ -55,7 +56,7 @@ import {
   YAxis
 } from 'recharts';
 
-const hostDashboardTabs = ['overview', 'analytics', 'bookings', 'events', 'communications', 'notifications', 'community', 'settings'];
+const hostDashboardTabs = ['overview', 'analytics', 'bookings', 'events', 'operations', 'communications', 'notifications', 'community', 'settings'];
 const statusPalette = {
   confirmed: '#10b981',
   pending: '#f59e0b',
@@ -236,6 +237,40 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleValidateTicket = async (ticketPayload) => {
+    if (!ticketPayload?.ticketId) {
+      const missingTicketError = new Error('Ticket QR is missing a booking ID');
+      toast.error(missingTicketError.message);
+      throw missingTicketError;
+    }
+
+    try {
+      const res = await api.post('/bookings/validate-ticket', {
+        ticketId: ticketPayload.ticketId,
+        eventId: ticketPayload.eventId
+      });
+      const validatedTicket = res.data?.ticket;
+
+      if (validatedTicket?.bookingId) {
+        setBookings((prev) => prev.map((booking) => (
+          booking._id === validatedTicket.bookingId
+            ? {
+                ...booking,
+                checkInStatus: validatedTicket.checkInStatus,
+                checkedInAt: validatedTicket.checkedInAt
+              }
+            : booking
+        )));
+      }
+
+      toast.success('Entry approved');
+      return res.data;
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || 'Ticket validation failed');
+      throw error;
+    }
+  };
+
    useEffect(() => {
      fetchDashboardData();
      if (user?.role === 'host') {
@@ -407,6 +442,15 @@ const AdminDashboard = () => {
   const pendingRate = totalBookings ? Math.round((pendingBookings / totalBookings) * 100) : 0;
   const avgBookingValue = totalBookings ? Math.round(totalRevenue / totalBookings) : 0;
   const activeEvents = events.filter((event) => new Date(event.date) >= new Date()).length;
+  const checkedInBookings = bookings.filter((booking) => booking.checkInStatus === 'checked_in' || booking.checkedInAt).length;
+  const entryReadyEvents = events.filter((event) => (
+    event.moderationStatus === 'approved' &&
+    ['live', 'sold_out'].includes(event.ticketSaleStatus)
+  ));
+  const upcomingOperationsEvents = [...events]
+    .filter((event) => new Date(event.date) >= new Date())
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(0, 4);
   const maxTopRevenue = Math.max(...(stats?.topEvents || []).map((item) => Number(item.revenue || 0)), 1);
   const maxStatusCount = Math.max(...(stats?.bookingsByStatus || []).map((item) => Number(item.count || 0)), 1);
   const topEventsChartData = (stats?.topEvents || []).slice(0, 6).map((item, index) => ({
@@ -491,6 +535,13 @@ const AdminDashboard = () => {
       detail: `${fillRate}% capacity filled`,
       icon: Ticket,
       color: 'from-amber-500 to-orange-500'
+    },
+    {
+      label: 'Net Settlement',
+      value: formatMoney(stats?.stats?.netSettlement || 0),
+      detail: `${formatMoney(stats?.stats?.platformFee || 0)} platform fee estimated`,
+      icon: CreditCard,
+      color: 'from-blue-500 to-cyan-500'
     },
     {
       label: 'Live Events',
@@ -622,6 +673,17 @@ const AdminDashboard = () => {
                   >
                     <Calendar className="h-4 w-4 inline mr-2" />
                     Events
+                  </button>
+                  <button
+                    onClick={() => handleTabChange('operations')}
+                    className={`rounded-full px-4 py-2 text-sm font-extrabold whitespace-nowrap transition-all ${
+                      activeTab === 'operations'
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-[#f3eee9] text-cocoa-500 hover:bg-primary-50 hover:text-primary-600'
+                    }`}
+                  >
+                    <Smartphone className="h-4 w-4 inline mr-2" />
+                    Entry Ops
                   </button>
                   <button
                     onClick={() => handleTabChange('communications')}
@@ -803,6 +865,7 @@ const AdminDashboard = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-cocoa-400">
                             {booking.numberOfTickets}
+                            <div className="text-xs text-cocoa-300">{booking.ticketCategoryName || 'General'}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-cocoa-900">
                             ₹{booking.totalPrice?.toLocaleString('en-IN')}
@@ -834,10 +897,33 @@ const AdminDashboard = () => {
                       />
                       <div className="p-4">
                         <h4 className="font-semibold text-cocoa-900 mb-2">{event.title}</h4>
+                        <div className="mb-3 flex flex-wrap gap-2 text-xs font-bold">
+                          <span className={`rounded-full px-2.5 py-1 ${event.moderationStatus === 'approved' ? 'bg-green-100 text-green-700' : event.moderationStatus === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                            {event.moderationStatus || 'pending'} review
+                          </span>
+                          <span className="rounded-full bg-primary-50 px-2.5 py-1 text-primary-700">
+                            {event.ticketSaleStatus || 'pending_approval'}
+                          </span>
+                          {event.settlement?.status && (
+                            <span className="rounded-full bg-cocoa-100 px-2.5 py-1 text-cocoa-600">
+                              settlement {event.settlement.status}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center text-sm text-cocoa-400 mb-2">
                           <Calendar className="h-4 w-4 mr-1" />
                           {formatDate(event.date)}
                         </div>
+                        {event.ticketCategories?.length > 0 && (
+                          <div className="mb-3 space-y-1 rounded-lg bg-[#fbf8f4] p-3 text-xs font-semibold text-cocoa-500">
+                            {event.ticketCategories.slice(0, 3).map((category) => (
+                              <div key={category._id || category.name} className="flex justify-between gap-3">
+                                <span>{category.name}</span>
+                                <span>₹{Number(category.price || 0).toLocaleString('en-IN')} / {category.availableQuantity}/{category.quantity}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-cocoa-400">
                             {event.availableTickets} / {event.totalTickets} tickets
@@ -870,6 +956,95 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'operations' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-5">
+                    <p className="text-sm font-bold uppercase text-cocoa-400">Entry-ready events</p>
+                    <p className="mt-2 text-3xl font-extrabold text-cocoa-900">{entryReadyEvents.length}</p>
+                  </div>
+                  <div className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-5">
+                    <p className="text-sm font-bold uppercase text-cocoa-400">Checked in</p>
+                    <p className="mt-2 text-3xl font-extrabold text-cocoa-900">{checkedInBookings}</p>
+                  </div>
+                  <div className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-5">
+                    <p className="text-sm font-bold uppercase text-cocoa-400">Confirmed bookings</p>
+                    <p className="mt-2 text-3xl font-extrabold text-cocoa-900">{confirmedBookings}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                  <div className="lg:col-span-2">
+                    <QRCodeScanner onValidateTicket={handleValidateTicket} />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-cocoa-100 bg-white p-5">
+                      <h3 className="mb-4 flex items-center text-lg font-semibold text-cocoa-900">
+                        <Calendar className="mr-2 h-5 w-5 text-primary-600" />
+                        Upcoming Gates
+                      </h3>
+                      {upcomingOperationsEvents.length === 0 ? (
+                        <p className="text-sm text-cocoa-500">No upcoming events scheduled.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {upcomingOperationsEvents.map((event) => (
+                            <div key={event._id} className="rounded-lg bg-[#fbf8f4] p-4">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="font-bold text-cocoa-900">{event.title}</p>
+                                  <p className="mt-1 text-sm text-cocoa-500">{formatDate(event.date)} at {event.time}</p>
+                                  <p className="mt-1 text-sm text-cocoa-500">{event.venue}</p>
+                                </div>
+                                <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                                  event.moderationStatus === 'approved' && ['live', 'sold_out'].includes(event.ticketSaleStatus)
+                                    ? 'bg-green-100 text-green-700'
+                                    : 'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {event.ticketSaleStatus || 'pending'}
+                                </span>
+                              </div>
+                              {event.gateInstructions && (
+                                <p className="mt-3 rounded-md bg-white p-3 text-xs font-semibold text-cocoa-500">
+                                  {event.gateInstructions}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-lg border border-cocoa-100 bg-white p-5">
+                      <h3 className="mb-4 flex items-center text-lg font-semibold text-cocoa-900">
+                        <Ticket className="mr-2 h-5 w-5 text-primary-600" />
+                        Recent Check-ins
+                      </h3>
+                      {bookings.filter((booking) => booking.checkedInAt).length === 0 ? (
+                        <p className="text-sm text-cocoa-500">No tickets checked in yet.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {bookings
+                            .filter((booking) => booking.checkedInAt)
+                            .sort((a, b) => new Date(b.checkedInAt) - new Date(a.checkedInAt))
+                            .slice(0, 5)
+                            .map((booking) => (
+                              <div key={booking._id} className="rounded-lg bg-[#fbf8f4] p-4">
+                                <p className="font-bold text-cocoa-900">{booking.user?.name || 'Attendee'}</p>
+                                <p className="mt-1 text-sm text-cocoa-500">{booking.event?.title}</p>
+                                <p className="mt-1 text-xs font-semibold text-green-700">
+                                  {new Date(booking.checkedInAt).toLocaleString('en-IN')}
+                                </p>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

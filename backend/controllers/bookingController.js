@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
 const Event = require('../models/Event');
 const Notification = require('../models/Notification');
@@ -22,9 +23,64 @@ const sendImportantEmail = (user, title, message, link) => {
 
 const getBookingEmailFailureMessage = () => 'Could not send booking OTP email. Please check the Brevo API key, verified sender email, and Render environment variables.';
 
+const getBookableTicketCategory = (event, ticketCategoryId) => {
+  const activeCategories = (event.ticketCategories || []).filter((category) => category.isActive !== false);
+
+  if (activeCategories.length === 0) {
+    return {
+      ticketCategoryId: undefined,
+      ticketCategoryName: 'General',
+      ticketPrice: Number(event.price || 0),
+      availableQuantity: Number(event.availableTickets || 0)
+    };
+  }
+
+  const selectedCategory = ticketCategoryId
+    ? activeCategories.find((category) => category._id.toString() === ticketCategoryId.toString())
+    : activeCategories[0];
+
+  if (!selectedCategory) return null;
+
+  return {
+    ticketCategoryId: selectedCategory._id,
+    ticketCategoryName: selectedCategory.name,
+    ticketPrice: Number(selectedCategory.price || 0),
+    availableQuantity: Number(selectedCategory.availableQuantity || 0)
+  };
+};
+
+const buildTicketValidationPayload = (booking) => ({
+  ticketId: booking._id,
+  bookingId: booking._id,
+  ticketCategoryId: booking.ticketCategoryId,
+  ticketCategoryName: booking.ticketCategoryName || 'General',
+  ticketPrice: booking.ticketPrice,
+  numberOfTickets: booking.numberOfTickets,
+  totalPrice: booking.totalPrice,
+  status: booking.status,
+  paymentStatus: booking.paymentStatus,
+  checkInStatus: booking.checkInStatus,
+  checkedInAt: booking.checkedInAt,
+  event: booking.event ? {
+    _id: booking.event._id,
+    title: booking.event.title,
+    date: booking.event.date,
+    time: booking.event.time,
+    venue: booking.event.venue,
+    location: booking.event.location,
+    gateInstructions: booking.event.gateInstructions
+  } : null,
+  attendee: booking.user ? {
+    _id: booking.user._id,
+    name: booking.user.name,
+    email: booking.user.email,
+    phone: booking.user.phone
+  } : null
+});
+
 exports.createBooking = async (req, res) => {
    try {
-     const { eventId, numberOfTickets, attendeeDetails } = req.body;
+     const { eventId, numberOfTickets, attendeeDetails, ticketCategoryId } = req.body;
 
      if (!eventId || !numberOfTickets) {
        return res.status(400).json({ message: 'Event ID and number of tickets are required' });
@@ -35,7 +91,16 @@ exports.createBooking = async (req, res) => {
        return res.status(404).json({ message: 'Event not found' });
      }
 
-     if (event.availableTickets < numberOfTickets) {
+     if (!event.isActive || event.moderationStatus !== 'approved' || !['live', undefined].includes(event.ticketSaleStatus)) {
+       return res.status(400).json({ message: 'Ticket sales are not live for this event yet' });
+     }
+
+     const ticketSelection = getBookableTicketCategory(event, ticketCategoryId);
+     if (!ticketSelection) {
+       return res.status(400).json({ message: 'Selected ticket category is not available' });
+     }
+
+     if (event.availableTickets < numberOfTickets || ticketSelection.availableQuantity < numberOfTickets) {
        return res.status(400).json({ message: 'Not enough tickets available' });
      }
 
@@ -56,7 +121,10 @@ exports.createBooking = async (req, res) => {
        );
 
        existingPendingBooking.numberOfTickets = numberOfTickets;
-       existingPendingBooking.totalPrice = event.price * numberOfTickets;
+       existingPendingBooking.ticketCategoryId = ticketSelection.ticketCategoryId;
+       existingPendingBooking.ticketCategoryName = ticketSelection.ticketCategoryName;
+       existingPendingBooking.ticketPrice = ticketSelection.ticketPrice;
+       existingPendingBooking.totalPrice = ticketSelection.ticketPrice * numberOfTickets;
        existingPendingBooking.attendeeDetails = attendeeDetails;
 
        let emailSent = true;
@@ -101,7 +169,10 @@ exports.createBooking = async (req, res) => {
        user: req.user.id,
        event: eventId,
        numberOfTickets,
-       totalPrice: event.price * numberOfTickets,
+       ticketCategoryId: ticketSelection.ticketCategoryId,
+       ticketCategoryName: ticketSelection.ticketCategoryName,
+       ticketPrice: ticketSelection.ticketPrice,
+       totalPrice: ticketSelection.ticketPrice * numberOfTickets,
        attendeeDetails,
        status: 'pending',
        paymentStatus: 'pending',
@@ -151,7 +222,7 @@ exports.createBooking = async (req, res) => {
          ? 'Booking created. Please verify OTP sent to your email.'
          : getBookingEmailFailureMessage(),
        bookingId: booking._id,
-       totalPrice: event.price * numberOfTickets,
+       totalPrice: ticketSelection.ticketPrice * numberOfTickets,
        requiresOTP: true,
        emailSent
      });
@@ -197,11 +268,15 @@ exports.verifyOTP = async (req, res) => {
      booking.status = 'confirmed';
      booking.paymentStatus = 'completed';
      booking.confirmedAt = new Date();
+     const event = await Event.findById(booking.event).populate('organizer', 'name email');
+     const ticketSelection = getBookableTicketCategory(event, booking.ticketCategoryId);
+     if (!ticketSelection || event.availableTickets < booking.numberOfTickets || ticketSelection.availableQuantity < booking.numberOfTickets) {
+       return res.status(400).json({ message: 'Not enough tickets available for this category anymore' });
+     }
+
+     event.adjustTicketInventory(booking.ticketCategoryId, -booking.numberOfTickets);
 
      await booking.save();
-
-     const event = await Event.findById(booking.event).populate('organizer', 'name email');
-     event.availableTickets -= booking.numberOfTickets;
      await event.save();
 
      sendBookingConfirmationEmail(
@@ -299,10 +374,94 @@ exports.resendOTP = async (req, res) => {
    }
  };
 
+exports.validateTicket = async (req, res) => {
+   try {
+     const { ticketId, bookingId, eventId, notes } = req.body || {};
+     const id = ticketId || bookingId;
+
+     if (!['host', 'admin'].includes(req.user.role)) {
+       return res.status(403).json({ message: 'Only organizers can validate event tickets' });
+     }
+
+     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+       return res.status(400).json({ message: 'Valid ticket ID is required' });
+     }
+
+     const booking = await Booking.findById(id)
+       .populate('event', 'title date time venue location organizer gateInstructions')
+       .populate('user', 'name email phone');
+
+     if (!booking) {
+       return res.status(404).json({ message: 'Ticket not found' });
+     }
+
+     if (!booking.event) {
+       return res.status(400).json({ message: 'Ticket event could not be found' });
+     }
+
+     if (eventId && booking.event._id.toString() !== eventId.toString()) {
+       return res.status(400).json({ message: 'This ticket belongs to a different event' });
+     }
+
+     const isAdmin = req.user.role === 'admin';
+     const isEventOrganizer = booking.event.organizer?.toString() === req.user.id;
+
+     if (!isAdmin && !isEventOrganizer) {
+       return res.status(403).json({ message: 'You can only validate tickets for your own events' });
+     }
+
+     if (booking.checkInStatus === 'checked_in' || booking.checkedInAt) {
+       return res.status(409).json({
+         message: 'Ticket has already been checked in',
+         entryApproved: false,
+         alreadyCheckedIn: true,
+         ticket: buildTicketValidationPayload(booking)
+       });
+     }
+
+     if (booking.status !== 'confirmed') {
+       return res.status(400).json({
+         message: `Ticket is ${booking.status || 'not confirmed'} and cannot be used for entry`,
+         entryApproved: false,
+         ticket: buildTicketValidationPayload(booking)
+       });
+     }
+
+     if (booking.paymentStatus !== 'completed') {
+       return res.status(400).json({
+         message: 'Ticket payment is not completed',
+         entryApproved: false,
+         ticket: buildTicketValidationPayload(booking)
+       });
+     }
+
+     const trimmedNotes = typeof notes === 'string' ? notes.trim() : '';
+
+     booking.checkInStatus = 'checked_in';
+     booking.checkedInAt = new Date();
+     booking.checkedInBy = req.user.id;
+     booking.checkInNotes = trimmedNotes || undefined;
+     await booking.save();
+
+     const validatedBooking = await Booking.findById(booking._id)
+       .populate('event', 'title date time venue location organizer gateInstructions')
+       .populate('user', 'name email phone');
+
+     res.json({
+       message: 'Ticket validated. Entry approved.',
+       entryApproved: true,
+       ticket: buildTicketValidationPayload(validatedBooking)
+     });
+   } catch (error) {
+     console.error('Validate ticket error:', error);
+     res.status(500).json({ message: 'Server error' });
+   }
+ };
+
 exports.getUserBookings = async (req, res) => {
    try {
      const bookings = await Booking.find({ user: req.user.id })
-       .populate('event', 'title date time venue image price')
+       .populate('event', 'title date time venue image price ticketCategories')
        .sort({ bookingDate: -1 });
 
      res.json(bookings);
@@ -315,7 +474,7 @@ exports.getUserBookings = async (req, res) => {
 exports.getBooking = async (req, res) => {
    try {
      const booking = await Booking.findById(req.params.id)
-       .populate('event', 'title date time venue image price')
+       .populate('event', 'title date time venue location image price ticketCategories gateInstructions')
        .populate('user', 'name email');
 
      if (!booking) {
@@ -367,7 +526,7 @@ exports.cancelBooking = async (req, res) => {
      const event = await Event.findById(booking.event._id).populate('organizer', 'name email');
 
      if (wasConfirmed) {
-       event.availableTickets = Math.min(event.totalTickets, event.availableTickets + booking.numberOfTickets);
+       event.adjustTicketInventory(booking.ticketCategoryId, booking.numberOfTickets);
        await event.save();
      }
 
@@ -411,7 +570,7 @@ exports.cancelBooking = async (req, res) => {
      }
 
      const updatedBooking = await Booking.findById(booking._id)
-       .populate('event', 'title date time venue image price')
+       .populate('event', 'title date time venue image price ticketCategories')
        .populate('user', 'name email');
 
      res.json({
@@ -480,10 +639,15 @@ exports.confirmBooking = async (req, res) => {
      booking.status = 'confirmed';
      booking.paymentStatus = 'completed';
      booking.confirmedAt = new Date();
-     await booking.save();
-
      const event = await Event.findById(booking.event._id);
-     event.availableTickets -= booking.numberOfTickets;
+     const ticketSelection = getBookableTicketCategory(event, booking.ticketCategoryId);
+     if (!ticketSelection || event.availableTickets < booking.numberOfTickets || ticketSelection.availableQuantity < booking.numberOfTickets) {
+       return res.status(400).json({ message: 'Not enough tickets available for this category anymore' });
+     }
+
+     event.adjustTicketInventory(booking.ticketCategoryId, -booking.numberOfTickets);
+
+     await booking.save();
      await event.save();
 
      sendBookingConfirmationEmail(

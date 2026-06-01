@@ -549,6 +549,9 @@ const AdminPanel = () => {
     setEditingEvent({
       ...event,
       date: event.date ? new Date(event.date).toISOString().slice(0, 10) : '',
+      settlementStatus: event.settlement?.status || 'not_started',
+      settlementReference: event.settlement?.reference || '',
+      settlementNotes: event.settlement?.notes || '',
       moderationFlagsText: (event.moderationFlags || []).join(', ')
     });
   };
@@ -817,6 +820,8 @@ const AdminPanel = () => {
                           {event.isFeatured && <StatusBadge tone="blue">featured</StatusBadge>}
                           {event.isTrending && <StatusBadge tone="amber">trending</StatusBadge>}
                           <StatusBadge tone={event.moderationStatus === 'approved' ? 'green' : event.moderationStatus === 'pending' ? 'amber' : 'red'}>{event.moderationStatus}</StatusBadge>
+                          <StatusBadge tone={event.ticketSaleStatus === 'live' ? 'green' : event.ticketSaleStatus === 'paused' ? 'red' : 'amber'}>{event.ticketSaleStatus || 'pending_approval'}</StatusBadge>
+                          <StatusBadge tone={event.settlement?.status === 'settled' ? 'green' : event.settlement?.status === 'pending' ? 'amber' : 'blue'}>settlement {event.settlement?.status || 'not_started'}</StatusBadge>
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -825,6 +830,7 @@ const AdminPanel = () => {
                           <button onClick={() => updateEvent(event._id, { isTrending: !event.isTrending })} className="rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50" title="Trending"><TrendingUp className="h-4 w-4" /></button>
                           <button onClick={() => sendEventReminder(event._id)} className="rounded-lg border border-green-200 p-2 text-green-700 hover:bg-green-50" title="Send reminder"><Bell className="h-4 w-4" /></button>
                           <button onClick={() => updateEvent(event._id, { moderationStatus: 'approved', moderationFlags: [] })} className="rounded-lg border border-green-200 p-2 text-green-700 hover:bg-green-50" title="Approve event"><CheckCircle className="h-4 w-4" /></button>
+                          <button onClick={() => updateEvent(event._id, { lifecycleStage: 'settled', ticketSaleStatus: 'completed', settlement: { ...(event.settlement || {}), status: 'settled' } })} className="rounded-lg border border-emerald-200 p-2 text-emerald-700 hover:bg-emerald-50" title="Mark settled"><IndianRupee className="h-4 w-4" /></button>
                           <button onClick={() => updateEvent(event._id, { moderationStatus: 'rejected', isActive: false, moderationFlags: ['other'] })} className="rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50" title="Reject event"><XCircle className="h-4 w-4" /></button>
                           <button onClick={() => updateEvent(event._id, { isActive: !event.isActive })} className="rounded-lg border border-cocoa-200 p-2 text-cocoa-700 hover:bg-[#fbf8f4]" title="Toggle active"><Flag className="h-4 w-4" /></button>
                           <button onClick={() => openEventEditor(event)} className="rounded-lg border border-cocoa-200 p-2 text-cocoa-500 hover:bg-[#fbf8f4]" title="Edit event"><Edit className="h-4 w-4" /></button>
@@ -943,7 +949,7 @@ const AdminPanel = () => {
                       <td className="px-4 py-3">
                         <div className="font-semibold text-cocoa-900">{booking.user?.name || 'Unknown'}</div>
                         <div className="text-xs text-cocoa-400">{booking.user?.email}</div>
-                        <div className="text-xs text-cocoa-400">{booking.numberOfTickets} ticket(s) / {money(booking.totalPrice)}</div>
+                        <div className="text-xs text-cocoa-400">{booking.numberOfTickets} {booking.ticketCategoryName || 'General'} ticket(s) / {money(booking.totalPrice)}</div>
                       </td>
                       <td className="px-4 py-3">{booking.event?.title || 'Deleted event'}<div className="text-xs text-cocoa-400">{formatDate(booking.bookingDate)}</div></td>
                       <td className="px-4 py-3">
@@ -1381,6 +1387,14 @@ const AdminPanel = () => {
                   totalTickets: Number(editingEvent.totalTickets),
                   availableTickets: Number(editingEvent.availableTickets),
                   moderationStatus: editingEvent.moderationStatus,
+                  lifecycleStage: editingEvent.lifecycleStage,
+                  ticketSaleStatus: editingEvent.ticketSaleStatus,
+                  settlement: {
+                    ...(editingEvent.settlement || {}),
+                    status: editingEvent.settlementStatus || editingEvent.settlement?.status || 'not_started',
+                    reference: editingEvent.settlementReference || editingEvent.settlement?.reference || '',
+                    notes: editingEvent.settlementNotes || editingEvent.settlement?.notes || ''
+                  },
                   moderationFlags: editingEvent.moderationFlagsText
                     ? editingEvent.moderationFlagsText.split(',').map((flag) => flag.trim()).filter(Boolean)
                     : [],
@@ -1403,11 +1417,38 @@ const AdminPanel = () => {
                 <option value="pending">pending</option>
                 <option value="rejected">rejected</option>
               </select>
+              <select value={editingEvent.lifecycleStage || 'under_review'} onChange={(e) => setEditingEvent({ ...editingEvent, lifecycleStage: e.target.value })} className="input-field">
+                <option value="planning">planning</option>
+                <option value="under_review">under_review</option>
+                <option value="approved">approved</option>
+                <option value="live">live</option>
+                <option value="completed">completed</option>
+                <option value="settlement_pending">settlement_pending</option>
+                <option value="settled">settled</option>
+                <option value="cancelled">cancelled</option>
+              </select>
+              <select value={editingEvent.ticketSaleStatus || 'pending_approval'} onChange={(e) => setEditingEvent({ ...editingEvent, ticketSaleStatus: e.target.value })} className="input-field">
+                <option value="draft">draft</option>
+                <option value="pending_approval">pending_approval</option>
+                <option value="live">live</option>
+                <option value="paused">paused</option>
+                <option value="sold_out">sold_out</option>
+                <option value="completed">completed</option>
+              </select>
               <input value={editingEvent.moderationFlagsText || ''} onChange={(e) => setEditingEvent({ ...editingEvent, moderationFlagsText: e.target.value })} className="input-field md:col-span-2" placeholder="Moderation flags: fake_event, spam, copyright, inappropriate_content" />
               <textarea value={editingEvent.moderationNotes || ''} onChange={(e) => setEditingEvent({ ...editingEvent, moderationNotes: e.target.value })} className="input-field md:col-span-2" rows={3} placeholder="Moderation notes" />
               <input type="number" value={editingEvent.price || 0} onChange={(e) => setEditingEvent({ ...editingEvent, price: e.target.value })} className="input-field" placeholder="Price" />
               <input type="number" value={editingEvent.totalTickets || 0} onChange={(e) => setEditingEvent({ ...editingEvent, totalTickets: e.target.value })} className="input-field" placeholder="Total tickets" />
               <input type="number" value={editingEvent.availableTickets || 0} onChange={(e) => setEditingEvent({ ...editingEvent, availableTickets: e.target.value })} className="input-field" placeholder="Available tickets" />
+              <select value={editingEvent.settlementStatus || 'not_started'} onChange={(e) => setEditingEvent({ ...editingEvent, settlementStatus: e.target.value })} className="input-field">
+                <option value="not_started">settlement not_started</option>
+                <option value="pending">settlement pending</option>
+                <option value="processing">settlement processing</option>
+                <option value="settled">settlement settled</option>
+                <option value="on_hold">settlement on_hold</option>
+              </select>
+              <input value={editingEvent.settlementReference || ''} onChange={(e) => setEditingEvent({ ...editingEvent, settlementReference: e.target.value })} className="input-field" placeholder="Settlement reference" />
+              <textarea value={editingEvent.settlementNotes || ''} onChange={(e) => setEditingEvent({ ...editingEvent, settlementNotes: e.target.value })} className="input-field md:col-span-2" rows={2} placeholder="Settlement notes" />
               <button disabled={saving} className="btn-primary md:col-span-2">{saving ? 'Saving...' : 'Save Event'}</button>
             </form>
           </div>

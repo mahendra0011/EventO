@@ -30,6 +30,9 @@ exports.getDashboardStats = async (req, res) => {
     const totalRevenue = hostBookings
       .filter(b => b.status === 'confirmed' && b.paymentStatus === 'completed')
       .reduce((sum, b) => sum + b.totalPrice, 0);
+    const platformFee = Math.round(totalRevenue * Number(process.env.PLATFORM_FEE_RATE || 0.1));
+    const netSettlement = Math.max(totalRevenue - platformFee, 0);
+    const settlementPending = hostEvents.filter(event => ['completed', 'settlement_pending'].includes(event.lifecycleStage) || event.settlement?.status === 'pending').length;
 
     // Get recent bookings for host's events
     const recentBookings = await Booking.find({ event: { $in: hostEventIds } })
@@ -65,7 +68,10 @@ exports.getDashboardStats = async (req, res) => {
         totalBookings,
         confirmedBookings,
         pendingBookings,
-        totalRevenue
+        totalRevenue,
+        platformFee,
+        netSettlement,
+        settlementPending
       },
       recentBookings,
       bookingsByStatus,
@@ -83,7 +89,7 @@ exports.getAllUsers = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
 
     const users = await User.find()
-      .select('-password')
+      .select('-password -googleId')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -115,7 +121,7 @@ exports.updateUserRole = async (req, res) => {
       req.params.id,
       { role },
       { new: true }
-    ).select('-password');
+    ).select('-password -googleId');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });

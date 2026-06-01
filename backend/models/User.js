@@ -16,8 +16,18 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, 'Password is required'],
+    required: function() {
+      return !this.googleId;
+    },
     minlength: 6
+  },
+  googleId: {
+    type: String,
+    trim: true
+  },
+  googlePicture: {
+    type: String,
+    trim: true
   },
   role: {
     type: String,
@@ -35,6 +45,58 @@ const userSchema = new mongoose.Schema({
   secretKeyword: {
     type: String,
     trim: true
+  },
+  organizerProfile: {
+    businessName: {
+      type: String,
+      trim: true
+    },
+    businessType: {
+      type: String,
+      enum: ['individual', 'partnership', 'company', 'trust', 'other'],
+      default: 'individual'
+    },
+    gstNumber: {
+      type: String,
+      trim: true,
+      uppercase: true
+    },
+    panNumber: {
+      type: String,
+      trim: true,
+      uppercase: true
+    },
+    bankAccountName: {
+      type: String,
+      trim: true
+    },
+    bankAccountNumber: {
+      type: String,
+      trim: true
+    },
+    bankIfsc: {
+      type: String,
+      trim: true,
+      uppercase: true
+    },
+    contactEmail: {
+      type: String,
+      trim: true,
+      lowercase: true
+    },
+    contactPhone: {
+      type: String,
+      trim: true
+    },
+    address: {
+      type: String,
+      trim: true
+    },
+    verificationStatus: {
+      type: String,
+      enum: ['pending', 'verified', 'rejected'],
+      default: 'pending'
+    }
   },
   organizerDocuments: [{
     label: {
@@ -113,12 +175,13 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  if (!this.isModified('password') || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
 userSchema.methods.comparePassword = async function(candidatePassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 

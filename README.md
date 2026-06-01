@@ -7,6 +7,7 @@ Evento is a full-stack event booking platform built with React, Express, MongoDB
 - Public event browsing with search, categories, featured events, trending flags, and wishlists.
 - User authentication with JWT, bcrypt password hashing, email OTP verification, login notifications, and password reset OTPs.
 - Host accounts with a dedicated dashboard for events, bookings, attendee communication, broadcasts, analytics, and community chat.
+- BookMyShow-style organizer workflow with business/GST/PAN/bank registration, event planning fields, review approval, multi-category tickets, event-day operation notes, and settlement tracking.
 - Ticket booking flow with email OTP verification before confirmation.
 - User dashboard for bookings, upcoming events, notifications, broadcasts, wishlist, payments, reviews, profile, and support.
 - Admin console for users, events, bookings, refunds, disputes, categories, locations, notifications, reviews, support tickets, fraud signals, security logs, analytics, and CSV exports.
@@ -78,6 +79,7 @@ MONGODB_URI=mongodb://localhost:27017/evento
 MONGODB_DB_NAME=evento
 JWT_SECRET=replace-with-a-long-random-secret
 FRONTEND_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=
 
 BREVO_API_KEY=
 FROM_EMAIL=
@@ -108,9 +110,16 @@ Frontend variables are optional because React uses the development proxy in `fro
 ```env
 REACT_APP_API_URL=
 REACT_APP_API_TIMEOUT_MS=20000
+REACT_APP_GOOGLE_CLIENT_ID=
 ```
 
 Set `REACT_APP_API_URL` only when the frontend should call a separate API origin.
+Set both Google client ID variables to the same OAuth web client ID to enable Google login.
+
+For Google login, create an OAuth 2.0 web client in Google Cloud Console and add these authorized JavaScript origins as needed:
+
+- `http://localhost:3000`
+- Your deployed frontend origin, for example `https://enento.onrender.com`
 
 ## Local Setup
 
@@ -149,6 +158,16 @@ Open:
 - Frontend: `http://localhost:3000`
 - Backend health: `http://localhost:5000/api/health`
 - Email diagnostics: `http://localhost:5000/api/health/email`
+
+## Organizer Workflow
+
+1. Hosts register with organizer business, tax, contact, and bank details.
+2. Hosts create events with event type, venue/date/time, budget, permissions, terms, on-ground operations notes, and ticket categories such as VIP, General, or Early Bird.
+3. New events are submitted as `pending` and hidden from public ticket sales.
+4. Admins review event details and approve/reject from the admin event control panel.
+5. Approved events become live and users can book available ticket categories.
+6. Hosts track sales, capacity, attendees, broadcasts, and event-day QR check-ins from the host dashboard.
+7. Admin reports and settlement status track gross revenue, platform fees, and organizer payouts.
 
 ## Available Scripts
 
@@ -271,10 +290,12 @@ Required production variables:
 - `JWT_SECRET`
 - `BREVO_API_KEY`
 - `FROM_EMAIL`
+- `GOOGLE_CLIENT_ID` for Google login
 
 Recommended production variables:
 
 - `FRONTEND_URL`
+- `REACT_APP_GOOGLE_CLIENT_ID` on the frontend/static site
 - `REPLY_TO_EMAIL`
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD`

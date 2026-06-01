@@ -10,7 +10,7 @@ const getUser = async (userId) => {
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.user;
   }
-  const user = await User.findById(userId).select('-password');
+  const user = await User.findById(userId).select('-password -googleId');
   if (user) {
     userCache.set(userId, { user, timestamp: Date.now() });
   }
