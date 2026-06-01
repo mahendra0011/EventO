@@ -420,12 +420,6 @@ const AdminPanel = () => {
     }
   };
 
-  const cancelTicket = (id) => {
-    if (window.confirm('Cancel this ticket?')) {
-      updateBooking(id, { status: 'cancelled' });
-    }
-  };
-
   const createCategory = async (e) => {
     e.preventDefault();
     if (!newCategory.trim()) return;
@@ -1049,10 +1043,9 @@ const AdminPanel = () => {
                           </button>
                           <button onClick={() => approveRefund(booking._id)} className="rounded-lg border border-green-200 px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-50" title="Approve refund">Approve Refund</button>
                           <button onClick={() => rejectRefund(booking._id)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50" title="Reject refund">Reject Refund</button>
-                          <button onClick={() => cancelTicket(booking._id)} className="rounded-lg border border-amber-200 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50" title="Cancel ticket">Cancel Ticket</button>
-                          <button onClick={() => refundBooking(booking._id)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50" title="Refund booking">
+                          <button onClick={() => refundBooking(booking._id)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50" title="Cancel ticket and mark refunded">
                             <IndianRupee className="mr-1 inline h-4 w-4" />
-                            Refund
+                            Cancel Ticket & Refund
                           </button>
                         </div>
                       </td>
@@ -1502,12 +1495,9 @@ const AdminPanel = () => {
               <button onClick={() => rejectRefund(viewingBooking._id)} className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100">
                 Reject Refund
               </button>
-              <button onClick={() => cancelTicket(viewingBooking._id)} className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-100">
-                Cancel Ticket
-              </button>
               <button onClick={() => refundBooking(viewingBooking._id)} className="btn-primary">
                 <IndianRupee className="h-4 w-4" />
-                Refund
+                Cancel Ticket & Refund
               </button>
             </div>
           </div>
