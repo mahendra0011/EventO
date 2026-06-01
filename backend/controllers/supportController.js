@@ -4,6 +4,7 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { sendImportantNotificationEmail } = require('../utils/email');
 const { logActivity } = require('../utils/activity');
+const { evaluateRefundPolicy, addRefundTimeline } = require('../utils/refund');
 
 exports.getMySupportTickets = async (req, res) => {
   try {
@@ -36,7 +37,7 @@ exports.createSupportTicket = async (req, res) => {
 
     let linkedBooking = null;
     if (booking) {
-      linkedBooking = await Booking.findById(booking).populate('event', 'title');
+      linkedBooking = await Booking.findById(booking).populate('event', 'title date time');
       if (!linkedBooking) {
         return res.status(404).json({ message: 'Booking not found' });
       }
@@ -57,8 +58,19 @@ exports.createSupportTicket = async (req, res) => {
     });
 
     if (linkedBooking && type === 'refund_issue') {
-      linkedBooking.refundStatus = 'requested';
-      linkedBooking.refundReason = message;
+      const policy = evaluateRefundPolicy(linkedBooking, linkedBooking.event);
+      if (policy.canRefund) {
+        linkedBooking.refundStatus = 'requested';
+        linkedBooking.refundReason = message;
+        linkedBooking.refundPolicy = policy;
+        linkedBooking.refundAmount = policy.refundableAmount || 0;
+        linkedBooking.refundRequestedAt = new Date();
+        addRefundTimeline(linkedBooking, 'requested', 'Refund issue opened from support ticket.', {
+          id: req.user.id,
+          role: req.user.role || 'user',
+          name: req.user.name
+        });
+      }
       await linkedBooking.save();
     }
 

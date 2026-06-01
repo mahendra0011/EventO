@@ -10,6 +10,11 @@ const {
   OTP_EXPIRY_MINUTES,
   OTP_RATE_LIMIT_SECONDS
 } = require('../utils/email');
+const {
+  evaluateRefundPolicy,
+  normalizeRefundDestination,
+  addRefundTimeline
+} = require('../utils/refund');
 
 const sendImportantEmail = (user, title, message, link) => {
   if (!user?.email) return;
@@ -461,12 +466,37 @@ exports.validateTicket = async (req, res) => {
 exports.getUserBookings = async (req, res) => {
    try {
      const bookings = await Booking.find({ user: req.user.id })
-       .populate('event', 'title date time venue image price ticketCategories')
+       .populate('event', 'title date time venue location image price ticketCategories')
        .sort({ bookingDate: -1 });
 
      res.json(bookings);
    } catch (error) {
      console.error('Get user bookings error:', error);
+     res.status(500).json({ message: 'Server error' });
+   }
+ };
+
+exports.getRefundPolicy = async (req, res) => {
+   try {
+     const booking = await Booking.findById(req.params.id).populate('event', 'title date time venue location');
+
+     if (!booking) {
+       return res.status(404).json({ message: 'Booking not found' });
+     }
+
+     if (booking.user.toString() !== req.user.id && !['host', 'admin'].includes(req.user.role)) {
+       return res.status(403).json({ message: 'Not authorized' });
+     }
+
+     const policy = evaluateRefundPolicy(booking, booking.event);
+
+     res.json({
+       policy,
+       requiresRefundDestination: Boolean(policy.canRefund && booking.paymentStatus === 'completed'),
+       refundStatus: booking.refundStatus || 'none'
+     });
+   } catch (error) {
+     console.error('Get refund policy error:', error);
      res.status(500).json({ message: 'Server error' });
    }
  };
@@ -494,7 +524,7 @@ exports.getBooking = async (req, res) => {
 
 exports.cancelBooking = async (req, res) => {
    try {
-     const { reason } = req.body || {};
+     const { reason, refundBankDetails } = req.body || {};
      const booking = await Booking.findById(req.params.id).populate('event');
 
      if (!booking) {
@@ -509,16 +539,40 @@ exports.cancelBooking = async (req, res) => {
        return res.status(400).json({ message: 'This booking is already closed' });
      }
 
+     const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
+     if (!trimmedReason) {
+       return res.status(400).json({ message: 'Cancellation reason is required' });
+     }
+
+     const refundPolicy = evaluateRefundPolicy(booking, booking.event);
+     if (!refundPolicy.canCancel) {
+       return res.status(400).json({ message: refundPolicy.reason, policy: refundPolicy });
+     }
+
      const wasConfirmed = booking.status === 'confirmed';
-     const shouldStartRefund = booking.paymentStatus === 'completed' && Number(booking.totalPrice || 0) > 0;
+     const shouldStartRefund = Boolean(refundPolicy.canRefund && refundPolicy.refundableAmount > 0);
+     const refundDestination = normalizeRefundDestination(refundBankDetails, shouldStartRefund);
 
      booking.status = 'cancelled';
      booking.cancelledAt = new Date();
+     booking.cancellationReason = trimmedReason;
+     booking.refundPolicy = refundPolicy;
+     booking.refundAmount = refundPolicy.refundableAmount || 0;
 
      if (shouldStartRefund) {
        booking.refundStatus = 'requested';
-       booking.refundReason = reason?.trim() || 'Booking cancelled by attendee';
+       booking.refundReason = trimmedReason;
        booking.refundRequestedAt = new Date();
+       booking.refundBankDetails = refundDestination;
+       addRefundTimeline(
+         booking,
+         'requested',
+         `Refund requested by attendee. ${refundPolicy.label}: ${refundPolicy.reason}`,
+         { id: req.user.id, role: req.user.role || 'user', name: req.user.name }
+       );
+     } else if (booking.paymentStatus === 'completed') {
+       booking.refundStatus = 'none';
+       booking.refundReason = trimmedReason;
      }
 
      await booking.save();
@@ -534,7 +588,7 @@ exports.cancelBooking = async (req, res) => {
        user: booking.user,
        title: shouldStartRefund ? 'Booking Cancelled - Refund Started' : 'Booking Cancelled',
        message: shouldStartRefund
-         ? `Your booking for "${event.title}" was cancelled and your refund request has started.`
+         ? `Your booking for "${event.title}" was cancelled. Refund amount: INR ${booking.refundAmount}.`
          : `Your booking for "${event.title}" was cancelled.`,
        type: 'booking',
        link: '/dashboard'
@@ -544,7 +598,7 @@ exports.cancelBooking = async (req, res) => {
        req.user,
        shouldStartRefund ? 'Booking cancelled - refund started' : 'Booking cancelled',
        shouldStartRefund
-         ? `Your booking for "${event.title}" was cancelled. Your refund request has started automatically.`
+         ? `Your booking for "${event.title}" was cancelled. Your refund request is now waiting for approval.`
          : `Your booking for "${event.title}" was cancelled.`,
        '/dashboard'
      );
@@ -563,26 +617,28 @@ exports.cancelBooking = async (req, res) => {
          event.organizer,
          shouldStartRefund ? 'Refund requested' : 'Booking cancelled',
          shouldStartRefund
-           ? `${req.user.name}'s booking for "${event.title}" was cancelled. A refund request has been started automatically.`
+           ? `${req.user.name}'s booking for "${event.title}" was cancelled. Refund requested: INR ${booking.refundAmount}.`
            : `${req.user.name}'s booking for "${event.title}" was cancelled.`,
          '/host/bookings'
        );
      }
 
      const updatedBooking = await Booking.findById(booking._id)
-       .populate('event', 'title date time venue image price ticketCategories')
+       .populate('event', 'title date time venue location image price ticketCategories')
        .populate('user', 'name email');
 
      res.json({
        message: shouldStartRefund
-         ? 'Booking cancelled and refund process started'
+         ? 'Booking cancelled and refund request submitted'
          : 'Booking cancelled successfully',
        refundStatus: booking.refundStatus,
+       refundPolicy,
+       refundAmount: booking.refundAmount,
        booking: updatedBooking
      });
    } catch (error) {
      console.error('Cancel booking error:', error);
-     res.status(500).json({ message: 'Server error' });
+     res.status(error.statusCode || 500).json({ message: error.statusCode ? error.message : 'Server error' });
    }
  };
 

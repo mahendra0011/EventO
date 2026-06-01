@@ -10,6 +10,13 @@ const Location = require('../models/Location');
 const { clearUserCache } = require('../middleware/auth');
 const { logActivity } = require('../utils/activity');
 const { sendBookingConfirmationEmail, sendImportantNotificationEmail } = require('../utils/email');
+const {
+  REFUND_STATUSES,
+  evaluateRefundPolicy,
+  addRefundTimeline,
+  processRefundPayment,
+  roundMoney
+} = require('../utils/refund');
 
 const PLATFORM_FEE_RATE = Number(process.env.PLATFORM_FEE_RATE || 0.1);
 
@@ -623,8 +630,8 @@ exports.getAllBookings = async (req, res) => {
 
 exports.updateBooking = async (req, res) => {
   try {
-    const { status, paymentStatus, paymentAttempts, refundStatus, refundReason, disputeStatus, notes } = req.body;
-    const booking = await Booking.findById(req.params.id).populate('event', 'title availableTickets totalTickets ticketCategories');
+    const { status, paymentStatus, paymentAttempts, refundStatus, refundReason, refundAmount, disputeStatus, notes } = req.body;
+    const booking = await Booking.findById(req.params.id).populate('event', 'title date time venue location availableTickets totalTickets ticketCategories');
 
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
@@ -633,9 +640,19 @@ exports.updateBooking = async (req, res) => {
     const previousStatus = booking.status;
     const previousRefundStatus = booking.refundStatus;
     const previousDisputeStatus = booking.disputeStatus;
+    const actor = { id: req.user.id, role: req.user.role || 'admin', name: req.user.name };
+
     if (status) {
       if (!['pending', 'confirmed', 'cancelled', 'rejected'].includes(status)) {
         return res.status(400).json({ message: 'Invalid booking status' });
+      }
+      if (['cancelled', 'rejected'].includes(status) && !['cancelled', 'rejected'].includes(previousStatus)) {
+        const policy = evaluateRefundPolicy(booking, booking.event);
+        if (!policy.canCancel) {
+          return res.status(400).json({ message: policy.reason, policy });
+        }
+        booking.refundPolicy = booking.refundPolicy?.status ? booking.refundPolicy : policy;
+        booking.cancellationReason = booking.cancellationReason || notes || 'Cancelled by admin';
       }
       booking.status = status;
       if (status === 'confirmed') booking.confirmedAt = booking.confirmedAt || new Date();
@@ -646,18 +663,78 @@ exports.updateBooking = async (req, res) => {
       if (!['pending', 'completed', 'failed', 'refunded'].includes(paymentStatus)) {
         return res.status(400).json({ message: 'Invalid payment status' });
       }
+      if (paymentStatus === 'refunded' && refundStatus !== 'processed' && booking.refundStatus !== 'processed') {
+        return res.status(400).json({ message: 'Use the Refund action so gateway processing succeeds before payment is marked refunded' });
+      }
       booking.paymentStatus = paymentStatus;
     }
     if (paymentAttempts !== undefined) booking.paymentAttempts = Number(paymentAttempts) || 0;
+    if (refundReason !== undefined) booking.refundReason = refundReason;
+    if (refundAmount !== undefined) booking.refundAmount = roundMoney(refundAmount);
     if (refundStatus) {
-      if (!['none', 'requested', 'approved', 'rejected', 'processed'].includes(refundStatus)) {
+      if (!REFUND_STATUSES.includes(refundStatus)) {
         return res.status(400).json({ message: 'Invalid refund status' });
       }
-      booking.refundStatus = refundStatus;
-      if (refundStatus === 'requested') booking.refundRequestedAt = booking.refundRequestedAt || new Date();
-      if (refundStatus === 'processed') booking.refundProcessedAt = new Date();
+
+      if (refundStatus === 'none') {
+        booking.refundStatus = 'none';
+        booking.refundAmount = 0;
+      }
+
+      if (refundStatus === 'requested') {
+        booking.refundStatus = 'requested';
+        booking.refundRequestedAt = booking.refundRequestedAt || new Date();
+        addRefundTimeline(booking, 'requested', 'Refund request was opened by admin.', actor);
+      }
+
+      if (['approved', 'processing', 'processed'].includes(refundStatus)) {
+        const policy = evaluateRefundPolicy(booking, booking.event);
+        if (!policy.canRefund) {
+          return res.status(400).json({ message: policy.reason, policy });
+        }
+        booking.refundPolicy = booking.refundPolicy?.status ? booking.refundPolicy : policy;
+        booking.refundAmount = booking.refundAmount || policy.refundableAmount;
+        if (!booking.refundAmount) {
+          return res.status(400).json({ message: 'Refund amount must be greater than zero' });
+        }
+      }
+
+      if (refundStatus === 'approved') {
+        booking.refundStatus = 'approved';
+        addRefundTimeline(booking, 'approved', `Refund approved for INR ${booking.refundAmount}.`, actor);
+      }
+
+      if (refundStatus === 'rejected') {
+        booking.refundStatus = 'rejected';
+        booking.refundProcessedAt = new Date();
+        addRefundTimeline(booking, 'rejected', 'Refund request rejected by admin.', actor);
+      }
+
+      if (refundStatus === 'processing') {
+        if (!['approved', 'processing'].includes(previousRefundStatus)) {
+          return res.status(400).json({ message: 'Approve the refund before processing it' });
+        }
+        booking.refundStatus = 'processing';
+        addRefundTimeline(booking, 'processing', 'Refund processing started.', actor);
+      }
+
+      if (refundStatus === 'processed') {
+        if (!['approved', 'processing'].includes(previousRefundStatus)) {
+          return res.status(400).json({ message: 'Approve the refund before processing it' });
+        }
+        booking.refundStatus = 'processing';
+        addRefundTimeline(booking, 'processing', 'Refund gateway processing started.', actor);
+        await booking.save();
+
+        const gatewayResult = await processRefundPayment(booking);
+        booking.refundStatus = 'processed';
+        booking.paymentStatus = 'refunded';
+        booking.refundProcessedAt = new Date();
+        booking.refundPaymentReference = gatewayResult.reference;
+        booking.refundGatewayResponse = gatewayResult.gatewayResponse;
+        addRefundTimeline(booking, 'processed', `Refund processed successfully. Reference: ${gatewayResult.reference}.`, actor);
+      }
     }
-    if (refundReason !== undefined) booking.refundReason = refundReason;
     if (disputeStatus) {
       if (!['none', 'open', 'under_review', 'resolved', 'rejected'].includes(disputeStatus)) {
         return res.status(400).json({ message: 'Invalid dispute status' });
@@ -692,10 +769,10 @@ exports.updateBooking = async (req, res) => {
     if (refundStatus && refundStatus !== previousRefundStatus) {
       await Notification.create({
         user: booking.user,
-        title: `Refund ${refundStatus}`,
-        message: `Your refund request has been marked as ${refundStatus}.`,
+        title: `Refund ${booking.refundStatus}`,
+        message: `Your refund request has been marked as ${booking.refundStatus}.`,
         type: 'booking',
-        link: '/dashboard?tab=support'
+        link: '/dashboard?tab=payments'
       });
     }
 
@@ -709,15 +786,15 @@ exports.updateBooking = async (req, res) => {
       });
     }
 
-    res.json(await Booking.findById(booking._id).populate('event', 'title date time venue price').populate('user', 'name email phone'));
+    res.json(await Booking.findById(booking._id).populate('event', 'title date time venue location price').populate('user', 'name email phone'));
   } catch (error) {
     console.error('Update booking error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(error.statusCode || 500).json({ message: error.statusCode ? error.message : 'Server error' });
   }
 };
 
 exports.refundBooking = async (req, res) => {
-  req.body = { ...req.body, status: 'cancelled', paymentStatus: 'refunded', refundStatus: 'processed' };
+  req.body = { ...req.body, status: 'cancelled', refundStatus: 'processed' };
   return exports.updateBooking(req, res);
 };
 

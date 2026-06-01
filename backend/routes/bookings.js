@@ -4,6 +4,7 @@ const {
   createBooking,
   getUserBookings,
   getBooking,
+  getRefundPolicy,
   cancelBooking,
   getAllBookings,
   confirmBooking,
@@ -21,6 +22,8 @@ router.get('/user', auth, getUserBookings);
 router.get('/all', hostAuth, getAllBookings);
 
 router.post('/validate-ticket', auth, validateTicket);
+
+router.get('/:id/refund-policy', auth, getRefundPolicy);
 
 router.get('/:id', auth, getBooking);
 

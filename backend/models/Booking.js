@@ -47,12 +47,97 @@ const bookingSchema = new mongoose.Schema({
   },
   refundStatus: {
     type: String,
-    enum: ['none', 'requested', 'approved', 'rejected', 'processed'],
+    enum: ['none', 'requested', 'approved', 'processing', 'processed', 'rejected'],
     default: 'none'
   },
   refundReason: {
     type: String,
     trim: true
+  },
+  cancellationReason: {
+    type: String,
+    trim: true
+  },
+  refundAmount: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  refundPolicy: {
+    status: {
+      type: String,
+      enum: ['full', 'partial', 'none', 'blocked']
+    },
+    label: String,
+    reason: String,
+    refundPercent: {
+      type: Number,
+      min: 0,
+      max: 100
+    },
+    refundableAmount: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    hoursBeforeEvent: Number,
+    evaluatedAt: Date
+  },
+  refundBankDetails: {
+    payoutMethod: {
+      type: String,
+      enum: ['bank', 'upi']
+    },
+    accountHolderName: {
+      type: String,
+      trim: true
+    },
+    accountNumber: {
+      type: String,
+      trim: true
+    },
+    ifsc: {
+      type: String,
+      trim: true
+    },
+    bankName: {
+      type: String,
+      trim: true
+    },
+    upiId: {
+      type: String,
+      trim: true
+    }
+  },
+  refundTimeline: [{
+    status: {
+      type: String,
+      enum: ['requested', 'approved', 'processing', 'processed', 'rejected']
+    },
+    message: {
+      type: String,
+      trim: true
+    },
+    at: {
+      type: Date,
+      default: Date.now
+    },
+    actorRole: {
+      type: String,
+      default: 'system'
+    },
+    actorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    actorName: String
+  }],
+  refundPaymentReference: {
+    type: String,
+    trim: true
+  },
+  refundGatewayResponse: {
+    type: mongoose.Schema.Types.Mixed
   },
   refundRequestedAt: {
     type: Date
@@ -120,5 +205,6 @@ const bookingSchema = new mongoose.Schema({
 bookingSchema.index({ user: 1, status: 1 });
 bookingSchema.index({ event: 1, status: 1 });
 bookingSchema.index({ event: 1, checkInStatus: 1 });
+bookingSchema.index({ refundStatus: 1, refundRequestedAt: -1 });
 
 module.exports = mongoose.model('Booking', bookingSchema);
