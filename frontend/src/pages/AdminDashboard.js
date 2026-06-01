@@ -30,7 +30,6 @@ import {
     Lock,
     ShieldCheck,
     Save,
-    Globe,
     Smartphone,
     CreditCard,
     Activity,
@@ -122,18 +121,6 @@ const AdminDashboard = () => {
      currentKeyword: '',
      newKeyword: ''
    });
-   const [notificationPreferences, setNotificationPreferences] = useState({
-     newBookings: true,
-     bookingDecisions: true,
-     eventReminders: true,
-     communityMessages: true
-   });
-   const [hostPreferences, setHostPreferences] = useState({
-     autoConfirmFreeEvents: false,
-     showRevenueCards: true,
-     requireQrAtEntry: true,
-     weeklyDigest: true
-   });
    const [updatingProfile, setUpdatingProfile] = useState(false);
    const [savingPassword, setSavingPassword] = useState(false);
    const [savingKeyword, setSavingKeyword] = useState(false);
@@ -192,14 +179,6 @@ const AdminDashboard = () => {
     } finally {
       setSavingKeyword(false);
     }
-  };
-
-  const toggleNotificationPreference = (key) => {
-    setNotificationPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const toggleHostPreference = (key) => {
-    setHostPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   // Reset profileData when user changes (e.g., after update)
@@ -1746,7 +1725,7 @@ const AdminDashboard = () => {
                       </span>
                       <h3 className="text-3xl font-extrabold text-cocoa-900">Control your host workspace</h3>
                       <p className="mt-3 max-w-2xl text-cocoa-500">
-                        Manage account security, login keyword, notifications, and event workflow preferences from one place.
+                        Manage your profile, password, host login keyword, and active session from one place.
                       </p>
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
@@ -1896,82 +1875,6 @@ const AdminDashboard = () => {
                         {savingKeyword ? 'Changing...' : 'Change keyword'}
                       </button>
                     </form>
-                  </div>
-                </div>
-
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
-                    <h3 className="text-xl font-extrabold text-cocoa-900">Notification controls</h3>
-                    <p className="mt-1 text-sm text-cocoa-500">Choose which host alerts should stay active.</p>
-                    <div className="mt-5 space-y-3">
-                      {[
-                        { key: 'newBookings', icon: Ticket, label: 'New booking requests', description: 'Alert me when an attendee requests a ticket.' },
-                        { key: 'bookingDecisions', icon: CheckCircle, label: 'Confirmations and rejections', description: 'Notify me when booking states change.' },
-                        { key: 'eventReminders', icon: Calendar, label: 'Event reminders', description: 'Send operational reminders before event day.' },
-                        { key: 'communityMessages', icon: MessageSquare, label: 'Community messages', description: 'Surface attendee chat activity.' }
-                      ].map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <button
-                            type="button"
-                            key={item.key}
-                            onClick={() => toggleNotificationPreference(item.key)}
-                            className="flex w-full items-center justify-between gap-4 rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4 text-left transition hover:border-primary-200 hover:bg-primary-50"
-                          >
-                            <div className="flex items-start gap-3">
-                              <Icon className="mt-1 h-5 w-5 text-primary-600" />
-                              <div>
-                                <p className="font-bold text-cocoa-900">{item.label}</p>
-                                <p className="text-sm text-cocoa-500">{item.description}</p>
-                              </div>
-                            </div>
-                            <span className={`h-6 w-11 rounded-full p-1 transition ${notificationPreferences[item.key] ? 'bg-primary-500' : 'bg-cocoa-200'}`}>
-                              <span className={`block h-4 w-4 rounded-full bg-white transition ${notificationPreferences[item.key] ? 'translate-x-5' : ''}`} />
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
-                    <h3 className="text-xl font-extrabold text-cocoa-900">Host workflow preferences</h3>
-                    <p className="mt-1 text-sm text-cocoa-500">Fine tune common host operations.</p>
-                    <div className="mt-5 grid gap-3">
-                      {[
-                        { key: 'autoConfirmFreeEvents', icon: CreditCard, label: 'Auto-confirm free events' },
-                        { key: 'showRevenueCards', icon: BarChart3, label: 'Show revenue cards by default' },
-                        { key: 'requireQrAtEntry', icon: Smartphone, label: 'Require QR check-in at entry' },
-                        { key: 'weeklyDigest', icon: Mail, label: 'Send weekly host digest' }
-                      ].map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <label key={item.key} className="flex items-center justify-between rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4">
-                            <span className="flex items-center gap-3 font-bold text-cocoa-800">
-                              <Icon className="h-5 w-5 text-primary-600" />
-                              {item.label}
-                            </span>
-                            <input
-                              type="checkbox"
-                              checked={hostPreferences[item.key]}
-                              onChange={() => toggleHostPreference(item.key)}
-                              className="h-5 w-5 rounded border-cocoa-200 text-primary-600 focus:ring-primary-500"
-                            />
-                          </label>
-                        );
-                      })}
-                    </div>
-                    <div className="mt-5 rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-4">
-                      <label className="label flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-primary-600" />
-                        Default event visibility
-                      </label>
-                      <select className="input-field">
-                        <option>Public after publishing</option>
-                        <option>Private draft first</option>
-                        <option>Manual review before listing</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
 
