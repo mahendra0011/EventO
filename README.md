@@ -5,10 +5,10 @@ Evento is a full-stack event booking platform built with React, Express, MongoDB
 ## Highlights
 
 - Public event browsing with search, categories, featured events, trending flags, and wishlists.
-- User authentication with JWT, bcrypt password hashing, email OTP verification, login notifications, and password reset OTPs.
+- User authentication with JWT, bcrypt password hashing, email OTP verification, Google sign-in, login notifications, and password reset OTPs.
 - Host accounts with a dedicated dashboard for events, bookings, attendee communication, broadcasts, analytics, and community chat.
 - BookMyShow-style organizer workflow with business/GST/PAN/bank registration, event planning fields, review approval, multi-category tickets, event-day operation notes, and settlement tracking.
-- Ticket booking flow with email OTP verification before confirmation.
+- Ticket booking flow with email OTP verification before confirmation, QR ticket validation, cancellation, and refund tracking.
 - User dashboard for bookings, upcoming events, notifications, broadcasts, wishlist, payments, reviews, profile, and support.
 - Admin console for users, events, bookings, refunds, disputes, categories, locations, notifications, reviews, support tickets, fraud signals, security logs, analytics, and CSV exports.
 - Email delivery through Brevo with diagnostics endpoints.
@@ -199,6 +199,14 @@ npm test
 5. Booking is confirmed, tickets are reduced, notifications are created, and a confirmation email is sent.
 6. User can view the e-ticket and QR code in the dashboard.
 
+### Cancellation and Refunds
+
+1. Users can cancel eligible pending or confirmed bookings from the dashboard or ticket confirmation page.
+2. The backend evaluates the event timing and refund policy before allowing cancellation.
+3. Cancelled confirmed bookings return ticket inventory to the event.
+4. Paid bookings can start a refund request with payout details, refund amount, policy result, and timeline tracking.
+5. Admins can approve, reject, process, or mark refunds from the admin booking controls.
+
 ### Host Management
 
 1. Host registers with email, password, and phone.
@@ -259,8 +267,9 @@ All backend routes are mounted under `/api`.
 | POST | `/bookings/resend-otp` | Private | Resend booking OTP |
 | GET | `/bookings/user` | Private | User bookings |
 | GET | `/bookings/all` | Host | Bookings for host events |
+| GET | `/bookings/:id/refund-policy` | Private | Preview refund eligibility |
 | GET | `/bookings/:id` | Private | Booking details |
-| PUT | `/bookings/:id/cancel` | Private | Cancel pending booking |
+| PUT | `/bookings/:id/cancel` | Private | Cancel eligible booking and start refund request when applicable |
 | PUT | `/bookings/:id/confirm` | Host | Confirm OTP-verified booking |
 | PUT | `/bookings/:id/reject` | Host | Reject booking |
 
@@ -276,6 +285,7 @@ All backend routes are mounted under `/api`.
 | GET | `/admin/bookings` | Booking management |
 | PUT | `/admin/bookings/:id` | Update booking/payment/refund/dispute state |
 | PUT | `/admin/bookings/:id/refund` | Mark booking refunded |
+| POST | `/admin/bookings/:id/confirmation` | Resend booking confirmation email |
 | GET | `/admin/payments` | Payment summary |
 | GET | `/admin/fraud` | Fraud and moderation signals |
 | GET | `/admin/reports/:type` | CSV exports |
