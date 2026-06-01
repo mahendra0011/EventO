@@ -168,7 +168,7 @@ const Navbar = () => {
     </motion.button>
   );
 
-  const CitySelector = ({ mobile = false }) => (
+  const renderCitySelector = (mobile = false) => (
     <div className={`relative ${mobile ? 'w-full' : ''}`}>
       <motion.button
         type="button"
@@ -324,7 +324,7 @@ const Navbar = () => {
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
-            <CitySelector />
+            {renderCitySelector()}
             <ThemeToggle />
 
             {user ? (
@@ -486,7 +486,7 @@ const Navbar = () => {
                     {link.label}
                   </Link>
                 ))}
-                <CitySelector mobile />
+                {renderCitySelector(true)}
                 <ThemeToggle mobile />
 
                 {user ? (
