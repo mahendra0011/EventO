@@ -40,9 +40,9 @@ const GoogleAuthButton = ({ disabled = false, onCredential, onError, text = 'con
           }
         }}
         onError={() => onError?.()}
-        theme="outline"
-        size="large"
-        shape="rectangular"
+        theme="filled_black"
+        size="medium"
+        shape="pill"
         text={text}
         logo_alignment="left"
         width={buttonWidth}

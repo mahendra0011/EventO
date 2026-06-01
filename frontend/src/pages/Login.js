@@ -156,7 +156,7 @@ const Login = () => {
                                         disabled={loading || googleLoading}
                                         onCredential={handleGoogleCredential}
                                         onError={() => toast.error('Google login failed')}
-                                        text="signin_with"
+                                        text="continue_with"
                                     />
                                     <div className="flex items-center gap-3">
                                         <span className="h-px flex-1 bg-cocoa-100" />
