@@ -56,8 +56,8 @@ export const AuthProvider = ({ children }) => {
       return res.data;
     };
 
-    const hostLogin = async (email, password, hostKeyword) => {
-      const res = await api.post('/auth/host-keyword-login', { email, password, hostKeyword });
+    const hostLogin = async (email, password) => {
+      const res = await api.post('/auth/host-login', { email, password });
       if (res.data.token) localStorage.setItem('token', res.data.token);
       if (res.data.verified && !res.data.requiresVerification && !res.data.requiresOTP) {
         setUser(res.data.user);
@@ -75,8 +75,8 @@ export const AuthProvider = ({ children }) => {
       return res.data;
     };
 
-const hostRegister = async (name, email, password, phone, secretKeyword, organizerProfile = {}) => {
-      const res = await api.post('/auth/host-keyword-register', { name, email, password, phone, secretKeyword, organizerProfile });
+    const hostRegister = async (name, email, password, phone, organizerProfile = {}) => {
+      const res = await api.post('/auth/host-register', { name, email, password, phone, organizerProfile });
       if (res.data.token) localStorage.setItem('token', res.data.token);
       if (!res.data.requiresVerification && !res.data.requiresOTP) {
         setUser(res.data.user);

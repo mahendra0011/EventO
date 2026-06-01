@@ -50,37 +50,20 @@ api.interceptors.response.use(
 
 export default api;
 
-// Host Login with credentials (email + password + secret keyword)
-export const hostLogin = async (email, password, secretKeyword) => {
-  const res = await api.post('/auth/host-login', { email, password, secretKeyword });
+// Host Login with credentials (email + password)
+export const hostLogin = async (email, password) => {
+  const res = await api.post('/auth/host-login', { email, password });
   return res.data;
 };
 
-// Host Register with secret keyword
+// Host Register
 export const hostRegister = async (userData) => {
   const res = await api.post('/auth/host-register', userData);
   return res.data;
 };
 
-// Host Keyword Login
-export const hostKeywordLogin = async (email, password, hostKeyword) => {
-  const res = await api.post('/auth/host-keyword-login', { email, password, hostKeyword });
-  return res.data;
-};
-
-// Host Keyword Register
-export const hostKeywordRegister = async (userData) => {
-  const res = await api.post('/auth/host-keyword-register', userData);
-  return res.data;
-};
-
 export const changePassword = async (currentPassword, newPassword) => {
   const res = await api.put('/auth/password', { currentPassword, newPassword });
-  return res.data;
-};
-
-export const changeHostKeyword = async (currentPassword, currentKeyword, newKeyword) => {
-  const res = await api.put('/auth/host-keyword', { currentPassword, currentKeyword, newKeyword });
   return res.data;
 };
 

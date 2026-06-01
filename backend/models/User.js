@@ -42,10 +42,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  secretKeyword: {
-    type: String,
-    trim: true
-  },
   organizerProfile: {
     businessName: {
       type: String,

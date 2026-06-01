@@ -201,7 +201,7 @@ npm test
 
 ### Host Management
 
-1. Host registers with email, password, phone, and host keyword.
+1. Host registers with email, password, and phone.
 2. Host verifies email OTP before using protected host routes.
 3. Host creates and manages events.
 4. Host views bookings, analytics, attendees, notifications, messages, broadcasts, and community chat.
@@ -227,9 +227,9 @@ All backend routes are mounted under `/api`.
 | Method | Endpoint | Access | Description |
 | --- | --- | --- | --- |
 | POST | `/auth/register` | Public | Register a user |
-| POST | `/auth/host-keyword-register` | Public | Register a host |
+| POST | `/auth/host-register` | Public | Register a host |
 | POST | `/auth/login` | Public | User/admin login |
-| POST | `/auth/host-keyword-login` | Public | Host login |
+| POST | `/auth/host-login` | Public | Host login |
 | POST | `/auth/verify-email` | Public | Verify email OTP |
 | POST | `/auth/resend-verification` | Public | Resend email OTP |
 | POST | `/auth/forgot-password` | Public | Send password reset OTP |

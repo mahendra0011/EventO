@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { Mail, Lock, Eye, EyeOff, User, Phone, CalendarDays, Key, Shield, ArrowRight, CheckCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, Phone, CalendarDays, Shield, ArrowRight, CheckCircle } from 'lucide-react';
 import GoogleAuthButton, { hasGoogleClientId } from '../components/GoogleAuthButton';
 
 const Register = () => {
@@ -12,7 +12,6 @@ const Register = () => {
     phone: '',
     password: '',
     confirmPassword: '',
-    secretKeyword: '',
     businessName: '',
     businessType: 'individual',
     gstNumber: '',
@@ -101,7 +100,6 @@ const Register = () => {
           formData.email,
           formData.password,
           formData.phone,
-          formData.secretKeyword,
           {
             businessName: formData.businessName,
             businessType: formData.businessType,
@@ -290,28 +288,6 @@ const Register = () => {
 
                 {formData.isHost && (
                   <div className="space-y-5 rounded-lg border border-cocoa-100 bg-[#fbf8f4] p-5">
-                    <div>
-                      <label htmlFor="secretKeyword" className="label">
-                        <span className="flex items-center text-primary-700">
-                          <Key className="mr-2 h-4 w-4" />
-                          Host secret keyword
-                        </span>
-                      </label>
-                      <div className="relative">
-                        <Shield className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-cocoa-300" />
-                        <input
-                          id="secretKeyword"
-                          name="secretKeyword"
-                          type="password"
-                          value={formData.secretKeyword}
-                          onChange={handleChange}
-                          required={formData.isHost}
-                          className="input-field pl-10"
-                          placeholder="Enter host keyword"
-                        />
-                      </div>
-                    </div>
-
                     <div className="grid gap-5 sm:grid-cols-2">
                       <div>
                         <label htmlFor="businessName" className="label">Business / organizer name</label>

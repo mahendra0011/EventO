@@ -185,10 +185,10 @@ const completeVerification = async (user) => {
 
 exports.hostRegister = async (req, res) => {
   try {
-    const { name, email, password, phone, secretKeyword } = req.body;
+    const { name, email, password, phone } = req.body;
 
-    if (!name || !email || !password || !secretKeyword) {
-      return res.status(400).json({ message: 'Name, email, password and secretKeyword are required' });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email, and password are required' });
     }
 
     let user = await User.findOne({ email });
@@ -202,7 +202,6 @@ exports.hostRegister = async (req, res) => {
       password,
       phone,
       role: 'host',
-      secretKeyword,
       organizerProfile: buildOrganizerProfile(req.body),
       organizerDocuments: Array.isArray(req.body.organizerDocuments) ? req.body.organizerDocuments : []
     });
@@ -663,7 +662,7 @@ exports.getMe = async (req, res) => {
 
 exports.hostLogin = async (req, res) => {
   try {
-    const { email, password, secretKeyword } = req.body;
+    const { email, password } = req.body;
 
     const user = await User.findOne({ email, role: 'host' });
     if (!user) {
@@ -672,10 +671,6 @@ exports.hostLogin = async (req, res) => {
 
     if (user.isBlocked) {
       return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
-    }
-
-    if (user.secretKeyword !== secretKeyword) {
-      return res.status(400).json({ message: 'Invalid secret keyword' });
     }
 
     const isMatch = await user.comparePassword(password);
@@ -774,141 +769,6 @@ exports.changePassword = async (req, res) => {
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
     console.error('Change password error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.changeHostKeyword = async (req, res) => {
-  try {
-    const { currentPassword, currentKeyword, newKeyword } = req.body;
-
-    if (!currentPassword || !currentKeyword || !newKeyword) {
-      return res.status(400).json({ message: 'Current password, current keyword, and new keyword are required' });
-    }
-
-    if (newKeyword.trim().length < 4) {
-      return res.status(400).json({ message: 'New host keyword must be at least 4 characters' });
-    }
-
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (user.role !== 'host') {
-      return res.status(403).json({ message: 'Only hosts can change a host keyword' });
-    }
-
-    const isMatch = await user.comparePassword(currentPassword);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Current password is incorrect' });
-    }
-
-    if (user.secretKeyword !== currentKeyword) {
-      return res.status(400).json({ message: 'Current host keyword is incorrect' });
-    }
-
-    user.secretKeyword = newKeyword.trim();
-    await user.save();
-
-    res.json({ message: 'Host keyword changed successfully' });
-  } catch (error) {
-    console.error('Change host keyword error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.hostKeywordLogin = async (req, res) => {
-  try {
-    const { email, password, hostKeyword } = req.body;
-
-    const user = await User.findOne({ email, role: 'host' });
-    if (!user) {
-      return res.status(400).json({ message: 'Host not found' });
-    }
-
-    if (user.isBlocked) {
-      return res.status(403).json({ message: 'Your account has been blocked. Please contact support.' });
-    }
-
-    if (user.secretKeyword !== hostKeyword) {
-      return res.status(400).json({ message: 'Invalid host keyword' });
-    }
-
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    if (!user.isVerified) {
-      const otpResult = await ensureVerificationOtpForLogin(user);
-
-      return res.status(200).json(buildUnverifiedResponse(
-        user,
-        otpResult.emailSent
-          ? 'Account is not verified. A new OTP was sent to your email.'
-          : getEmailFailureMessage('verification'),
-        otpResult.emailSent
-      ));
-    }
-
-    const token = generateToken(user._id);
-    await recordSuccessfulLogin(req, user);
-
-    res.json({
-      success: true,
-      verified: true,
-      token,
-      role: user.role,
-      user: buildAuthUser(user)
-    });
-  } catch (error) {
-    console.error('Host keyword login error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.hostKeywordRegister = async (req, res) => {
-  try {
-    const { name, email, password, phone, secretKeyword } = req.body;
-
-    if (!name || !email || !password || !secretKeyword) {
-      return res.status(400).json({ message: 'Name, email, password and secretKeyword are required' });
-    }
-
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    user = new User({
-      name,
-      email,
-      password,
-      phone,
-      role: 'host',
-      secretKeyword,
-      organizerProfile: buildOrganizerProfile(req.body),
-      organizerDocuments: Array.isArray(req.body.organizerDocuments) ? req.body.organizerDocuments : []
-    });
-
-    const otpResult = await sendVerificationOtp(user, false);
-    if (!otpResult.success) {
-      return res.status(502).json({
-        message: getEmailFailureMessage('host verification'),
-        emailSent: false
-      });
-    }
-
-    await user.save();
-
-    res.status(201).json(buildUnverifiedResponse(
-      user,
-      'Host account created. Please verify the OTP sent to your email.',
-      true
-    ));
-  } catch (error) {
-    console.error('Host keyword register error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

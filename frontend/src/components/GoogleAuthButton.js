@@ -40,7 +40,7 @@ const GoogleAuthButton = ({ disabled = false, onCredential, onError, text = 'con
           }
         }}
         onError={() => onError?.()}
-        theme="filled_black"
+        theme="outline"
         size="medium"
         shape="pill"
         text={text}

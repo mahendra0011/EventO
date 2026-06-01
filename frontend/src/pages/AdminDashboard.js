@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import api, { broadcastToEventBookers, changeHostKeyword, changePassword, getNotifications } from '../utils/api';
+import api, { broadcastToEventBookers, changePassword, getNotifications } from '../utils/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeScanner } from '../components/animated';
@@ -26,7 +26,6 @@ import {
     Bell,
     LogOut,
     User,
-    Key,
     Lock,
     ShieldCheck,
     Save,
@@ -116,14 +115,8 @@ const AdminDashboard = () => {
      newPassword: '',
      confirmPassword: ''
    });
-   const [keywordData, setKeywordData] = useState({
-     currentPassword: '',
-     currentKeyword: '',
-     newKeyword: ''
-   });
    const [updatingProfile, setUpdatingProfile] = useState(false);
    const [savingPassword, setSavingPassword] = useState(false);
-   const [savingKeyword, setSavingKeyword] = useState(false);
 
     // Notification states
     const [notifications, setNotifications] = useState([]);
@@ -160,24 +153,6 @@ const AdminDashboard = () => {
       toast.error(error.response?.data?.message || 'Failed to change password');
     } finally {
       setSavingPassword(false);
-    }
-  };
-
-  const handleChangeHostKeyword = async (e) => {
-    e.preventDefault();
-    setSavingKeyword(true);
-    try {
-      await changeHostKeyword(
-        keywordData.currentPassword,
-        keywordData.currentKeyword,
-        keywordData.newKeyword
-      );
-      toast.success('Host keyword changed successfully');
-      setKeywordData({ currentPassword: '', currentKeyword: '', newKeyword: '' });
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to change host keyword');
-    } finally {
-      setSavingKeyword(false);
     }
   };
 
@@ -1759,7 +1734,7 @@ const AdminDashboard = () => {
                       </span>
                       <h3 className="text-3xl font-extrabold text-cocoa-900">Control your host workspace</h3>
                       <p className="mt-3 max-w-2xl text-cocoa-500">
-                        Manage your profile, password, host login keyword, and active session from one place.
+                        Manage your profile, password, and active session from one place.
                       </p>
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
@@ -1822,7 +1797,7 @@ const AdminDashboard = () => {
                     </div>
                   </form>
 
-                  <div className="grid gap-6">
+                  <div>
                     <form onSubmit={handleChangePassword} className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
                       <div className="mb-6 flex items-center gap-3">
                         <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
@@ -1864,49 +1839,6 @@ const AdminDashboard = () => {
                       <button type="submit" disabled={savingPassword} className="btn-primary mt-4">
                         <ShieldCheck className="h-4 w-4" />
                         {savingPassword ? 'Updating...' : 'Update password'}
-                      </button>
-                    </form>
-
-                    <form onSubmit={handleChangeHostKeyword} className="rounded-lg border border-white bg-white p-6 shadow-xl shadow-cocoa-900/5">
-                      <div className="mb-6 flex items-center gap-3">
-                        <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                          <Key className="h-5 w-5" />
-                        </span>
-                        <div>
-                          <h3 className="text-xl font-extrabold text-cocoa-900">Change host keyword</h3>
-                          <p className="text-sm text-cocoa-500">This keyword is required for host login.</p>
-                        </div>
-                      </div>
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <input
-                          type="password"
-                          value={keywordData.currentPassword}
-                          onChange={(e) => setKeywordData({ ...keywordData, currentPassword: e.target.value })}
-                          className="input-field"
-                          placeholder="Current password"
-                          required
-                        />
-                        <input
-                          type="password"
-                          value={keywordData.currentKeyword}
-                          onChange={(e) => setKeywordData({ ...keywordData, currentKeyword: e.target.value })}
-                          className="input-field"
-                          placeholder="Current keyword"
-                          required
-                        />
-                        <input
-                          type="password"
-                          value={keywordData.newKeyword}
-                          onChange={(e) => setKeywordData({ ...keywordData, newKeyword: e.target.value })}
-                          className="input-field"
-                          placeholder="New keyword"
-                          minLength={4}
-                          required
-                        />
-                      </div>
-                      <button type="submit" disabled={savingKeyword} className="btn-secondary mt-4">
-                        <Key className="h-4 w-4" />
-                        {savingKeyword ? 'Changing...' : 'Change keyword'}
                       </button>
                     </form>
                   </div>

@@ -73,8 +73,7 @@ const users = [
     email: 'admin@evento.com',
     password: 'admin123',
     role: 'admin',
-    phone: '+91 90000 10001',
-    secretKeyword: 'admin-demo'
+    phone: '+91 90000 10001'
   },
   {
     name: 'Aarav Mehta',
@@ -82,7 +81,6 @@ const users = [
     password: 'host123',
     role: 'host',
     phone: '+91 90000 10002',
-    secretKeyword: 'host-demo',
     organizerDocuments: [
       {
         label: 'Organizer GST Certificate',
@@ -98,7 +96,6 @@ const users = [
     password: 'host123',
     role: 'host',
     phone: '+91 90000 10003',
-    secretKeyword: 'music-demo',
     organizerDocuments: [
       {
         label: 'Venue Partner Agreement',
@@ -113,24 +110,21 @@ const users = [
     email: 'john@example.com',
     password: 'user123',
     role: 'user',
-    phone: '+91 90000 10004',
-    secretKeyword: 'john-demo'
+    phone: '+91 90000 10004'
   },
   {
     name: 'Jane Smith',
     email: 'jane@example.com',
     password: 'user123',
     role: 'user',
-    phone: '+91 90000 10005',
-    secretKeyword: 'jane-demo'
+    phone: '+91 90000 10005'
   },
   {
     name: 'Alex Fernandes',
     email: 'alex@example.com',
     password: 'user123',
     role: 'user',
-    phone: '+91 90000 10006',
-    secretKeyword: 'alex-demo'
+    phone: '+91 90000 10006'
   }
 ];
 
@@ -365,7 +359,6 @@ async function upsertUser(userData) {
   user.password = userData.password;
   user.role = userData.role;
   user.phone = userData.phone;
-  user.secretKeyword = userData.secretKeyword;
   user.organizerDocuments = userData.organizerDocuments || [];
   user.isVerified = true;
   user.isBlocked = false;

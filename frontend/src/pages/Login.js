@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { Mail, Lock, Eye, EyeOff, CalendarDays, Key, Shield, ArrowRight, CheckCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, CalendarDays, Shield, ArrowRight, CheckCircle } from 'lucide-react';
 import GoogleAuthButton, { hasGoogleClientId } from '../components/GoogleAuthButton';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [hostKeyword, setHostKeyword] = useState('');
     const [isHost, setIsHost] = useState(false);
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
@@ -46,7 +45,7 @@ const Login = () => {
         try {
             let response;
             if (isHost) {
-                response = await hostLogin(email, password, hostKeyword);
+                response = await hostLogin(email, password);
             } else {
                 response = await login(email, password);
             }
@@ -128,7 +127,7 @@ const Login = () => {
                                     {isHost ? 'Host access' : 'Sign in'}
                                 </h2>
                                 <p className="mt-2 font-semibold text-cocoa-500">
-                                    {isHost ? 'Use your host credentials and secret keyword.' : 'Continue to your bookings, wishlist, and event updates.'}
+                                    {isHost ? 'Use your host email and password.' : 'Continue to your bookings, wishlist, and event updates.'}
                                 </p>
                             </div>
 
@@ -211,29 +210,6 @@ const Login = () => {
                                         </button>
                                     </div>
                                 </div>
-
-                                {isHost && (
-                                    <div>
-                                        <label htmlFor="hostKeyword" className="label">
-                                            <span className="flex items-center text-primary-700">
-                                                <Key className="mr-2 h-4 w-4" />
-                                                Host secret keyword
-                                            </span>
-                                        </label>
-                                        <div className="relative">
-                                            <Shield className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-cocoa-300" />
-                                            <input
-                                                id="hostKeyword"
-                                                type="password"
-                                                value={hostKeyword}
-                                                onChange={(e) => setHostKeyword(e.target.value)}
-                                                required={isHost}
-                                                className="input-field pl-10"
-                                                placeholder="Enter host keyword"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
 
                                 <button type="submit" disabled={loading} className="btn-primary w-full">
                                     {loading ? 'Signing in...' : (isHost ? 'Access host panel' : 'Sign in')}
