@@ -3,9 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import toast from 'react-hot-toast';
 import { CheckCircle, Calendar, Clock, MapPin, Ticket, ArrowLeft, Sparkles, XCircle, RefreshCw } from 'lucide-react';
 import { QRCodeTicket, AnimatedButton, AnimatedContainer, GradientText } from '../components/animated';
+import RefundRequestModal from '../components/RefundRequestModal';
+import RefundTimeline from '../components/RefundTimeline';
 
 const BookingConfirmation = () => {
   const { id } = useParams();
@@ -13,6 +14,7 @@ const BookingConfirmation = () => {
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     fetchBooking();
@@ -46,29 +48,10 @@ const BookingConfirmation = () => {
   const ticketCategoryName = booking?.ticketCategoryName || 'General';
   const ticketPrice = Number(booking?.ticketPrice || booking?.event?.price || 0);
 
-  const handleCancelBooking = async () => {
-    const refundCopy = willStartRefund
-      ? ' This will also start the refund process automatically.'
-      : '';
-
-    if (!window.confirm(`Are you sure you want to cancel this booking?${refundCopy}`)) {
-      return;
-    }
-
-    setCancelling(true);
-    try {
-      const res = await api.put(`/bookings/${booking._id}/cancel`, {
-        reason: 'Cancelled by attendee from booking confirmation'
-      });
-      setBooking(res.data?.booking || booking);
-      toast.success(res.data?.refundStatus === 'requested'
-        ? 'Booking cancelled. Refund process started.'
-        : 'Booking cancelled successfully');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to cancel booking');
-    } finally {
-      setCancelling(false);
-    }
+  const handleCancelSubmitted = (data) => {
+    setBooking(data?.booking || booking);
+    setShowCancelModal(false);
+    setCancelling(false);
   };
 
   if (loading) {
@@ -248,6 +231,9 @@ const BookingConfirmation = () => {
                           {booking.refundStatus}
                         </span>
                       </div>
+                      <p className="mt-2 text-xs font-semibold text-cocoa-500">
+                        Refund amount: Rs. {Number(booking.refundAmount || booking.refundPolicy?.refundableAmount || 0).toLocaleString('en-IN')}
+                      </p>
                     </div>
                   )}
                   <div className="border-t border-cocoa-100 pt-3 mt-3">
@@ -281,6 +267,12 @@ const BookingConfirmation = () => {
                     </motion.div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {refundStarted && (
+              <div className="mt-6 pt-6 border-t border-cocoa-100">
+                <RefundTimeline booking={booking} />
               </div>
             )}
           </div>
@@ -340,7 +332,10 @@ const BookingConfirmation = () => {
               variant="danger"
               size="lg"
               className="flex-1"
-              onClick={handleCancelBooking}
+              onClick={() => {
+                setCancelling(true);
+                setShowCancelModal(true);
+              }}
               disabled={cancelling}
             >
               {cancelling ? 'Cancelling...' : (willStartRefund ? 'Cancel & Start Refund' : 'Cancel Booking')}
@@ -348,6 +343,16 @@ const BookingConfirmation = () => {
           )}
         </motion.div>
       </div>
+      {showCancelModal && (
+        <RefundRequestModal
+          booking={booking}
+          onClose={() => {
+            setShowCancelModal(false);
+            setCancelling(false);
+          }}
+          onSubmitted={handleCancelSubmitted}
+        />
+      )}
     </div>
   );
 };

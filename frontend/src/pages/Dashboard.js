@@ -9,6 +9,8 @@ import {
   Edit3, Heart, CreditCard, Star, MessageCircle, MessageSquare, Calendar as CalendarIcon, Bell, Eye, Users, MapPin, HelpCircle, Megaphone, RefreshCw
 } from 'lucide-react';
 import { AnimatedButton, AnimatedCard, AnimatedIcon, GradientText } from '../components/animated';
+import RefundRequestModal from '../components/RefundRequestModal';
+import RefundTimeline from '../components/RefundTimeline';
 
 const primaryDashboardTabs = ['bookings', 'upcoming', 'calendar', 'community', 'broadcasts', 'notifications', 'payments', 'reviews', 'support'];
 const topDashboardTabs = ['wishlist', 'profile'];
@@ -38,6 +40,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState(dashboardTabs.includes(requestedTab) ? requestedTab : 'bookings');
   const [filterStatus, setFilterStatus] = useState('all');
   const [editMode, setEditMode] = useState(false);
+  const [cancelBookingTarget, setCancelBookingTarget] = useState(null);
 
   // States for notifications and community
   const [notifications, setNotifications] = useState([]);
@@ -175,28 +178,15 @@ const Dashboard = () => {
   const willStartRefund = (booking) => booking.status === 'confirmed' && booking.paymentStatus === 'completed' && Number(booking.totalPrice || 0) > 0;
 
   const handleCancelBooking = async (booking) => {
-    const refundCopy = willStartRefund(booking)
-      ? ' This will also start the refund process automatically.'
-      : '';
+    setCancelBookingTarget(booking);
+  };
 
-    if (!window.confirm(`Are you sure you want to cancel this booking?${refundCopy}`)) {
-      return;
+  const handleCancelSubmitted = (data) => {
+    if (data?.booking) {
+      setBookings(prev => prev.map(item => item._id === data.booking._id ? data.booking : item));
     }
-
-    try {
-      const res = await api.put(`/bookings/${booking._id}/cancel`, {
-        reason: 'Cancelled by attendee from dashboard'
-      });
-      toast.success(res.data?.refundStatus === 'requested'
-        ? 'Booking cancelled. Refund process started.'
-        : 'Booking cancelled successfully');
-      if (res.data?.booking) {
-        setBookings(prev => prev.map(item => item._id === booking._id ? res.data.booking : item));
-      }
-      fetchBookings();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to cancel booking');
-    }
+    setCancelBookingTarget(null);
+    fetchBookings();
   };
 
   const handleUpdateProfile = async (e) => {
@@ -233,6 +223,7 @@ const Dashboard = () => {
     const refundConfig = {
       requested: { color: 'bg-amber-100 text-amber-800', icon: RefreshCw, text: 'Refund requested' },
       approved: { color: 'bg-blue-100 text-blue-800', icon: CheckCircle, text: 'Refund approved' },
+      processing: { color: 'bg-indigo-100 text-indigo-800', icon: RefreshCw, text: 'Refund processing' },
       rejected: { color: 'bg-red-100 text-red-800', icon: XCircle, text: 'Refund rejected' },
       processed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, text: 'Refund processed' }
     };
@@ -650,11 +641,16 @@ const Dashboard = () => {
                               </div>
                               {willStartRefund(booking) && (
                                 <p className="max-w-xs text-right text-xs font-semibold text-cocoa-400">
-                                  Refund request starts automatically after cancellation.
+                                  Reason and payout details are required before refund request.
                                 </p>
                               )}
                             </div>
                           </div>
+                          {(booking.refundStatus && booking.refundStatus !== 'none') && (
+                            <div className="mt-4">
+                              <RefundTimeline booking={booking} compact />
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -944,7 +940,8 @@ const Dashboard = () => {
                       {bookings
                         .filter(b => ['completed', 'refunded'].includes(b.paymentStatus) || (b.refundStatus && b.refundStatus !== 'none'))
                         .map((booking) => (
-                          <div key={booking._id} className="border border-cocoa-100 rounded-lg p-4 flex items-center bg-white">
+                          <div key={booking._id} className="border border-cocoa-100 rounded-lg p-4 bg-white">
+                            <div className="flex items-center">
                             <img src={booking.event?.image} alt={booking.event?.title} className="w-16 h-16 rounded-lg object-cover" />
                             <div className="ml-4 flex-1">
                               <h4 className="font-semibold">{booking.event?.title}</h4>
@@ -959,8 +956,19 @@ const Dashboard = () => {
                                   {booking.paymentStatus === 'refunded' ? 'Refunded' : 'Paid'}
                                 </span>
                                 {getRefundBadge(booking.refundStatus)}
+                                {booking.refundAmount > 0 && (
+                                  <span className="text-xs font-bold text-cocoa-500">
+                                    Refund Rs. {Number(booking.refundAmount || 0).toLocaleString('en-IN')}
+                                  </span>
+                                )}
                               </div>
                             </div>
+                            </div>
+                            {(booking.refundStatus && booking.refundStatus !== 'none') && (
+                              <div className="mt-4">
+                                <RefundTimeline booking={booking} compact />
+                              </div>
+                            )}
                           </div>
                         ))
                       }
@@ -1108,6 +1116,13 @@ const Dashboard = () => {
           </div>
         </AnimatedCard>
       </div>
+      {cancelBookingTarget && (
+        <RefundRequestModal
+          booking={cancelBookingTarget}
+          onClose={() => setCancelBookingTarget(null)}
+          onSubmitted={handleCancelSubmitted}
+        />
+      )}
     </div>
   );
 };
