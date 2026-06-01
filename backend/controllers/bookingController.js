@@ -584,44 +584,8 @@ exports.cancelBooking = async (req, res) => {
        await event.save();
      }
 
-     await Notification.create({
-       user: booking.user,
-       title: shouldStartRefund ? 'Booking Cancelled - Refund Started' : 'Booking Cancelled',
-       message: shouldStartRefund
-         ? `Your booking for "${event.title}" was cancelled. Refund amount: INR ${booking.refundAmount}.`
-         : `Your booking for "${event.title}" was cancelled.`,
-       type: 'booking',
-       link: '/dashboard'
-     });
-
-     sendImportantEmail(
-       req.user,
-       shouldStartRefund ? 'Booking cancelled - refund started' : 'Booking cancelled',
-       shouldStartRefund
-         ? `Your booking for "${event.title}" was cancelled. Your refund request is now waiting for approval.`
-         : `Your booking for "${event.title}" was cancelled.`,
-       '/dashboard'
-     );
-
-     if (event.organizer) {
-       await Notification.create({
-         user: event.organizer._id,
-         title: shouldStartRefund ? 'Refund Requested' : 'Booking Cancelled',
-         message: shouldStartRefund
-           ? `${req.user.name}'s booking for "${event.title}" was cancelled and needs refund processing.`
-           : `Booking for "${event.title}" was cancelled.`,
-         type: 'booking',
-         link: '/host/bookings'
-       });
-       sendImportantEmail(
-         event.organizer,
-         shouldStartRefund ? 'Refund requested' : 'Booking cancelled',
-         shouldStartRefund
-           ? `${req.user.name}'s booking for "${event.title}" was cancelled. Refund requested: INR ${booking.refundAmount}.`
-           : `${req.user.name}'s booking for "${event.title}" was cancelled.`,
-         '/host/bookings'
-       );
-     }
+     // Cancellation and refund progress are shown in dashboards/timelines.
+     // Avoid noisy emails or notifications for routine state changes.
 
      const updatedBooking = await Booking.findById(booking._id)
        .populate('event', 'title date time venue location image price ticketCategories')

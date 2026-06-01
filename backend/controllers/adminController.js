@@ -766,16 +766,6 @@ exports.updateBooking = async (req, res) => {
       metadata: { status: booking.status, paymentStatus: booking.paymentStatus }
     });
 
-    if (refundStatus && refundStatus !== previousRefundStatus) {
-      await Notification.create({
-        user: booking.user,
-        title: `Refund ${booking.refundStatus}`,
-        message: `Your refund request has been marked as ${booking.refundStatus}.`,
-        type: 'booking',
-        link: '/dashboard?tab=payments'
-      });
-    }
-
     if (disputeStatus && disputeStatus !== previousDisputeStatus) {
       await Notification.create({
         user: booking.user,
