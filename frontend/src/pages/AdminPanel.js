@@ -20,7 +20,6 @@ import {
   Mail,
   MapPin,
   MessageSquare,
-  RefreshCw,
   Search,
   Shield,
   Star,
@@ -124,6 +123,13 @@ const StatusBadge = ({ children, tone = 'gray' }) => {
   );
 };
 
+const DetailBlock = ({ label, value, className = '' }) => (
+  <div className={`rounded-lg bg-[#fbf8f4] p-4 ${className}`}>
+    <p className="text-xs font-extrabold uppercase text-cocoa-400">{label}</p>
+    <p className="mt-1 whitespace-pre-wrap text-sm font-semibold leading-6 text-cocoa-800">{value === undefined || value === null || value === '' ? 'N/A' : value}</p>
+  </div>
+);
+
 const StatCard = ({ icon: Icon, label, value, tone = 'blue' }) => {
   const tones = {
     blue: 'bg-blue-50 text-blue-700',
@@ -207,6 +213,8 @@ const AdminPanel = () => {
   const [newLocation, setNewLocation] = useState(emptyLocation);
   const [editingUser, setEditingUser] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [reviewingEvent, setReviewingEvent] = useState(null);
+  const [viewingBooking, setViewingBooking] = useState(null);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -340,6 +348,7 @@ const AdminPanel = () => {
       setEvents((prev) => prev.map((item) => item._id === id ? res.data : item));
       toast.success('Event updated');
       setEditingEvent(null);
+      setReviewingEvent(null);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update event');
     } finally {
@@ -362,6 +371,7 @@ const AdminPanel = () => {
     try {
       const res = await api.put(`/admin/bookings/${id}`, payload);
       setBookings((prev) => prev.map((item) => item._id === id ? res.data : item));
+      setViewingBooking((current) => current?._id === id ? res.data : current);
       toast.success('Booking updated');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update booking');
@@ -373,6 +383,7 @@ const AdminPanel = () => {
     try {
       const res = await api.put(`/admin/bookings/${id}/refund`);
       setBookings((prev) => prev.map((item) => item._id === id ? res.data : item));
+      setViewingBooking((current) => current?._id === id ? res.data : current);
       toast.success('Refund marked');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to refund booking');
@@ -492,15 +503,6 @@ const AdminPanel = () => {
       toast.success(`Reminder sent to ${res.data.recipients} attendee(s)`);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to send reminder');
-    }
-  };
-
-  const resendBookingConfirmation = async (id) => {
-    try {
-      await api.post(`/admin/bookings/${id}/confirmation`);
-      toast.success('Booking confirmation resent');
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to resend confirmation');
     }
   };
 
@@ -826,6 +828,7 @@ const AdminPanel = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">
+                          <button onClick={() => setReviewingEvent(event)} className="rounded-lg border border-primary-200 p-2 text-primary-700 hover:bg-primary-50" title="Review event details"><Eye className="h-4 w-4" /></button>
                           <button onClick={() => updateEvent(event._id, { isFeatured: !event.isFeatured })} className="rounded-lg border border-blue-200 p-2 text-blue-700 hover:bg-blue-50" title="Featured"><Star className="h-4 w-4" /></button>
                           <button onClick={() => updateEvent(event._id, { isTrending: !event.isTrending })} className="rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50" title="Trending"><TrendingUp className="h-4 w-4" /></button>
                           <button onClick={() => sendEventReminder(event._id)} className="rounded-lg border border-green-200 p-2 text-green-700 hover:bg-green-50" title="Send reminder"><Bell className="h-4 w-4" /></button>
@@ -953,20 +956,14 @@ const AdminPanel = () => {
                       </td>
                       <td className="px-4 py-3">{booking.event?.title || 'Deleted event'}<div className="text-xs text-cocoa-400">{formatDate(booking.bookingDate)}</div></td>
                       <td className="px-4 py-3">
-                        <select value={booking.status} onChange={(e) => updateBooking(booking._id, { status: e.target.value })} className="rounded-lg border border-cocoa-200 px-2 py-1">
-                          <option value="pending">pending</option>
-                          <option value="confirmed">confirmed</option>
-                          <option value="cancelled">cancelled</option>
-                          <option value="rejected">rejected</option>
-                        </select>
+                        <StatusBadge tone={booking.status === 'confirmed' ? 'green' : booking.status === 'cancelled' || booking.status === 'rejected' ? 'red' : 'amber'}>
+                          {booking.status}
+                        </StatusBadge>
                       </td>
                       <td className="px-4 py-3">
-                        <select value={booking.paymentStatus} onChange={(e) => updateBooking(booking._id, { paymentStatus: e.target.value })} className="rounded-lg border border-cocoa-200 px-2 py-1">
-                          <option value="pending">pending</option>
-                          <option value="completed">completed</option>
-                          <option value="failed">failed</option>
-                          <option value="refunded">refunded</option>
-                        </select>
+                        <StatusBadge tone={booking.paymentStatus === 'completed' ? 'green' : booking.paymentStatus === 'refunded' ? 'blue' : booking.paymentStatus === 'failed' ? 'red' : 'amber'}>
+                          {booking.paymentStatus}
+                        </StatusBadge>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
@@ -976,13 +973,18 @@ const AdminPanel = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => resendBookingConfirmation(booking._id)} className="rounded-lg border border-blue-200 p-2 text-blue-700 hover:bg-blue-50" title="Resend confirmation"><RefreshCw className="h-4 w-4" /></button>
-                          <button onClick={() => updateBooking(booking._id, { refundStatus: 'approved' })} className="rounded-lg border border-green-200 px-2 py-1 text-xs font-semibold text-green-700 hover:bg-green-50" title="Approve refund">Approve</button>
-                          <button onClick={() => updateBooking(booking._id, { refundStatus: 'rejected' })} className="rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50" title="Reject refund">Reject</button>
-                          <button onClick={() => updateBooking(booking._id, { disputeStatus: booking.disputeStatus === 'under_review' ? 'resolved' : 'under_review' })} className="rounded-lg border border-purple-200 px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-50" title="Review dispute">Dispute</button>
-                          <button onClick={() => updateBooking(booking._id, { status: 'cancelled' })} className="rounded-lg border border-amber-200 p-2 text-amber-700 hover:bg-amber-50" title="Cancel booking"><X className="h-4 w-4" /></button>
-                          <button onClick={() => refundBooking(booking._id)} className="rounded-lg border border-red-200 p-2 text-red-700 hover:bg-red-50" title="Refund booking"><IndianRupee className="h-4 w-4" /></button>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <button onClick={() => setViewingBooking(booking)} className="rounded-lg border border-primary-200 px-3 py-2 text-xs font-semibold text-primary-700 hover:bg-primary-50" title="View booking details">
+                            <Eye className="mr-1 inline h-4 w-4" />
+                            View
+                          </button>
+                          <button onClick={() => updateBooking(booking._id, { refundStatus: 'approved' })} className="rounded-lg border border-green-200 px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-50" title="Approve refund">Approve Refund</button>
+                          <button onClick={() => updateBooking(booking._id, { refundStatus: 'rejected' })} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50" title="Reject refund">Reject Refund</button>
+                          <button onClick={() => window.confirm('Cancel this ticket?') && updateBooking(booking._id, { status: 'cancelled' })} className="rounded-lg border border-amber-200 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-50" title="Cancel ticket">Cancel Ticket</button>
+                          <button onClick={() => refundBooking(booking._id)} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50" title="Refund booking">
+                            <IndianRupee className="mr-1 inline h-4 w-4" />
+                            Refund
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1361,6 +1363,216 @@ const AdminPanel = () => {
               <input value={editingUser.email || ''} disabled className="input-field bg-[#fbf8f4] text-cocoa-400" />
               <button disabled={saving} className="btn-primary w-full">{saving ? 'Saving...' : 'Save User'}</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {viewingBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-extrabold uppercase text-primary-600">Booking details</p>
+                <h2 className="mt-1 text-xl font-extrabold text-cocoa-900">{viewingBooking.event?.title || 'Deleted event'}</h2>
+                <p className="mt-1 text-sm font-semibold text-cocoa-400">
+                  {viewingBooking.user?.name || 'Unknown'} / {viewingBooking.user?.email || 'No email'}
+                </p>
+              </div>
+              <button onClick={() => setViewingBooking(null)} className="rounded-lg p-2 hover:bg-[#f3eee9]" title="Close booking details">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mb-5 flex flex-wrap gap-2">
+              <StatusBadge tone={viewingBooking.status === 'confirmed' ? 'green' : viewingBooking.status === 'cancelled' || viewingBooking.status === 'rejected' ? 'red' : 'amber'}>
+                {viewingBooking.status}
+              </StatusBadge>
+              <StatusBadge tone={viewingBooking.paymentStatus === 'completed' ? 'green' : viewingBooking.paymentStatus === 'refunded' ? 'blue' : viewingBooking.paymentStatus === 'failed' ? 'red' : 'amber'}>
+                payment {viewingBooking.paymentStatus}
+              </StatusBadge>
+              <StatusBadge tone={viewingBooking.refundStatus && viewingBooking.refundStatus !== 'none' ? 'amber' : 'gray'}>
+                refund {viewingBooking.refundStatus || 'none'}
+              </StatusBadge>
+              <StatusBadge tone={viewingBooking.disputeStatus && viewingBooking.disputeStatus !== 'none' ? 'red' : 'gray'}>
+                dispute {viewingBooking.disputeStatus || 'none'}
+              </StatusBadge>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <DetailBlock label="Booking ID" value={viewingBooking._id} />
+              <DetailBlock label="Booked On" value={formatDateTime(viewingBooking.bookingDate)} />
+              <DetailBlock label="Event Date" value={formatDate(viewingBooking.event?.date)} />
+              <DetailBlock label="Event Venue" value={[viewingBooking.event?.venue, viewingBooking.event?.location].filter(Boolean).join(', ')} />
+              <DetailBlock label="Tickets" value={`${viewingBooking.numberOfTickets} ${viewingBooking.ticketCategoryName || 'General'} ticket(s)`} />
+              <DetailBlock label="Total Amount" value={money(viewingBooking.totalPrice)} />
+              <DetailBlock label="Payment Attempts" value={viewingBooking.paymentAttempts || 0} />
+              <DetailBlock label="Refund Reason" value={viewingBooking.refundReason} />
+              <DetailBlock label="Confirmed At" value={formatDateTime(viewingBooking.confirmedAt)} />
+              <DetailBlock label="Cancelled At" value={formatDateTime(viewingBooking.cancelledAt)} />
+              <DetailBlock label="Attendee Details" className="md:col-span-2" value={(viewingBooking.attendeeDetails || [])
+                .map((attendee, index) => `${index + 1}. ${attendee.name || 'Guest'}${attendee.email ? ` / ${attendee.email}` : ''}${attendee.phone ? ` / ${attendee.phone}` : ''}`)
+                .join('\n')} />
+              <DetailBlock label="Admin Notes" className="md:col-span-2" value={viewingBooking.notes} />
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 border-t border-cocoa-100 pt-5 sm:flex-row sm:justify-end">
+              <button onClick={() => updateBooking(viewingBooking._id, { refundStatus: 'approved' })} className="rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-bold text-green-700 hover:bg-green-100">
+                Approve Refund
+              </button>
+              <button onClick={() => updateBooking(viewingBooking._id, { refundStatus: 'rejected' })} className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100">
+                Reject Refund
+              </button>
+              <button onClick={() => window.confirm('Cancel this ticket?') && updateBooking(viewingBooking._id, { status: 'cancelled' })} className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-bold text-amber-700 hover:bg-amber-100">
+                Cancel Ticket
+              </button>
+              <button onClick={() => refundBooking(viewingBooking._id)} className="btn-primary">
+                <IndianRupee className="h-4 w-4" />
+                Refund
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reviewingEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-lg bg-white shadow-xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-cocoa-100 bg-white p-5">
+              <div>
+                <p className="text-xs font-extrabold uppercase text-primary-600">Event review</p>
+                <h2 className="mt-1 text-2xl font-extrabold text-cocoa-900">{reviewingEvent.title}</h2>
+                <p className="mt-1 text-sm font-semibold text-cocoa-400">
+                  {reviewingEvent.organizer?.name || 'Unknown organizer'} / {reviewingEvent.organizer?.email || 'No email'}
+                </p>
+              </div>
+              <button onClick={() => setReviewingEvent(null)} className="rounded-lg p-2 hover:bg-[#f3eee9]" title="Close review">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-5">
+              <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+                <div className="overflow-hidden rounded-lg border border-cocoa-100">
+                  <img
+                    src={reviewingEvent.image || 'https://images.unsplash.com/photo-1540575467083-2bdc3c5f8ebe?w=900'}
+                    alt={reviewingEvent.title}
+                    className="h-72 w-full object-cover"
+                  />
+                  <div className="flex flex-wrap gap-2 border-t border-cocoa-100 p-4">
+                    <StatusBadge tone={reviewingEvent.moderationStatus === 'approved' ? 'green' : reviewingEvent.moderationStatus === 'rejected' ? 'red' : 'amber'}>
+                      {reviewingEvent.moderationStatus || 'pending'}
+                    </StatusBadge>
+                    <StatusBadge tone={reviewingEvent.isActive ? 'green' : 'red'}>{reviewingEvent.isActive ? 'active' : 'inactive'}</StatusBadge>
+                    <StatusBadge tone={reviewingEvent.ticketSaleStatus === 'live' ? 'green' : reviewingEvent.ticketSaleStatus === 'paused' ? 'red' : 'amber'}>
+                      {reviewingEvent.ticketSaleStatus || 'pending_approval'}
+                    </StatusBadge>
+                    <StatusBadge tone="blue">{reviewingEvent.lifecycleStage || 'under_review'}</StatusBadge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <DetailBlock label="Category" value={reviewingEvent.category} />
+                  <DetailBlock label="Event Type" value={reviewingEvent.eventType} />
+                  <DetailBlock label="Date" value={formatDate(reviewingEvent.date)} />
+                  <DetailBlock label="Time" value={reviewingEvent.time} />
+                  <DetailBlock label="Venue" value={reviewingEvent.venue} />
+                  <DetailBlock label="Location" value={reviewingEvent.location} />
+                  <DetailBlock label="Budget" value={money(reviewingEvent.budget)} />
+                  <DetailBlock label="Capacity" value={`${reviewingEvent.totalTickets || 0} total / ${reviewingEvent.availableTickets || 0} available`} />
+                  <DetailBlock label="Organizer Phone" value={reviewingEvent.organizer?.phone} />
+                  <DetailBlock label="Settlement" value={reviewingEvent.settlement?.status || 'not_started'} />
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <DetailBlock label="Description" value={reviewingEvent.description} className="lg:col-span-2" />
+
+                <div className="rounded-lg border border-cocoa-100 p-4">
+                  <h3 className="mb-3 text-sm font-extrabold uppercase text-cocoa-500">Ticket Categories</h3>
+                  {(reviewingEvent.ticketCategories || []).length === 0 ? (
+                    <p className="text-sm font-semibold text-cocoa-400">No ticket categories added.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {reviewingEvent.ticketCategories.map((category) => (
+                        <div key={category._id || category.name} className="rounded-lg bg-[#fbf8f4] p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-extrabold text-cocoa-900">{category.name}</p>
+                              {category.description && <p className="mt-1 text-sm text-cocoa-500">{category.description}</p>}
+                            </div>
+                            <p className="text-sm font-extrabold text-primary-600">{money(category.price)}</p>
+                          </div>
+                          <p className="mt-2 text-xs font-bold uppercase text-cocoa-400">
+                            {category.availableQuantity ?? category.quantity} available / {category.quantity} total
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-lg border border-cocoa-100 p-4">
+                  <h3 className="mb-3 text-sm font-extrabold uppercase text-cocoa-500">Permissions and Proofs</h3>
+                  <div className="space-y-3 text-sm font-semibold">
+                    {[
+                      ['Venue permission', reviewingEvent.venuePermissionUrl],
+                      ['Ownership proof', reviewingEvent.ownershipProofUrl]
+                    ].map(([label, url]) => (
+                      <div key={label} className="rounded-lg bg-[#fbf8f4] p-3">
+                        <p className="text-xs font-extrabold uppercase text-cocoa-400">{label}</p>
+                        {url ? (
+                          <a href={url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-2 text-primary-700 hover:text-primary-800">
+                            Open document
+                            <Eye className="h-4 w-4" />
+                          </a>
+                        ) : (
+                          <p className="mt-1 text-cocoa-500">N/A</p>
+                        )}
+                      </div>
+                    ))}
+                    <DetailBlock label="License Details" value={reviewingEvent.licenseDetails} />
+                  </div>
+                </div>
+
+                <DetailBlock label="Terms and Conditions" value={reviewingEvent.termsAndConditions} />
+                <DetailBlock label="Crowd Management Plan" value={reviewingEvent.crowdManagementPlan} />
+                <DetailBlock label="Gate Instructions" value={reviewingEvent.gateInstructions} />
+                <DetailBlock label="On-ground Contact" value={[reviewingEvent.onGroundContactName, reviewingEvent.onGroundContactPhone].filter(Boolean).join(' / ')} />
+                <DetailBlock label="Moderation Notes" value={reviewingEvent.moderationNotes} className="lg:col-span-2" />
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3 border-t border-cocoa-100 pt-5 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    openEventEditor(reviewingEvent);
+                    setReviewingEvent(null);
+                  }}
+                  className="btn-secondary"
+                >
+                  <Edit className="h-4 w-4" />
+                  Edit Details
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => updateEvent(reviewingEvent._id, { moderationStatus: 'rejected', isActive: false, moderationFlags: ['other'] })}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-5 py-3 font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Reject Event
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => updateEvent(reviewingEvent._id, { moderationStatus: 'approved', moderationFlags: [] })}
+                  className="btn-primary"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Approve Event
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
