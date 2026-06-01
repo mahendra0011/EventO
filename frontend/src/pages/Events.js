@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 import EventCard from '../components/EventCard';
+import { useCity } from '../context/CityContext';
 import { Search, Filter, X, CalendarDays, SlidersHorizontal, ArrowLeft, ArrowRight, MapPin, Sparkles, Ticket, Users } from 'lucide-react';
 
 const browseStats = [
@@ -31,6 +32,7 @@ const revealItem = {
 
 const Events = () => {
   const [searchParams] = useSearchParams();
+  const { selectedCity, clearCity } = useCity();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
@@ -43,7 +45,7 @@ const Events = () => {
   useEffect(() => {
     fetchEvents();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, selectedCategory, currentPage]);
+  }, [searchTerm, selectedCategory, selectedCity?.city, currentPage]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -66,6 +68,7 @@ const Events = () => {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (selectedCategory) params.append('category', selectedCategory);
+      if (selectedCity?.city) params.append('city', selectedCity.city);
       params.append('page', currentPage);
       params.append('limit', 9);
 
@@ -95,10 +98,11 @@ const Events = () => {
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedCategory('');
+    clearCity();
     setCurrentPage(1);
   };
 
-  const hasFilters = Boolean(searchTerm || selectedCategory);
+  const hasFilters = Boolean(searchTerm || selectedCategory || selectedCity);
 
   return (
     <div className="min-h-screen bg-[#fbf8f4]">
@@ -230,8 +234,18 @@ const Events = () => {
               {hasFilters ? 'Filtered events' : 'All events'}
             </div>
             <h2 className="text-3xl font-extrabold text-cocoa-900">
-              {selectedCategory ? `${selectedCategory} events` : 'Available events'}
+              {selectedCategory
+                ? `${selectedCategory} events${selectedCity ? ` in ${selectedCity.city}` : ''}`
+                : selectedCity ? `Events in ${selectedCity.city}` : 'Available events'}
             </h2>
+            {selectedCity && (
+              <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1.5 text-sm font-bold text-primary-700">
+                <MapPin className="h-4 w-4" />
+                {selectedCity.city}
+                <span className="text-primary-400">/</span>
+                {selectedCity.state}
+              </p>
+            )}
           </div>
           <p className="text-sm font-bold text-cocoa-400">
             {loading ? 'Loading events...' : `${events.length} result${events.length === 1 ? '' : 's'} on page ${currentPage}`}
@@ -312,7 +326,7 @@ const Events = () => {
             </div>
             <h3 className="text-xl font-extrabold text-cocoa-900">No events found</h3>
             <p className="mx-auto mt-2 max-w-md text-cocoa-500">
-              Try a different search term, clear the category, or check back after hosts publish more events.
+              Try a different search term, change the city from the navbar, clear filters, or check back after hosts publish more events.
             </p>
             {hasFilters && (
               <button type="button" onClick={clearFilters} className="btn-primary mt-6">

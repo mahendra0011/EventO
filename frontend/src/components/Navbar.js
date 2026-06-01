@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useCity } from '../context/CityContext';
+import { INDIAN_CITY_OPTIONS } from '../data/indianCities';
 import api from '../utils/api';
-import { Menu, X, CalendarDays, User, LogOut, Settings, Bell, Check, Shield, ArrowRight, Moon, Sun } from 'lucide-react';
+import { Menu, X, CalendarDays, User, LogOut, Settings, Bell, Check, Shield, ArrowRight, Moon, Sun, MapPin, ChevronDown, Search } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { selectedCity, selectCity, clearCity } = useCity();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -16,6 +19,8 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showCityMenu, setShowCityMenu] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
   const { scrollYProgress } = useScroll();
   const scrollProgress = useSpring(scrollYProgress, {
     stiffness: 160,
@@ -75,6 +80,8 @@ const Navbar = () => {
   useEffect(() => {
     setIsMenuOpen(false);
     setShowNotifications(false);
+    setShowCityMenu(false);
+    setCitySearch('');
   }, [location.pathname]);
 
   const handleLogout = () => {
@@ -86,6 +93,22 @@ const Navbar = () => {
     { to: '/', label: 'Home' },
     { to: '/events', label: 'Browse Events' },
   ];
+
+  const filteredCityOptions = useMemo(() => {
+    const query = citySearch.trim().toLowerCase();
+    if (!query) return INDIAN_CITY_OPTIONS;
+
+    return INDIAN_CITY_OPTIONS.filter((option) => (
+      option.city.toLowerCase().includes(query) ||
+      option.state.toLowerCase().includes(query)
+    ));
+  }, [citySearch]);
+
+  const handleCitySelect = (option) => {
+    selectCity(option);
+    setShowCityMenu(false);
+    setCitySearch('');
+  };
 
   const isActive = (path) => location.pathname === path;
 
@@ -145,6 +168,109 @@ const Navbar = () => {
     </motion.button>
   );
 
+  const CitySelector = ({ mobile = false }) => (
+    <div className={`relative ${mobile ? 'w-full' : ''}`}>
+      <motion.button
+        type="button"
+        onClick={() => {
+          setShowCityMenu((open) => !open);
+          setShowNotifications(false);
+        }}
+        whileHover={mobile ? undefined : { y: -2 }}
+        whileTap={{ scale: 0.96 }}
+        className={`inline-flex items-center gap-2 rounded-lg border border-cocoa-100 bg-white text-left text-sm font-extrabold text-cocoa-700 shadow-sm transition-all hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 ${
+          mobile ? 'w-full justify-between px-4 py-3' : 'max-w-[210px] px-3 py-2.5'
+        }`}
+        aria-expanded={showCityMenu}
+        aria-label="Select city"
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-primary-50 text-primary-600">
+            <MapPin className="h-4 w-4" />
+          </span>
+          <span className="min-w-0 leading-tight">
+            <span className="block truncate">{selectedCity?.city || 'All Cities'}</span>
+            <span className="block truncate text-[11px] font-bold text-cocoa-400">
+              {selectedCity?.state || 'India'}
+            </span>
+          </span>
+        </span>
+        <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${showCityMenu ? 'rotate-180' : ''}`} />
+      </motion.button>
+
+      <AnimatePresence>
+        {showCityMenu && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className={`${mobile ? 'mt-2 w-full' : 'absolute right-0 mt-3 w-80'} overflow-hidden rounded-lg border border-cocoa-100 bg-white shadow-2xl shadow-cocoa-900/15`}
+          >
+            <div className="border-b border-cocoa-100 p-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-cocoa-300" />
+                <input
+                  type="text"
+                  value={citySearch}
+                  onChange={(event) => setCitySearch(event.target.value)}
+                  placeholder="Search city or state"
+                  className="h-10 w-full rounded-lg border border-cocoa-100 bg-[#fbf8f4] pl-9 pr-3 text-sm font-semibold text-cocoa-800 outline-none transition focus:border-primary-300 focus:bg-white focus:ring-2 focus:ring-primary-100"
+                />
+              </div>
+            </div>
+
+            <div className="max-h-[420px] overflow-y-auto p-2">
+              <button
+                type="button"
+                onClick={() => {
+                  clearCity();
+                  setShowCityMenu(false);
+                  setCitySearch('');
+                }}
+                className={`mb-1 flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors ${
+                  !selectedCity ? 'bg-primary-50 text-primary-700' : 'text-cocoa-700 hover:bg-primary-50'
+                }`}
+              >
+                <span>
+                  <span className="block text-sm font-extrabold">All Cities</span>
+                  <span className="mt-0.5 block text-xs font-bold text-cocoa-400">India</span>
+                </span>
+                {!selectedCity && <Check className="h-4 w-4 text-primary-600" />}
+              </button>
+
+              {filteredCityOptions.map((option) => {
+                const isSelected = selectedCity?.city === option.city && selectedCity?.state === option.state;
+
+                return (
+                  <button
+                    type="button"
+                    key={option.value}
+                    onClick={() => handleCitySelect(option)}
+                    className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-colors ${
+                      isSelected ? 'bg-primary-50 text-primary-700' : 'text-cocoa-700 hover:bg-primary-50'
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-extrabold">{option.city}</span>
+                      <span className="mt-0.5 block truncate text-xs font-bold text-cocoa-400">{option.state}</span>
+                    </span>
+                    {isSelected && <Check className="h-4 w-4 flex-shrink-0 text-primary-600" />}
+                  </button>
+                );
+              })}
+
+              {filteredCityOptions.length === 0 && (
+                <div className="px-3 py-8 text-center text-sm font-semibold text-cocoa-400">
+                  No matching city found
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
   return (
     <motion.nav
       className={`sticky top-0 z-50 border-b transition-all duration-300 ${
@@ -198,6 +324,7 @@ const Navbar = () => {
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
+            <CitySelector />
             <ThemeToggle />
 
             {user ? (
@@ -359,6 +486,7 @@ const Navbar = () => {
                     {link.label}
                   </Link>
                 ))}
+                <CitySelector mobile />
                 <ThemeToggle mobile />
 
                 {user ? (

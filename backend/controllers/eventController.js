@@ -13,6 +13,20 @@ const toNumber = (value, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildCityLocationQuery = (city) => {
+  const trimmedCity = String(city || '').trim();
+  if (!trimmedCity) return null;
+
+  return {
+    location: {
+      $regex: `(^|[,\\s])${escapeRegex(trimmedCity)}([,\\s]|$)`,
+      $options: 'i'
+    }
+  };
+};
+
 const normalizeTicketCategories = (ticketCategories, fallbackPrice, fallbackQuantity) => {
   const categories = Array.isArray(ticketCategories) ? ticketCategories : [];
   const normalized = categories
@@ -64,7 +78,7 @@ exports.getCategories = async (req, res) => {
 // Get all events
 exports.getEvents = async (req, res) => {
   try {
-    const { category, search, page = 1, limit = 10 } = req.query;
+    const { category, search, city, page = 1, limit = 10 } = req.query;
     
     let query = {
       isActive: true,
@@ -75,12 +89,18 @@ exports.getEvents = async (req, res) => {
     if (category) {
       query.category = category;
     }
+
+    const cityLocationQuery = buildCityLocationQuery(city);
+    if (cityLocationQuery) {
+      query.$and.push(cityLocationQuery);
+    }
     
     if (search) {
       query.$and.push({ $or: [
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
-        { venue: { $regex: search, $options: 'i' } }
+        { venue: { $regex: search, $options: 'i' } },
+        { location: { $regex: search, $options: 'i' } }
       ] });
     }
 
@@ -324,7 +344,9 @@ exports.getOrganizerEvents = async (req, res) => {
 // Get featured events
 exports.getFeaturedEvents = async (req, res) => {
   try {
-    const featuredEvents = await Event.find({ isActive: true, moderationStatus: 'approved', isFeatured: true, ...PUBLIC_SALES_QUERY })
+    const cityLocationQuery = buildCityLocationQuery(req.query.city);
+    const cityFilter = cityLocationQuery ? { $and: [cityLocationQuery] } : {};
+    const featuredEvents = await Event.find({ isActive: true, moderationStatus: 'approved', isFeatured: true, ...PUBLIC_SALES_QUERY, ...cityFilter })
       .sort({ date: 1 })
       .limit(6)
       .populate('organizer', 'name');
@@ -337,6 +359,7 @@ exports.getFeaturedEvents = async (req, res) => {
       isActive: true,
       moderationStatus: 'approved',
       ...PUBLIC_SALES_QUERY,
+      ...cityFilter,
       _id: { $nin: featuredEvents.map((event) => event._id) }
     })
       .sort({ isTrending: -1, date: 1 })

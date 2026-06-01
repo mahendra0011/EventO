@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import api from '../utils/api';
 import EventCard from '../components/EventCard';
+import { useCity } from '../context/CityContext';
 import {
   Search,
   CalendarDays,
@@ -295,6 +296,7 @@ const revealItem = {
 };
 
 const Home = () => {
+  const { selectedCity } = useCity();
   const [featuredEvents, setFeaturedEvents] = useState([]);
   const [homeCategories, setHomeCategories] = useState(defaultInterests);
   const [loading, setLoading] = useState(true);
@@ -315,6 +317,10 @@ const Home = () => {
 
   useEffect(() => {
     fetchFeaturedEvents();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCity?.city]);
+
+  useEffect(() => {
     fetchHomeCategories();
   }, []);
 
@@ -327,7 +333,9 @@ const Home = () => {
 
   const fetchFeaturedEvents = async () => {
     try {
-      const res = await api.get('/events/featured');
+      const params = new URLSearchParams();
+      if (selectedCity?.city) params.append('city', selectedCity.city);
+      const res = await api.get(`/events/featured${params.toString() ? `?${params.toString()}` : ''}`);
       setFeaturedEvents(res.data || []);
     } catch (error) {
       console.error('Error fetching featured events:', error);
@@ -352,7 +360,9 @@ const Home = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     const query = searchQuery.trim();
-    navigate(query ? `/events?search=${encodeURIComponent(query)}` : '/events');
+    const params = new URLSearchParams();
+    if (query) params.set('search', query);
+    navigate(params.toString() ? `/events?${params.toString()}` : '/events');
   };
 
   const featuredCards = featuredEvents.slice(0, 6);
@@ -720,10 +730,12 @@ const Home = () => {
                 Trending now
               </span>
               <h2 className="text-3xl font-extrabold text-cocoa-900 sm:text-4xl">
-                Featured events
+                {selectedCity ? `Featured events in ${selectedCity.city}` : 'Featured events'}
               </h2>
               <p className="mt-3 max-w-2xl text-cocoa-500">
-                A quick look at the events guests are discovering first.
+                {selectedCity
+                  ? `${selectedCity.state} ke selected city events yahan dikh rahe hain.`
+                  : 'A quick look at the events guests are discovering first.'}
               </p>
             </div>
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
@@ -769,9 +781,13 @@ const Home = () => {
           ) : featuredEvents.length === 0 ? (
             <div className="surface-panel flex flex-col items-center justify-center px-6 py-16 text-center">
               <CalendarDays className="mb-4 h-12 w-12 text-primary-300" />
-              <h3 className="text-xl font-extrabold text-cocoa-900">Featured events are coming soon</h3>
+              <h3 className="text-xl font-extrabold text-cocoa-900">
+                {selectedCity ? `No events found in ${selectedCity.city}` : 'Featured events are coming soon'}
+              </h3>
               <p className="mt-2 max-w-md text-cocoa-500">
-                Explore all events or create an account to start hosting your own.
+                {selectedCity
+                  ? 'Try another city from the navbar or clear the city filter to see all events.'
+                  : 'Explore all events or create an account to start hosting your own.'}
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Link to="/events" className="btn-primary">

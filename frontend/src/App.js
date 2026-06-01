@@ -4,6 +4,7 @@ import { Toaster, resolveValue, toast } from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { CityProvider } from './context/CityContext';
 import { CheckCircle2, Info, Loader2, X, XCircle } from 'lucide-react';
 
 // Components
@@ -330,9 +331,11 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <Router>
-          <AppContent />
-        </Router>
+        <CityProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </CityProvider>
       </ThemeProvider>
     </AuthProvider>
   );
