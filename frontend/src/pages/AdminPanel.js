@@ -130,6 +130,21 @@ const DetailBlock = ({ label, value, className = '' }) => (
   </div>
 );
 
+const refundTone = (status) => {
+  if (status === 'processed') return 'green';
+  if (status === 'rejected') return 'red';
+  if (status === 'approved' || status === 'processing') return 'blue';
+  if (status === 'requested') return 'amber';
+  return 'gray';
+};
+
+const formatRefundDestination = (details = {}) => {
+  if (!details?.payoutMethod) return 'N/A';
+  if (details.payoutMethod === 'upi') return `UPI / ${details.upiId || 'N/A'}`;
+  const last4 = details.accountNumber ? details.accountNumber.slice(-4) : 'N/A';
+  return `${details.bankName || 'Bank'} / ${details.accountHolderName || 'Account holder'} / ****${last4} / ${details.ifsc || 'IFSC N/A'}`;
+};
+
 const StatCard = ({ icon: Icon, label, value, tone = 'blue' }) => {
   const tones = {
     blue: 'bg-blue-50 text-blue-700',
@@ -315,6 +330,9 @@ const AdminPanel = () => {
   const filteredBookings = useMemo(() => bookings.filter((item) => (
     !bookingStatusFilter || item.status === bookingStatusFilter
   )), [bookings, bookingStatusFilter]);
+  const refundQueue = useMemo(() => bookings.filter((item) => (
+    item.refundStatus && !['none', 'processed', 'rejected'].includes(item.refundStatus)
+  )), [bookings]);
 
   const updateUser = async (id, payload) => {
     setSaving(true);
@@ -952,6 +970,39 @@ const AdminPanel = () => {
                 <option value="rejected">Rejected</option>
               </select>
             </div>
+            {refundQueue.length > 0 && (
+              <div className="border-b border-cocoa-100 bg-amber-50 p-5">
+                <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-base font-extrabold text-amber-950">Refund Request Queue</h3>
+                    <p className="text-sm font-semibold text-amber-800">Review reason, amount, policy result, and payout destination before settlement.</p>
+                  </div>
+                  <StatusBadge tone="amber">{refundQueue.length} open</StatusBadge>
+                </div>
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  {refundQueue.slice(0, 6).map((booking) => (
+                    <button
+                      key={booking._id}
+                      onClick={() => setViewingBooking(booking)}
+                      className="rounded-lg border border-amber-200 bg-white p-4 text-left hover:bg-amber-50"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-extrabold text-cocoa-900">{booking.event?.title || 'Deleted event'}</p>
+                          <p className="text-xs font-semibold text-cocoa-500">{booking.user?.name || 'Unknown'} / {booking.user?.email || 'No email'}</p>
+                        </div>
+                        <StatusBadge tone={refundTone(booking.refundStatus)}>{booking.refundStatus}</StatusBadge>
+                      </div>
+                      <div className="mt-3 grid grid-cols-1 gap-2 text-xs font-semibold text-cocoa-600 sm:grid-cols-2">
+                        <span>Amount: {money(booking.refundAmount || booking.refundPolicy?.refundableAmount || 0)}</span>
+                        <span>Policy: {booking.refundPolicy?.label || 'N/A'}</span>
+                        <span className="sm:col-span-2">Reason: {booking.refundReason || booking.cancellationReason || 'N/A'}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead className="bg-[#fbf8f4]">
@@ -986,7 +1037,7 @@ const AdminPanel = () => {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
                           <StatusBadge tone={(booking.paymentAttempts || 0) >= 3 ? 'red' : 'gray'}>{booking.paymentAttempts || 0} attempts</StatusBadge>
-                          <StatusBadge tone={booking.refundStatus && booking.refundStatus !== 'none' ? 'amber' : 'gray'}>{booking.refundStatus || 'none'}</StatusBadge>
+                          <StatusBadge tone={refundTone(booking.refundStatus)}>{booking.refundStatus || 'none'}</StatusBadge>
                           <StatusBadge tone={booking.disputeStatus && booking.disputeStatus !== 'none' ? 'red' : 'gray'}>{booking.disputeStatus || 'none'}</StatusBadge>
                         </div>
                       </td>
@@ -1408,7 +1459,7 @@ const AdminPanel = () => {
               <StatusBadge tone={viewingBooking.paymentStatus === 'completed' ? 'green' : viewingBooking.paymentStatus === 'refunded' ? 'blue' : viewingBooking.paymentStatus === 'failed' ? 'red' : 'amber'}>
                 payment {viewingBooking.paymentStatus}
               </StatusBadge>
-              <StatusBadge tone={viewingBooking.refundStatus && viewingBooking.refundStatus !== 'none' ? 'amber' : 'gray'}>
+              <StatusBadge tone={refundTone(viewingBooking.refundStatus)}>
                 refund {viewingBooking.refundStatus || 'none'}
               </StatusBadge>
               <StatusBadge tone={viewingBooking.disputeStatus && viewingBooking.disputeStatus !== 'none' ? 'red' : 'gray'}>
@@ -1425,6 +1476,17 @@ const AdminPanel = () => {
               <DetailBlock label="Total Amount" value={money(viewingBooking.totalPrice)} />
               <DetailBlock label="Payment Attempts" value={viewingBooking.paymentAttempts || 0} />
               <DetailBlock label="Refund Reason" value={viewingBooking.refundReason} />
+              <DetailBlock label="Cancellation Reason" value={viewingBooking.cancellationReason} />
+              <DetailBlock label="Refund Amount" value={money(viewingBooking.refundAmount || viewingBooking.refundPolicy?.refundableAmount || 0)} />
+              <DetailBlock label="Refund Policy" value={[
+                viewingBooking.refundPolicy?.label,
+                viewingBooking.refundPolicy?.reason,
+                viewingBooking.refundPolicy?.refundPercent !== undefined ? `${viewingBooking.refundPolicy.refundPercent}%` : ''
+              ].filter(Boolean).join('\n')} />
+              <DetailBlock label="Refund Payout" value={formatRefundDestination(viewingBooking.refundBankDetails)} />
+              <DetailBlock label="Refund Timeline" className="md:col-span-2" value={(viewingBooking.refundTimeline || [])
+                .map((item) => `${formatDateTime(item.at)} / ${item.status}: ${item.message || ''}`)
+                .join('\n')} />
               <DetailBlock label="Confirmed At" value={formatDateTime(viewingBooking.confirmedAt)} />
               <DetailBlock label="Cancelled At" value={formatDateTime(viewingBooking.cancelledAt)} />
               <DetailBlock label="Attendee Details" className="md:col-span-2" value={(viewingBooking.attendeeDetails || [])

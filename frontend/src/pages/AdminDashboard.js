@@ -378,6 +378,7 @@ const AdminDashboard = () => {
     const refundConfig = {
       requested: { color: 'bg-amber-100 text-amber-800', text: 'Refund requested' },
       approved: { color: 'bg-blue-100 text-blue-800', text: 'Refund approved' },
+      processing: { color: 'bg-indigo-100 text-indigo-800', text: 'Refund processing' },
       rejected: { color: 'bg-red-100 text-red-800', text: 'Refund rejected' },
       processed: { color: 'bg-green-100 text-green-800', text: 'Refund processed' }
     };
@@ -404,6 +405,9 @@ const AdminDashboard = () => {
   const filteredBookings = bookingFilter === 'all'
     ? bookings
     : bookings.filter(b => b.status === bookingFilter);
+  const refundQueue = bookings.filter((booking) => (
+    booking.refundStatus && !['none', 'processed', 'rejected'].includes(booking.refundStatus)
+  ));
 
   const analyticsStats = stats?.stats || {};
   const totalRevenue = Number(analyticsStats.totalRevenue || 0);
@@ -805,6 +809,36 @@ const AdminDashboard = () => {
                     </button>
                   ))}
                 </div>
+
+                {refundQueue.length > 0 && (
+                  <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-5">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-extrabold text-amber-950">Refund request queue</h3>
+                        <p className="text-sm font-semibold text-amber-800">{refundQueue.length} request(s) need admin settlement action</p>
+                      </div>
+                      <RefreshCw className="h-5 w-5 text-amber-700" />
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                      {refundQueue.map((booking) => (
+                        <div key={booking._id} className="rounded-lg border border-amber-200 bg-white p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-extrabold text-cocoa-900">{booking.event?.title || 'Deleted event'}</p>
+                              <p className="text-sm font-semibold text-cocoa-500">{booking.user?.name || 'Unknown'} / {booking.ticketCategoryName || 'General'}</p>
+                            </div>
+                            {getRefundBadge(booking.refundStatus)}
+                          </div>
+                          <div className="mt-3 grid grid-cols-1 gap-2 text-sm font-semibold text-cocoa-600 sm:grid-cols-2">
+                            <p>Amount: {formatMoney(booking.refundAmount || booking.refundPolicy?.refundableAmount || 0)}</p>
+                            <p>Policy: {booking.refundPolicy?.label || 'Pending check'}</p>
+                            <p className="sm:col-span-2">Reason: {booking.refundReason || booking.cancellationReason || 'No reason provided'}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Bookings Table */}
                 <div className="overflow-x-auto">
