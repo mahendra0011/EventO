@@ -630,7 +630,7 @@ exports.getAllBookings = async (req, res) => {
 
 exports.updateBooking = async (req, res) => {
   try {
-    const { status, paymentStatus, paymentAttempts, refundStatus, refundReason, refundAmount, disputeStatus, notes } = req.body;
+    const { status, paymentStatus, paymentAttempts, refundStatus, refundReason, refundAmount, disputeStatus, notes, autoApproveRefund } = req.body;
     const booking = await Booking.findById(req.params.id).populate('event', 'title date time venue location availableTickets totalTickets ticketCategories');
 
     if (!booking) {
@@ -719,8 +719,12 @@ exports.updateBooking = async (req, res) => {
       }
 
       if (refundStatus === 'processed') {
-        if (!['approved', 'processing'].includes(previousRefundStatus)) {
+        if (!['approved', 'processing'].includes(previousRefundStatus) && !autoApproveRefund) {
           return res.status(400).json({ message: 'Approve the refund before processing it' });
+        }
+        if (!['approved', 'processing'].includes(previousRefundStatus) && autoApproveRefund) {
+          booking.refundStatus = 'approved';
+          addRefundTimeline(booking, 'approved', `Refund approved for INR ${booking.refundAmount}.`, actor);
         }
         booking.refundStatus = 'processing';
         addRefundTimeline(booking, 'processing', 'Refund gateway processing started.', actor);
@@ -784,7 +788,7 @@ exports.updateBooking = async (req, res) => {
 };
 
 exports.refundBooking = async (req, res) => {
-  req.body = { ...req.body, status: 'cancelled', refundStatus: 'processed' };
+  req.body = { ...req.body, status: 'cancelled', refundStatus: 'processed', autoApproveRefund: true };
   return exports.updateBooking(req, res);
 };
 
