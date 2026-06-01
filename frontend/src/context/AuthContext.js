@@ -43,7 +43,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     const googleLogin = async (credential) => {
-      const res = await api.post('/auth/google', { credential });
+      const payload = typeof credential === 'string' ? { credential } : credential;
+      const res = await api.post('/auth/google', payload);
       if (res.data.token) localStorage.setItem('token', res.data.token);
       if (res.data.verified && !res.data.requiresVerification && !res.data.requiresOTP) {
         setUser(res.data.user);

@@ -32,6 +32,33 @@ const getGoogleClientIds = () => (
   .map((clientId) => clientId.trim())
   .filter(Boolean);
 
+const getGoogleProfileFromAccessToken = async (accessToken, audience) => {
+  const tokenInfoResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`);
+  const tokenInfo = await tokenInfoResponse.json().catch(() => ({}));
+
+  if (!tokenInfoResponse.ok) {
+    throw new Error(tokenInfo.error_description || tokenInfo.error || 'Google token could not be verified');
+  }
+
+  const tokenAudience = tokenInfo.aud || tokenInfo.audience || tokenInfo.issued_to;
+  if (tokenAudience && audience.length > 0 && !audience.includes(tokenAudience)) {
+    throw new Error('Google token audience does not match this app');
+  }
+
+  const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+  const userInfo = await userInfoResponse.json().catch(() => ({}));
+
+  if (!userInfoResponse.ok) {
+    throw new Error(userInfo.error_description || userInfo.error || 'Google profile could not be loaded');
+  }
+
+  return userInfo;
+};
+
 const getEmailFailureMessage = (purpose) => (
   `Could not send ${purpose} email. Please check the Brevo API key, verified sender email, and Render environment variables.`
 );
@@ -320,10 +347,10 @@ exports.login = async (req, res) => {
 
 exports.googleLogin = async (req, res) => {
   try {
-    const { credential } = req.body;
+    const { credential, accessToken } = req.body;
     const audience = getGoogleClientIds();
 
-    if (!credential) {
+    if (!credential && !accessToken) {
       return res.status(400).json({ message: 'Google credential is required' });
     }
 
@@ -331,11 +358,17 @@ exports.googleLogin = async (req, res) => {
       return res.status(500).json({ message: 'Google login is not configured' });
     }
 
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: audience.length === 1 ? audience[0] : audience
-    });
-    const payload = ticket.getPayload();
+    let payload;
+    if (credential) {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: audience.length === 1 ? audience[0] : audience
+      });
+      payload = ticket.getPayload();
+    } else {
+      payload = await getGoogleProfileFromAccessToken(accessToken, audience);
+    }
+
     const email = payload?.email?.toLowerCase().trim();
     const emailVerified = payload?.email_verified === true || payload?.email_verified === 'true';
 

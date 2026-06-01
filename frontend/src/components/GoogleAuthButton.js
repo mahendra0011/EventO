@@ -1,40 +1,35 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { GoogleLogin } from '@react-oauth/google';
+import React from 'react';
+import { useGoogleLogin } from '@react-oauth/google';
 import { Loader2 } from 'lucide-react';
 
 export const hasGoogleClientId = Boolean(process.env.REACT_APP_GOOGLE_CLIENT_ID);
 
 const GoogleAuthButton = ({ disabled = false, onCredential, onError, text = 'continue_with' }) => {
-  const containerRef = useRef(null);
-  const [buttonWidth, setButtonWidth] = useState(320);
-
-  useEffect(() => {
-    if (!hasGoogleClientId || !containerRef.current) return undefined;
-
-    const updateWidth = () => {
-      const width = containerRef.current?.getBoundingClientRect().width || 320;
-      setButtonWidth(Math.max(200, Math.min(400, Math.floor(width))));
-    };
-
-    updateWidth();
-
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', updateWidth);
-      return () => window.removeEventListener('resize', updateWidth);
-    }
-
-    const observer = new ResizeObserver(updateWidth);
-    observer.observe(containerRef.current);
-    return () => observer.disconnect();
-  }, []);
+  const googleLogin = useGoogleLogin({
+    flow: 'implicit',
+    scope: 'openid email profile',
+    ux_mode: 'popup',
+    onSuccess: (tokenResponse) => {
+      if (tokenResponse?.access_token) {
+        onCredential({ accessToken: tokenResponse.access_token });
+      } else {
+        onError?.();
+      }
+    },
+    onError: () => onError?.()
+  });
 
   if (!hasGoogleClientId) return null;
 
   const label = text === 'signup_with' ? 'Signup with Google' : 'Login with Google';
 
   return (
-    <div ref={containerRef} className={`relative w-full ${disabled ? 'pointer-events-none opacity-60' : ''}`}>
-      <div className="flex min-h-[50px] w-full items-center justify-center gap-3 rounded-lg border-2 border-primary-500 bg-white px-4 py-3 text-sm font-bold text-cocoa-900 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary-50 hover:shadow-md focus-within:ring-4 focus-within:ring-primary-100">
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => googleLogin()}
+      className="flex min-h-[50px] w-full items-center justify-center gap-3 rounded-lg border-2 border-primary-500 bg-white px-4 py-3 text-sm font-bold text-cocoa-900 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary-50 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-primary-100 disabled:pointer-events-none disabled:opacity-60"
+    >
         <span className="flex h-6 w-6 shrink-0 items-center justify-center">
           <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -45,26 +40,7 @@ const GoogleAuthButton = ({ disabled = false, onCredential, onError, text = 'con
         </span>
         <span>{disabled ? 'Connecting Google...' : label}</span>
         {disabled && <Loader2 className="h-4 w-4 animate-spin text-primary-600" />}
-      </div>
-      <div className="absolute inset-0 z-10 overflow-hidden rounded-lg opacity-0">
-        <GoogleLogin
-          onSuccess={(credentialResponse) => {
-            if (credentialResponse.credential) {
-              onCredential(credentialResponse.credential);
-            } else {
-              onError?.();
-            }
-          }}
-          onError={() => onError?.()}
-          theme="outline"
-          size="large"
-          shape="rectangular"
-          text={text}
-          logo_alignment="left"
-          width={buttonWidth}
-        />
-      </div>
-    </div>
+    </button>
   );
 };
 
