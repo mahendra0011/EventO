@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { uploadFiles } from '../utils/api';
 import toast from 'react-hot-toast';
-import { Mail, Lock, Eye, EyeOff, User, Phone, CalendarDays, Shield, ArrowRight, CheckCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, Phone, CalendarDays, Shield, ArrowRight, CheckCircle, FileText, Loader2, Plus, Trash2, UploadCloud } from 'lucide-react';
 import GoogleAuthButton, { hasGoogleClientId } from '../components/GoogleAuthButton';
 
 const Register = () => {
@@ -25,6 +26,10 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [organizerDocuments, setOrganizerDocuments] = useState([
+    { label: 'Business proof', url: '' }
+  ]);
+  const [uploadingDocumentIndex, setUploadingDocumentIndex] = useState(null);
   const { register, hostRegister, googleLogin } = useAuth();
   const navigate = useNavigate();
 
@@ -78,6 +83,46 @@ const Register = () => {
     });
   };
 
+  const updateOrganizerDocument = (index, field, value) => {
+    setOrganizerDocuments((current) => current.map((doc, docIndex) => (
+      docIndex === index ? { ...doc, [field]: value } : doc
+    )));
+  };
+
+  const addOrganizerDocument = () => {
+    setOrganizerDocuments((current) => [...current, { label: '', url: '' }]);
+  };
+
+  const removeOrganizerDocument = (index) => {
+    setOrganizerDocuments((current) => current.length === 1 ? current : current.filter((_, docIndex) => docIndex !== index));
+  };
+
+  const uploadOrganizerDocument = async (index, event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setUploadingDocumentIndex(index);
+    try {
+      const result = await uploadFiles('organizer-document', [file], {}, { publicUpload: true });
+      const uploadedFile = result.files?.[0];
+      if (!uploadedFile?.url) {
+        throw new Error('Upload did not return a URL');
+      }
+
+      setOrganizerDocuments((current) => current.map((doc, docIndex) => (
+        docIndex === index
+          ? { ...doc, label: doc.label || uploadedFile.name || 'Organizer document', url: uploadedFile.url }
+          : doc
+      )));
+      toast.success('Document uploaded');
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || 'Document upload failed');
+    } finally {
+      setUploadingDocumentIndex(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -95,6 +140,13 @@ const Register = () => {
 
     try {
       if (formData.isHost) {
+        const documents = organizerDocuments
+          .map((doc) => ({
+            label: doc.label.trim() || 'Organizer document',
+            url: doc.url.trim()
+          }))
+          .filter((doc) => doc.url);
+
         const res = await hostRegister(
           formData.name,
           formData.email,
@@ -111,7 +163,8 @@ const Register = () => {
             businessAddress: formData.businessAddress,
             contactEmail: formData.email,
             contactPhone: formData.phone
-          }
+          },
+          documents
         );
         if (res.requiresVerification || res.requiresOTP) {
           goToVerification(formData.email, res);
@@ -334,6 +387,64 @@ const Register = () => {
                     <div>
                       <label htmlFor="businessAddress" className="label">Business address</label>
                       <textarea id="businessAddress" name="businessAddress" value={formData.businessAddress} onChange={handleChange} className="input-field" rows={3} placeholder="Registered address" />
+                    </div>
+
+                    <div>
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <label className="label mb-0">
+                          <FileText className="mr-1 inline h-4 w-4" />
+                          Organizer documents
+                        </label>
+                        <button type="button" onClick={addOrganizerDocument} className="btn-secondary px-3 py-2 text-sm">
+                          <Plus className="h-4 w-4" />
+                          Add
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {organizerDocuments.map((doc, index) => (
+                          <div key={index} className="grid gap-3 rounded-lg border border-white bg-white p-3 sm:grid-cols-[0.8fr_1fr_auto_auto]">
+                            <input
+                              value={doc.label}
+                              onChange={(event) => updateOrganizerDocument(index, 'label', event.target.value)}
+                              className="input-field"
+                              placeholder="GST, PAN, bank proof"
+                            />
+                            <input
+                              type="url"
+                              value={doc.url}
+                              onChange={(event) => updateOrganizerDocument(index, 'url', event.target.value)}
+                              className="input-field"
+                              placeholder="https://..."
+                            />
+                            <div>
+                              <input
+                                id={`organizerDocumentUpload-${index}`}
+                                type="file"
+                                accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+                                disabled={uploadingDocumentIndex === index}
+                                onChange={(event) => uploadOrganizerDocument(index, event)}
+                                className="hidden"
+                              />
+                              <label
+                                htmlFor={`organizerDocumentUpload-${index}`}
+                                className={`btn-secondary inline-flex h-full min-h-[48px] cursor-pointer items-center justify-center px-4 text-sm ${uploadingDocumentIndex === index ? 'pointer-events-none opacity-70' : ''}`}
+                              >
+                                {uploadingDocumentIndex === index ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                                {uploadingDocumentIndex === index ? 'Uploading' : 'Upload'}
+                              </label>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeOrganizerDocument(index)}
+                              disabled={organizerDocuments.length === 1}
+                              className="rounded-lg border border-red-100 p-3 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                              title="Remove document"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

@@ -12,6 +12,7 @@ Evento is a full-stack event booking platform built with React, Express, MongoDB
 - User dashboard for bookings, upcoming events, notifications, broadcasts, wishlist, payments, reviews, profile, and support.
 - Admin console for users, events, bookings, refunds, disputes, categories, locations, notifications, reviews, support tickets, fraud signals, security logs, analytics, and CSV exports.
 - Email delivery through Brevo with diagnostics endpoints.
+- Cloudinary-backed uploads for event images, organizer documents, event proof files, and community media.
 - Production deployment support through `render.yaml`.
 
 ## Tech Stack
@@ -35,6 +36,7 @@ Evento is a full-stack event booking platform built with React, Express, MongoDB
 - JSON Web Tokens
 - bcryptjs
 - Nodemailer and Brevo email API
+- Cloudinary uploads with Multer
 - CSV exports for admin reports
 
 ## Project Structure
@@ -67,6 +69,7 @@ Evento is a full-stack event booking platform built with React, Express, MongoDB
 - npm
 - MongoDB, either local or Atlas
 - Brevo account for production email delivery
+- Cloudinary account for image and document uploads
 
 ## Environment Variables
 
@@ -80,6 +83,12 @@ MONGODB_DB_NAME=evento
 JWT_SECRET=replace-with-a-long-random-secret
 FRONTEND_URL=http://localhost:3000
 GOOGLE_CLIENT_ID=
+
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+CLOUDINARY_URL=
+CLOUDINARY_ROOT_FOLDER=evento
 
 BREVO_API_KEY=
 FROM_EMAIL=
@@ -143,6 +152,9 @@ docker run --rm -p 5000:5000 \
   -e BREVO_API_KEY=your-brevo-api-key \
   -e FROM_EMAIL=your-sender-email \
   -e GOOGLE_CLIENT_ID=your-google-client-id \
+  -e CLOUDINARY_CLOUD_NAME=your-cloud-name \
+  -e CLOUDINARY_API_KEY=your-api-key \
+  -e CLOUDINARY_API_SECRET=your-api-secret \
   evento
 ```
 
@@ -272,6 +284,15 @@ All backend routes are mounted under `/api`.
 | GET | `/auth/me` | Private | Current user profile |
 | PUT | `/auth/profile` | Private | Update profile |
 
+### Uploads
+
+| Method | Endpoint | Access | Description |
+| --- | --- | --- | --- |
+| POST | `/uploads/event-banner` | Host/Admin | Upload event banner images to `evento/events/banners/...` |
+| POST | `/uploads/event-document` | Host/Admin | Upload event permission/proof files to `evento/events/documents/...` |
+| POST | `/uploads/community-media` | Private | Upload attendee/host community chat media to `evento/community/events/...` |
+| POST | `/uploads/public/organizer-document` | Public | Upload pending host registration documents to `evento/organizers/pending-documents/...` |
+
 ### Events
 
 | Method | Endpoint | Access | Description |
@@ -328,6 +349,7 @@ Required production variables:
 - `BREVO_API_KEY`
 - `FROM_EMAIL`
 - `GOOGLE_CLIENT_ID` for Google login
+- Cloudinary upload config via `CLOUDINARY_URL`, or `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`
 
 Recommended production variables:
 
@@ -352,6 +374,7 @@ In production mode, the backend can serve `frontend/build` if both projects are 
 - Change seeded admin credentials in every deployed environment.
 - Use a strong `JWT_SECRET`.
 - Keep Brevo sender email verified.
+- Keep Cloudinary API secrets only in environment variables.
 - Do not commit `.env` files.
 - Configure CORS with the real frontend URL in production.
 - Use HTTPS for deployed frontend and backend URLs.
@@ -361,6 +384,7 @@ In production mode, the backend can serve `frontend/build` if both projects are 
 - `401 Token is not valid`: log in again or check `JWT_SECRET`.
 - `403 Please verify your email via OTP`: complete email verification.
 - Booking OTP email failed: check `BREVO_API_KEY`, `FROM_EMAIL`, and sender verification.
+- Upload failed: check Cloudinary environment variables and file size/type limits.
 - MongoDB connection error: verify `MONGODB_URI`, network access, and database credentials.
 - Frontend API calls fail locally: confirm the backend is running on port `5000`.
 

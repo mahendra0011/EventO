@@ -76,8 +76,8 @@ export const AuthProvider = ({ children }) => {
       return res.data;
     };
 
-    const hostRegister = async (name, email, password, phone, organizerProfile = {}) => {
-      const res = await api.post('/auth/host-register', { name, email, password, phone, organizerProfile });
+    const hostRegister = async (name, email, password, phone, organizerProfile = {}, organizerDocuments = []) => {
+      const res = await api.post('/auth/host-register', { name, email, password, phone, organizerProfile, organizerDocuments });
       if (res.data.token) localStorage.setItem('token', res.data.token);
       if (!res.data.requiresVerification && !res.data.requiresOTP) {
         setUser(res.data.user);
