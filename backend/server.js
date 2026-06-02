@@ -16,8 +16,10 @@ const notificationRoutes = require('./routes/notifications');
 const messageRoutes = require('./routes/messages');
 const adminRoutes = require('./routes/admin');
 const supportRoutes = require('./routes/support');
+const uploadRoutes = require('./routes/uploads');
 const { getEmailDiagnostics, sendEmailDiagnostics } = require('./utils/email');
 const { seedAdminUser, seedDefaultCategories } = require('./utils/seed');
+const { isCloudinaryConfigured } = require('./utils/cloudinary');
 
 const app = express();
 
@@ -43,6 +45,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Evento API is running' });
@@ -93,6 +96,12 @@ function validateProductionConfig() {
     throw new Error(
       `Missing required production environment variable(s): ${missingEnvVars.join(', ')}. ` +
       'Set them in the Render service environment before deploying.'
+    );
+  }
+
+  if (!isCloudinaryConfigured()) {
+    throw new Error(
+      'Missing Cloudinary production configuration. Set CLOUDINARY_URL, or set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.'
     );
   }
 }
