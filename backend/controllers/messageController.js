@@ -5,6 +5,7 @@ const Booking = require('../models/Booking');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { sendHostMessageEmail, sendImportantNotificationEmail, sendBroadcastEmail } = require('../utils/email');
+const { uploadBufferToCloudinary } = require('../utils/cloudinary');
 
 const MAX_COMMUNITY_MEDIA_ITEMS = 3;
 const MAX_COMMUNITY_MEDIA_BYTES = 8 * 1024 * 1024;
@@ -26,7 +27,7 @@ const getBase64ByteSize = (base64 = '') => {
   return Math.floor((base64.length * 3) / 4) - padding;
 };
 
-const normalizeCommunityMedia = (media = []) => {
+const normalizeCommunityMedia = async (media = [], options = {}) => {
   if (!Array.isArray(media)) {
     const error = new Error('Media must be an array');
     error.statusCode = 400;
@@ -40,19 +41,20 @@ const normalizeCommunityMedia = (media = []) => {
   }
 
   let totalSize = 0;
+  const normalizedMedia = [];
 
-  return media.map((item, index) => {
+  for (const [index, item] of media.entries()) {
     const match = typeof item?.url === 'string' ? item.url.match(DATA_URL_PATTERN) : null;
     const mimeType = match?.[1] || item?.mimeType || '';
     const mediaType = item?.type || mimeType.split('/')[0];
 
-    if (!match || !['image', 'video'].includes(mediaType) || !mimeType.startsWith(`${mediaType}/`) || !ALLOWED_COMMUNITY_MEDIA_TYPES.has(mimeType)) {
+    if (!['image', 'video'].includes(mediaType) || !mimeType.startsWith(`${mediaType}/`) || !ALLOWED_COMMUNITY_MEDIA_TYPES.has(mimeType)) {
       const error = new Error(`Attachment ${index + 1} must be a JPG, PNG, GIF, WebP, MP4, WebM, OGG, or MOV file`);
       error.statusCode = 400;
       throw error;
     }
 
-    const size = getBase64ByteSize(match[2]);
+    const size = match ? getBase64ByteSize(match[2]) : Number(item?.size || 0);
     totalSize += size;
 
     if (size > MAX_COMMUNITY_MEDIA_BYTES) {
@@ -67,14 +69,49 @@ const normalizeCommunityMedia = (media = []) => {
       throw error;
     }
 
-    return {
+    if (match) {
+      const uploadedFile = await uploadBufferToCloudinary({
+        buffer: Buffer.from(match[2], 'base64'),
+        mimetype: mimeType,
+        originalname: item.name || `community-${mediaType}-${index + 1}`,
+        size
+      }, 'community-media', {
+        eventId: options.eventId,
+        userId: options.userId,
+        index
+      });
+
+      normalizedMedia.push({
+        type: uploadedFile.type,
+        url: uploadedFile.url,
+        publicId: uploadedFile.publicId,
+        resourceType: uploadedFile.resourceType,
+        mimeType: uploadedFile.mimeType,
+        name: uploadedFile.name,
+        size: uploadedFile.size
+      });
+      continue;
+    }
+
+    const url = String(item?.url || '').trim();
+    if (!/^https?:\/\//i.test(url)) {
+      const error = new Error(`Attachment ${index + 1} must be uploaded before sending`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    normalizedMedia.push({
       type: mediaType,
-      url: item.url,
+      url,
+      publicId: item.publicId,
+      resourceType: item.resourceType,
       mimeType,
       name: String(item.name || `community-${mediaType}-${index + 1}`).slice(0, 180),
       size
-    };
-  });
+    });
+  }
+
+  return normalizedMedia;
 };
 
 // Send message from user or host
@@ -184,7 +221,7 @@ exports.postCommunityMessage = async (req, res) => {
   try {
     const { eventId, content, replyTo, media } = req.body;
     const trimmedContent = typeof content === 'string' ? content.trim() : '';
-    const mediaItems = normalizeCommunityMedia(media || []);
+    const mediaItems = await normalizeCommunityMedia(media || [], { eventId, userId: req.user.id });
     const messagePreview = trimmedContent || `[${mediaItems.length} media attachment${mediaItems.length === 1 ? '' : 's'}]`;
 
     if (!trimmedContent && mediaItems.length === 0) {

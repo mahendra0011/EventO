@@ -22,7 +22,8 @@ import {
   getEventAttendees,
   deleteMessage,
   editMessage,
-  addReaction
+  addReaction,
+  uploadFiles
 } from '../utils/api';
 import ReactionPicker from './ReactionPicker';
 import './EventChat.css';
@@ -80,12 +81,11 @@ const formatFileSize = (bytes = 0) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.onload = () => resolve(reader.result);
-  reader.onerror = reject;
-  reader.readAsDataURL(file);
-});
+const releaseMediaItems = (items = []) => {
+  items.forEach((item) => {
+    if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+  });
+};
 
 const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const [messages, setMessages] = useState([]);
@@ -111,6 +111,11 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   const autoScrollRef = useRef(true);
   const pendingScrollRef = useRef('auto');
   const messagesSignatureRef = useRef('');
+  const selectedMediaRef = useRef([]);
+
+  useEffect(() => {
+    selectedMediaRef.current = selectedMedia;
+  }, [selectedMedia]);
 
   const fetchMessages = useCallback(async (silent = false) => {
     if (!eventId) return;
@@ -167,9 +172,14 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     setEditContent('');
     setActiveMenu(null);
     setShowReactionPicker(null);
+    releaseMediaItems(selectedMediaRef.current);
     setSelectedMedia([]);
     setMediaError('');
   }, [eventId]);
+
+  useEffect(() => () => {
+    releaseMediaItems(selectedMediaRef.current);
+  }, []);
 
   useEffect(() => {
     fetchMessages();
@@ -314,19 +324,15 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
         continue;
       }
 
-      let url = '';
-      try {
-        url = await readFileAsDataUrl(file);
-      } catch {
-        nextError = `Could not read ${file.name}.`;
-        continue;
-      }
+      const previewUrl = URL.createObjectURL(file);
 
       runningTotal += file.size;
       nextMedia.push({
         id: `${file.name}-${file.lastModified}-${file.size}-${Date.now()}-${nextMedia.length}`,
         type: mediaType,
-        url,
+        file,
+        previewUrl,
+        url: previewUrl,
         mimeType: file.type,
         name: file.name,
         size: file.size
@@ -346,7 +352,11 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
   };
 
   const removeSelectedMedia = (mediaId) => {
-    setSelectedMedia((current) => current.filter((item) => item.id !== mediaId));
+    setSelectedMedia((current) => {
+      const removedItem = current.find((item) => item.id === mediaId);
+      releaseMediaItems(removedItem ? [removedItem] : []);
+      return current.filter((item) => item.id !== mediaId);
+    });
     setMediaError('');
   };
 
@@ -360,15 +370,30 @@ const EventChat = ({ eventId, eventTitle, currentUser, userRole = 'user' }) => {
     pendingScrollRef.current = 'smooth';
 
     try {
-      const mediaPayload = selectedMedia.map(({ id, ...item }) => item);
+      let mediaPayload = [];
+      if (selectedMedia.length > 0) {
+        const uploadResult = await uploadFiles('community-media', selectedMedia.map((item) => item.file), { eventId });
+        mediaPayload = (uploadResult.files || []).map((item) => ({
+          type: item.type,
+          url: item.url,
+          publicId: item.publicId,
+          resourceType: item.resourceType,
+          mimeType: item.mimeType,
+          name: item.name,
+          size: item.size
+        }));
+      }
+
       await postCommunityMessage(eventId, trimmedMessage, replyTo?._id || null, mediaPayload);
       setNewMessage('');
+      releaseMediaItems(selectedMedia);
       setSelectedMedia([]);
       setMediaError('');
       setReplyTo(null);
       fetchMessages(true).catch(() => {});
     } catch (error) {
       console.error('Error sending message:', error);
+      setMediaError(error.response?.data?.message || 'Could not send message or upload attachments.');
     } finally {
       setSending(false);
     }

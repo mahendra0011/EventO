@@ -20,6 +20,14 @@ const mediaSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  publicId: {
+    type: String,
+    trim: true
+  },
+  resourceType: {
+    type: String,
+    trim: true
+  },
   mimeType: {
     type: String,
     required: true

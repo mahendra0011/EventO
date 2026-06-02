@@ -193,6 +193,28 @@ export const getAllEventAttendees = async () => {
   return res.data;
 };
 
+// Cloudinary-backed file uploads through the backend
+export const uploadFiles = async (context, files, fields = {}, { publicUpload = false } = {}) => {
+  const formData = new FormData();
+  Array.from(files || []).forEach((file) => {
+    formData.append('files', file);
+  });
+
+  Object.entries(fields || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      formData.append(key, value);
+    }
+  });
+
+  const path = publicUpload ? `/uploads/public/${context}` : `/uploads/${context}`;
+  const res = await api.post(path, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000
+  });
+
+  return res.data;
+};
+
 // Add reaction to a message
 export const addReaction = async (messageId, emoji) => {
   const res = await api.post(`/messages/${messageId}/react`, { emoji });
