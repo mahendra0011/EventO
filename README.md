@@ -121,6 +121,33 @@ For Google login, create an OAuth 2.0 web client in Google Cloud Console and add
 - `http://localhost:3000`
 - Your deployed frontend origin, for example `https://enento.onrender.com`
 
+## Docker
+
+Build one production image for the API and React app:
+
+```bash
+docker build -t evento \
+  --build-arg REACT_APP_API_URL=/api \
+  --build-arg REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id \
+  .
+```
+
+Run it with production environment variables:
+
+```bash
+docker run --rm -p 5000:5000 \
+  -e NODE_ENV=production \
+  -e PORT=5000 \
+  -e MONGODB_URI=your-mongodb-uri \
+  -e JWT_SECRET=your-jwt-secret \
+  -e BREVO_API_KEY=your-brevo-api-key \
+  -e FROM_EMAIL=your-sender-email \
+  -e GOOGLE_CLIENT_ID=your-google-client-id \
+  evento
+```
+
+Open `http://localhost:5000` for the app and `http://localhost:5000/api/health` for the API health check.
+
 ## Local Setup
 
 Install dependencies:
