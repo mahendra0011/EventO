@@ -152,11 +152,14 @@ docker run --rm -p 5000:5000 \
   -e BREVO_API_KEY=your-brevo-api-key \
   -e FROM_EMAIL=your-sender-email \
   -e GOOGLE_CLIENT_ID=your-google-client-id \
+  -e CLOUDINARY_ROOT_FOLDER=evento \
   -e CLOUDINARY_CLOUD_NAME=your-cloud-name \
   -e CLOUDINARY_API_KEY=your-api-key \
   -e CLOUDINARY_API_SECRET=your-api-secret \
   evento
 ```
+
+You can also replace the three Cloudinary key variables with one `CLOUDINARY_URL` environment variable. Do not pass Cloudinary secrets as Docker build args because build args can become part of image metadata.
 
 Open `http://localhost:5000` for the app and `http://localhost:5000/api/health` for the API health check.
 
