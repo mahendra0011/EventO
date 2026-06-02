@@ -18,6 +18,11 @@ frontend/.env.*
 
 *.log
 *.pdf
+*.zip
+*.tar
+*.tar.gz
+aws
+awscliv2.zip
 npm-debug.log*
 
 .cache
