@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+import { uploadFiles } from '../utils/api';
 import toast from 'react-hot-toast';
-import { Calendar, Clock, MapPin, IndianRupee, Users, Image, Tag, ArrowLeft, FileText, ShieldCheck, Plus, Trash2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, IndianRupee, Users, Image, Tag, ArrowLeft, FileText, ShieldCheck, Plus, Trash2, UploadCloud, Loader2 } from 'lucide-react';
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const CreateEvent = () => {
   const [ticketCategories, setTicketCategories] = useState([
     { name: 'General', description: '', price: '', quantity: '' }
   ]);
+  const [uploadingFields, setUploadingFields] = useState({});
 
   const [categories, setCategories] = useState(['Music', 'Sports', 'Technology', 'Business', 'Art', 'Food', 'Other']);
 
@@ -76,6 +78,86 @@ const CreateEvent = () => {
   const removeTicketCategory = (index) => {
     setTicketCategories((prev) => prev.length === 1 ? prev : prev.filter((_, categoryIndex) => categoryIndex !== index));
   };
+
+  const setFieldUploading = (field, isUploading) => {
+    setUploadingFields((current) => ({ ...current, [field]: isUploading }));
+  };
+
+  const handleFileUpload = async (event, context, field) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setFieldUploading(field, true);
+    try {
+      const result = await uploadFiles(context, [file]);
+      const uploadedFile = result.files?.[0];
+      if (!uploadedFile?.url) {
+        throw new Error('Upload did not return a URL');
+      }
+
+      setFormData((current) => ({ ...current, [field]: uploadedFile.url }));
+      toast.success('File uploaded');
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || 'Upload failed');
+    } finally {
+      setFieldUploading(field, false);
+    }
+  };
+
+  const renderUploadableUrlField = ({
+    field,
+    label,
+    context,
+    accept,
+    placeholder,
+    helper,
+    IconComponent,
+    showPreview = false
+  }) => (
+    <div>
+      <label htmlFor={field} className="label">
+        {IconComponent && <IconComponent className="h-4 w-4 inline mr-1" />}
+        {label}
+      </label>
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+        <input
+          id={field}
+          name={field}
+          type="url"
+          value={formData[field]}
+          onChange={handleChange}
+          className="input-field"
+          placeholder={placeholder}
+        />
+        <div>
+          <input
+            id={`${field}Upload`}
+            type="file"
+            accept={accept}
+            disabled={uploadingFields[field]}
+            onChange={(event) => handleFileUpload(event, context, field)}
+            className="hidden"
+          />
+          <label
+            htmlFor={`${field}Upload`}
+            className={`btn-secondary inline-flex h-full min-h-[48px] cursor-pointer items-center justify-center px-4 text-sm ${uploadingFields[field] ? 'pointer-events-none opacity-70' : ''}`}
+          >
+            {uploadingFields[field] ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+            {uploadingFields[field] ? 'Uploading' : 'Upload'}
+          </label>
+        </div>
+      </div>
+      {helper && (
+        <p className="text-sm text-cocoa-400 mt-1">{helper}</p>
+      )}
+      {showPreview && formData[field] && (
+        <div className="mt-3 overflow-hidden rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+          <img src={formData[field]} alt="Event preview" className="h-44 w-full object-cover" />
+        </div>
+      )}
+    </div>
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -304,25 +386,16 @@ const CreateEvent = () => {
               </div>
             </div>
 
-            {/* Image URL */}
-            <div>
-              <label htmlFor="image" className="label">
-                <Image className="h-4 w-4 inline mr-1" />
-                Image URL
-              </label>
-              <input
-                id="image"
-                name="image"
-                type="url"
-                value={formData.image}
-                onChange={handleChange}
-                className="input-field"
-                placeholder="https://example.com/image.jpg"
-              />
-              <p className="text-sm text-cocoa-400 mt-1">
-                Leave empty to use default image
-              </p>
-            </div>
+            {renderUploadableUrlField({
+              field: 'image',
+              label: 'Image URL',
+              context: 'event-banner',
+              accept: 'image/jpeg,image/png,image/gif,image/webp',
+              placeholder: 'https://example.com/image.jpg',
+              helper: 'Leave empty to use default image',
+              IconComponent: Image,
+              showPreview: true
+            })}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -343,39 +416,25 @@ const CreateEvent = () => {
                 />
               </div>
 
-              <div>
-                <label htmlFor="venuePermissionUrl" className="label">
-                  <ShieldCheck className="h-4 w-4 inline mr-1" />
-                  Venue Permission URL
-                </label>
-                <input
-                  id="venuePermissionUrl"
-                  name="venuePermissionUrl"
-                  type="url"
-                  value={formData.venuePermissionUrl}
-                  onChange={handleChange}
-                  className="input-field"
-                  placeholder="https://..."
-                />
-              </div>
+              {renderUploadableUrlField({
+                field: 'venuePermissionUrl',
+                label: 'Venue Permission URL',
+                context: 'event-document',
+                accept: 'image/jpeg,image/png,image/gif,image/webp,application/pdf',
+                placeholder: 'https://...',
+                IconComponent: ShieldCheck
+              })}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="ownershipProofUrl" className="label">
-                  <FileText className="h-4 w-4 inline mr-1" />
-                  Ownership / Permission Proof URL
-                </label>
-                <input
-                  id="ownershipProofUrl"
-                  name="ownershipProofUrl"
-                  type="url"
-                  value={formData.ownershipProofUrl}
-                  onChange={handleChange}
-                  className="input-field"
-                  placeholder="https://..."
-                />
-              </div>
+              {renderUploadableUrlField({
+                field: 'ownershipProofUrl',
+                label: 'Ownership / Permission Proof URL',
+                context: 'event-document',
+                accept: 'image/jpeg,image/png,image/gif,image/webp,application/pdf',
+                placeholder: 'https://...',
+                IconComponent: FileText
+              })}
 
               <div>
                 <label htmlFor="licenseDetails" className="label">

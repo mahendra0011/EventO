@@ -30,9 +30,13 @@ import {
   AlertTriangle,
   Users,
   X,
-  XCircle
+  XCircle,
+  Image,
+  Loader2,
+  UploadCloud
 } from 'lucide-react';
 import api from '../utils/api';
+import { uploadFiles } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
 const tabs = [
@@ -228,6 +232,7 @@ const AdminPanel = () => {
   const [newLocation, setNewLocation] = useState(emptyLocation);
   const [editingUser, setEditingUser] = useState(null);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [uploadingEventField, setUploadingEventField] = useState('');
   const [reviewingEvent, setReviewingEvent] = useState(null);
   const [viewingBooking, setViewingBooking] = useState(null);
   const { logout } = useAuth();
@@ -407,6 +412,69 @@ const AdminPanel = () => {
       toast.error(error.response?.data?.message || 'Failed to refund booking');
     }
   };
+
+  const handleEventFileUpload = async (event, context, field) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setUploadingEventField(field);
+    try {
+      const result = await uploadFiles(context, [file]);
+      const uploadedFile = result.files?.[0];
+      if (!uploadedFile?.url) {
+        throw new Error('Upload did not return a URL');
+      }
+
+      setEditingEvent((current) => current ? { ...current, [field]: uploadedFile.url } : current);
+      toast.success('File uploaded');
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || 'Upload failed');
+    } finally {
+      setUploadingEventField('');
+    }
+  };
+
+  const renderEventUploadField = ({ field, label, context, accept, icon: IconComponent }) => (
+    <div className="md:col-span-2">
+      <label htmlFor={`edit-${field}`} className="label">
+        {IconComponent && <IconComponent className="mr-1 inline h-4 w-4" />}
+        {label}
+      </label>
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+        <input
+          id={`edit-${field}`}
+          type="url"
+          value={editingEvent?.[field] || ''}
+          onChange={(e) => setEditingEvent({ ...editingEvent, [field]: e.target.value })}
+          className="input-field"
+          placeholder="https://..."
+        />
+        <div>
+          <input
+            id={`edit-${field}-upload`}
+            type="file"
+            accept={accept}
+            disabled={uploadingEventField === field}
+            onChange={(event) => handleEventFileUpload(event, context, field)}
+            className="hidden"
+          />
+          <label
+            htmlFor={`edit-${field}-upload`}
+            className={`btn-secondary inline-flex h-full min-h-[48px] cursor-pointer items-center justify-center px-4 text-sm ${uploadingEventField === field ? 'pointer-events-none opacity-70' : ''}`}
+          >
+            {uploadingEventField === field ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+            {uploadingEventField === field ? 'Uploading' : 'Upload'}
+          </label>
+        </div>
+      </div>
+      {field === 'image' && editingEvent?.image && (
+        <div className="mt-3 overflow-hidden rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+          <img src={editingEvent.image} alt="Event preview" className="h-44 w-full object-cover" />
+        </div>
+      )}
+    </div>
+  );
 
   const approveRefund = (id) => {
     if (window.confirm('Approve this refund request?')) {
@@ -1665,6 +1733,9 @@ const AdminPanel = () => {
                   venue: editingEvent.venue,
                   location: editingEvent.location,
                   category: editingEvent.category,
+                  image: editingEvent.image,
+                  venuePermissionUrl: editingEvent.venuePermissionUrl,
+                  ownershipProofUrl: editingEvent.ownershipProofUrl,
                   price: Number(editingEvent.price),
                   totalTickets: Number(editingEvent.totalTickets),
                   availableTickets: Number(editingEvent.availableTickets),
@@ -1694,6 +1765,27 @@ const AdminPanel = () => {
               <select value={editingEvent.category || ''} onChange={(e) => setEditingEvent({ ...editingEvent, category: e.target.value })} className="input-field">
                 {categories.map((category) => <option key={category._id} value={category.name}>{category.name}</option>)}
               </select>
+              {renderEventUploadField({
+                field: 'image',
+                label: 'Image URL',
+                context: 'event-banner',
+                accept: 'image/jpeg,image/png,image/gif,image/webp',
+                icon: Image
+              })}
+              {renderEventUploadField({
+                field: 'venuePermissionUrl',
+                label: 'Venue Permission URL',
+                context: 'event-document',
+                accept: 'image/jpeg,image/png,image/gif,image/webp,application/pdf',
+                icon: Shield
+              })}
+              {renderEventUploadField({
+                field: 'ownershipProofUrl',
+                label: 'Ownership / Permission Proof URL',
+                context: 'event-document',
+                accept: 'image/jpeg,image/png,image/gif,image/webp,application/pdf',
+                icon: FileText
+              })}
               <select value={editingEvent.moderationStatus || 'approved'} onChange={(e) => setEditingEvent({ ...editingEvent, moderationStatus: e.target.value })} className="input-field">
                 <option value="approved">approved</option>
                 <option value="pending">pending</option>
