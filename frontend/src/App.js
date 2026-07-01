@@ -1,7 +1,9 @@
 import React from 'react';
+import { Provider } from 'react-redux';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster, resolveValue, toast } from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
+import store from './store';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { CityProvider } from './context/CityContext';
@@ -329,15 +331,17 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <CityProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </CityProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <Provider store={store}>
+      <AuthProvider>
+        <ThemeProvider>
+          <CityProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </CityProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </Provider>
   );
 }
 
