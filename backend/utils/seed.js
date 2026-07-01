@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Category = require('../models/Category');
 
@@ -32,12 +33,13 @@ const seedAdminUser = async () => {
   }
 
   const existingUser = await User.findOne({ email });
+  const hashedPassword = await bcrypt.hash(password, 12);
 
   if (!existingUser) {
     await User.create({
       name,
       email,
-      password,
+      password: hashedPassword,
       role: 'admin',
       isVerified: true,
       isBlocked: false
@@ -53,7 +55,7 @@ const seedAdminUser = async () => {
   existingUser.isBlocked = false;
 
   if (!wasAdmin || process.env.ADMIN_RESET_PASSWORD === 'true') {
-    existingUser.password = password;
+    existingUser.password = hashedPassword;
   }
 
   await existingUser.save();
