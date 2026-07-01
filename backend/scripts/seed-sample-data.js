@@ -1,5 +1,7 @@
 const path = require('path');
 const mongoose = require('mongoose');
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
 
 mongoose.set('bufferCommands', false);
@@ -126,6 +128,15 @@ const users = [
     role: 'user',
     phone: '+91 90000 10006'
   }
+];
+
+const SEED_USERS = [
+  'admin@evento.com',
+  'host@evento.com',
+  'music.host@evento.com',
+  'john@example.com',
+  'jane@example.com',
+  'alex@example.com'
 ];
 
 const locations = [
@@ -444,6 +455,25 @@ async function clearGeneratedData(seedUserIds, seedEventIds) {
   ]);
 }
 
+async function clearOldSeedUsers() {
+  const oldSeedUsers = await User.find({ email: { $in: SEED_USERS } });
+  const oldSeedUserIds = oldSeedUsers.map((user) => user._id);
+
+  if (oldSeedUserIds.length) {
+    await Promise.all([
+      Booking.deleteMany({ user: { $in: oldSeedUserIds } }),
+      Review.deleteMany({ user: { $in: oldSeedUserIds } }),
+      Wishlist.deleteMany({ user: { $in: oldSeedUserIds } }),
+      Message.deleteMany({ $or: [{ sender: { $in: oldSeedUserIds } }, { receiver: { $in: oldSeedUserIds } }] }),
+      Notification.deleteMany({ user: { $in: oldSeedUserIds } }),
+      SupportTicket.deleteMany({ user: { $in: oldSeedUserIds } }),
+      ActivityLog.deleteMany({ actor: { $in: oldSeedUserIds } }),
+      User.deleteMany({ _id: { $in: oldSeedUserIds } })
+    ]);
+    console.log(`Cleaned ${oldSeedUserIds.length} old seed users.`);
+  }
+}
+
 async function createBookings(usersByEmail, eventsByTitle) {
   const createdBookings = [];
 
@@ -677,7 +707,11 @@ async function seedDatabase() {
 
   const uri = getMongoUri();
   await mongoose.connect(uri, getMongoOptions());
-  console.log(`Connected to MongoDB database "${mongoose.connection.name}"`);
+  console.log(`Connected to MongoDB database "${mongoose.connection.name}"\n`);
+
+  console.log('Cleaning old demo data...');
+  await clearOldSeedUsers();
+  console.log('');
 
   const usersByEmail = new Map();
   for (const userData of users) {
