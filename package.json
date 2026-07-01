@@ -3,10 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "seed": "npm run seed --workspace backend"
+    "seed:admin": "npm run seed:admin --workspace backend",
+    "seed:dummy": "npm run seed:dummy --workspace backend",
+    "seed:clean:users": "npm run seed:clean:users --workspace backend"
   },
   "workspaces": [
     "backend",
     "frontend"
-  ]
+  ],
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.12.0",
+    "lodash": "^4.17.21",
+    "react-redux": "^9.3.0"
+  }
 }

@@ -7,7 +7,9 @@
     "start": "node server.js",
     "dev": "node server.js",
     "dev:local": "node --watch server.js",
-    "seed": "node scripts/seed-sample-data.js",
+    "seed:admin": "node scripts/seed-admin.js",
+    "seed:dummy": "node scripts/seed-sample-data.js",
+    "seed:clean:users": "node scripts/seed-clean-users.js",
     "migrate:db": "node scripts/copy-database.js"
   },
   "dependencies": {
