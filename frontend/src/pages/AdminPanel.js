@@ -33,8 +33,27 @@ import {
   XCircle,
   Image,
   Loader2,
-  UploadCloud
+  UploadCloud,
+  Activity,
+  DollarSign
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
 import api from '../utils/api';
 import { uploadFiles } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -147,6 +166,25 @@ const formatRefundDestination = (details = {}) => {
   if (details.payoutMethod === 'upi') return `UPI / ${details.upiId || 'N/A'}`;
   const last4 = details.accountNumber ? details.accountNumber.slice(-4) : 'N/A';
   return `${details.bankName || 'Bank'} / ${details.accountHolderName || 'Account holder'} / ****${last4} / ${details.ifsc || 'IFSC N/A'}`;
+};
+
+const AnalyticsTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  const title = payload[0]?.payload?.name || label || payload[0]?.name;
+
+  return (
+    <div className="rounded-lg border border-cocoa-100 bg-white px-3 py-2 shadow-xl shadow-cocoa-900/10">
+      {title && <p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-cocoa-400">{title}</p>}
+      <div className="space-y-1">
+        {payload.map((entry) => (
+          <p key={entry.dataKey || entry.name} className="flex items-center gap-2 text-sm font-bold text-cocoa-700">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color || entry.fill }} />
+            <span>{entry.name}: {entry.name === 'Revenue' ? money(entry.value) : Number(entry.value || 0).toLocaleString('en-IN')}</span>
+          </p>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 const StatCard = ({ icon: Icon, label, value, tone = 'blue' }) => {
@@ -726,6 +764,7 @@ const AdminPanel = () => {
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            {/* Stats Grid */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard icon={Users} label="Total Users" value={(stats.totalUsers || 0) + (stats.totalOrganizers || 0) + (stats.totalAdmins || 0)} />
               <StatCard icon={Calendar} label="Total Events" value={stats.totalEvents || 0} tone="green" />
@@ -740,29 +779,197 @@ const AdminPanel = () => {
               <StatCard icon={AlertTriangle} label="High-risk Items" value={stats.highRiskBookings || 0} tone="red" />
             </div>
 
+            {/* Charts Row */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
-                <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Monthly Revenue</h2>
-                <ChartBars
-                  rows={charts.revenueByMonth || []}
-                  labelFor={monthLabel}
-                  valueFor={(row) => row.revenue}
-                  valueLabel={(value) => money(value)}
-                />
+              {/* Monthly Revenue - Area Chart */}
+              <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-cocoa-900">Monthly Revenue</h2>
+                    <p className="text-xs text-cocoa-400">Revenue trend over months</p>
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                    <TrendingUp className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="h-64">
+                  {(charts.revenueByMonth || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={charts.revenueByMonth.map(r => ({ name: monthLabel(r), revenue: r.revenue }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f45a2c" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#f45a2c" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid stroke="#f4eee6" strokeDasharray="3 3" />
+                        <XAxis dataKey="name" tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+                        <Tooltip content={<AnalyticsTooltip />} />
+                        <Area type="monotone" dataKey="revenue" stroke="#f45a2c" strokeWidth={3} fill="url(#revGrad)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                      <p className="text-sm text-cocoa-400">No revenue data yet</p>
+                    </div>
+                  )}
+                </div>
               </section>
-              <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
-                <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Top-selling Events</h2>
-                <ChartBars
-                  rows={charts.topEvents || []}
-                  labelFor={(row) => row._id?.title || 'Deleted event'}
-                  valueFor={(row) => row.revenue}
-                  valueLabel={(value, row) => `${money(value)} / ${row.tickets || 0} tickets`}
-                />
+
+              {/* Top-selling Events - Bar Chart */}
+              <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-cocoa-900">Top-selling Events</h2>
+                    <p className="text-xs text-cocoa-400">Revenue by event</p>
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
+                    <BarChart3 className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="h-64">
+                  {(charts.topEvents || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={charts.topEvents.map(e => ({ name: e._id?.title || 'Deleted', revenue: e.revenue, tickets: e.tickets || 0 }))} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} layout="vertical">
+                        <CartesianGrid stroke="#f4eee6" horizontal={false} />
+                        <XAxis type="number" tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="name" tick={{ fill: '#76523f', fontSize: 10 }} axisLine={false} tickLine={false} width={120} />
+                        <Tooltip content={<AnalyticsTooltip />} />
+                        <Bar dataKey="revenue" name="Revenue" radius={[0, 6, 6, 0]} fill="#f45a2c">
+                          {(charts.topEvents || []).map((_, idx) => (
+                            <Cell key={idx} fill={['#f45a2c', '#ff9a72', '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'][idx % 6]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                      <p className="text-sm text-cocoa-400">No event revenue yet</p>
+                    </div>
+                  )}
+                </div>
               </section>
             </div>
 
-            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Recent Bookings</h2>
+            {/* Second Row - More Charts */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              {/* Ticket Sales Trend - AreaChart */}
+              <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-cocoa-900">Ticket Sales</h2>
+                    <p className="text-xs text-cocoa-400">Monthly trend</p>
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                    <TrendingUp className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="h-48">
+                  {(charts.ticketSalesTrend || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={charts.ticketSalesTrend.map(r => ({ name: monthLabel(r), tickets: r.tickets }))} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="tsGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.25} />
+                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid stroke="#f4eee6" strokeDasharray="3 3" />
+                        <XAxis dataKey="name" tick={{ fill: '#976f59', fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: '#976f59', fontSize: 10 }} axisLine={false} tickLine={false} width={30} />
+                        <Tooltip content={<AnalyticsTooltip />} />
+                        <Area type="monotone" dataKey="tickets" stroke="#f59e0b" strokeWidth={2} fill="url(#tsGrad)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                      <p className="text-xs text-cocoa-400">No data</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* User Growth - BarChart */}
+              <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-cocoa-900">User Growth</h2>
+                    <p className="text-xs text-cocoa-400">New registrations</p>
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 text-green-600">
+                    <Users className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="h-48">
+                  {(charts.userGrowth || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={charts.userGrowth.map(r => ({ name: monthLabel(r), users: r.count }))} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+                        <CartesianGrid stroke="#f4eee6" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fill: '#976f59', fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: '#976f59', fontSize: 10 }} axisLine={false} tickLine={false} width={30} />
+                        <Tooltip content={<AnalyticsTooltip />} />
+                        <Bar dataKey="users" name="Users" radius={[4,4,0,0]} fill="#10b981">
+                          {(charts.userGrowth || []).map((_, i) => <Cell key={i} fill={['#10b981','#34d399','#059669','#047857'][i%4]} />)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                      <p className="text-xs text-cocoa-400">No data</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Booking Status - PieChart */}
+              <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-cocoa-900">Booking Status</h2>
+                    <p className="text-xs text-cocoa-400">By booking status</p>
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                    <Ticket className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="h-48">
+                  {(dashboard?.stats?.totalBookings || 0) > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={[
+                          { name: 'Confirmed', value: stats.confirmedBookings || 0 },
+                          { name: 'Pending', value: stats.pendingBookings || 0 },
+                          { name: 'Cancelled', value: (stats.totalBookings || 0) - (stats.confirmedBookings || 0) - (stats.pendingBookings || 0) }
+                        ].filter(d => d.value > 0)} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={30} outerRadius={55} paddingAngle={3}>
+                          <Cell fill="#10b981" />
+                          <Cell fill="#f59e0b" />
+                          <Cell fill="#ef4444" />
+                        </Pie>
+                        <Tooltip content={<AnalyticsTooltip />} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: 10, color: '#583d2f' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                      <p className="text-xs text-cocoa-400">No data</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+
+            {/* Recent Bookings Table */}
+            <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-cocoa-900">Recent Bookings</h2>
+                  <p className="text-xs text-cocoa-400">Latest booking activity</p>
+                </div>
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                  <Ticket className="h-5 w-5" />
+                </span>
+              </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                   <thead className="bg-[#fbf8f4]">
@@ -776,11 +983,11 @@ const AdminPanel = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {(dashboard?.recentBookings || []).map((booking) => (
-                      <tr key={booking._id}>
+                      <tr key={booking._id} className="hover:bg-[#fbf8f4] transition-colors">
                         <td className="px-4 py-3">{booking.user?.name || 'Unknown'}<div className="text-xs text-cocoa-400">{booking.user?.email}</div></td>
                         <td className="px-4 py-3">{booking.event?.title || 'Deleted event'}</td>
                         <td className="px-4 py-3">{booking.numberOfTickets}</td>
-                        <td className="px-4 py-3">{money(booking.totalPrice)}</td>
+                        <td className="px-4 py-3 font-medium text-cocoa-900">{money(booking.totalPrice)}</td>
                         <td className="px-4 py-3"><StatusBadge tone={booking.status === 'confirmed' ? 'green' : booking.status === 'pending' ? 'amber' : 'red'}>{booking.status}</StatusBadge></td>
                       </tr>
                     ))}
@@ -1187,37 +1394,214 @@ const AdminPanel = () => {
 
         {activeTab === 'analytics' && (
           <div className="space-y-6">
+            {/* Stat Cards */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
               <StatCard icon={Users} label="Active Users" value={advancedAnalytics?.activeUsers || 0} />
               <StatCard icon={TrendingUp} label="Conversion Rate" value={`${advancedAnalytics?.conversionRate || 0}%`} tone="green" />
               <StatCard icon={Ticket} label="Confirmed Bookings" value={advancedAnalytics?.bookingTotals?.confirmedBookings || 0} tone="amber" />
               <StatCard icon={Clock} label="Peak Hour" value={`${advancedAnalytics?.peakBookingHours?.[0]?._id?.hour ?? 'N/A'}:00`} tone="slate" />
             </div>
+
+            {/* First Row - Trend & Categories */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Ticket Sales Trend</h2>
-              <ChartBars rows={charts.ticketSalesTrend || []} labelFor={monthLabel} valueFor={(row) => row.tickets} />
-            </section>
-            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Category-wise Events</h2>
-              <ChartBars rows={charts.categoryWiseEvents || []} labelFor={(row) => row._id || 'Uncategorized'} valueFor={(row) => row.count} />
-            </section>
-            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">User Growth</h2>
-              <ChartBars rows={charts.userGrowth || []} labelFor={monthLabel} valueFor={(row) => row.count} />
-            </section>
-            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Highest Revenue Events</h2>
-              <ChartBars rows={charts.topEvents || []} labelFor={(row) => row._id?.title || 'Deleted event'} valueFor={(row) => row.revenue} valueLabel={(value) => money(value)} />
-            </section>
-            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Peak Booking Times</h2>
-              <ChartBars rows={advancedAnalytics?.peakBookingHours || []} labelFor={(row) => `${row._id.hour}:00`} valueFor={(row) => row.bookings} />
-            </section>
-            <section className="rounded-lg border border-cocoa-100 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 text-lg font-semibold text-cocoa-900">Organizer Performance</h2>
-              <ChartBars rows={advancedAnalytics?.organizerPerformance || []} labelFor={(row) => row._id?.name || 'Unknown organizer'} valueFor={(row) => row.revenue} valueLabel={(value, row) => `${money(value)} / ${row.ticketsSold || 0} tickets`} />
-            </section>
+              {/* Ticket Sales Trend - AreaChart */}
+              <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-cocoa-900">Ticket Sales Trend</h2>
+                    <p className="text-xs text-cocoa-400">Monthly ticket sales</p>
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                    <TrendingUp className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="h-64">
+                  {(charts.ticketSalesTrend || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={charts.ticketSalesTrend.map(r => ({ name: monthLabel(r), tickets: r.tickets }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="ticketGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid stroke="#f4eee6" strokeDasharray="3 3" />
+                        <XAxis dataKey="name" tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                        <Tooltip content={<AnalyticsTooltip />} />
+                        <Area type="monotone" dataKey="tickets" stroke="#f59e0b" strokeWidth={3} fill="url(#ticketGrad)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                      <p className="text-sm text-cocoa-400">No ticket sales data yet</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Category-wise Events - PieChart */}
+              <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-cocoa-900">Category-wise Events</h2>
+                    <p className="text-xs text-cocoa-400">Events by category</p>
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                    <BarChart3 className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="h-64">
+                  {(charts.categoryWiseEvents || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={charts.categoryWiseEvents.map((r, i) => ({ name: r._id || 'Uncategorized', value: r.count, fill: ['#f45a2c','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1'][i%9] }))} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({name, percent}) => `${name} ${(percent*100).toFixed(0)}%`}>
+                          {(charts.categoryWiseEvents || []).map((_, i) => <Cell key={i} fill={['#f45a2c','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1'][i%9]} />)}
+                        </Pie>
+                        <Tooltip content={<AnalyticsTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                      <p className="text-sm text-cocoa-400">No categories data yet</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+
+            {/* Second Row - User Growth & Highest Revenue */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* User Growth - BarChart */}
+              <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-cocoa-900">User Growth</h2>
+                    <p className="text-xs text-cocoa-400">New user registrations</p>
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 text-green-600">
+                    <Users className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="h-64">
+                  {(charts.userGrowth || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={charts.userGrowth.map(r => ({ name: monthLabel(r), users: r.count }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <CartesianGrid stroke="#f4eee6" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                        <Tooltip content={<AnalyticsTooltip />} />
+                        <Bar dataKey="users" name="Users" radius={[6,6,0,0]} fill="#10b981">
+                          {(charts.userGrowth || []).map((_, i) => <Cell key={i} fill={['#10b981','#34d399','#059669','#047857','#65d36e'][i%5]} />)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                      <p className="text-sm text-cocoa-400">No user growth data yet</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Highest Revenue Events - Horizontal BarChart */}
+              <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-cocoa-900">Highest Revenue Events</h2>
+                    <p className="text-xs text-cocoa-400">Top events by revenue</p>
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                    <DollarSign className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="h-64">
+                  {(charts.topEvents || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={charts.topEvents.map(e => ({ name: e._id?.title || 'Deleted', revenue: e.revenue }))} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} layout="vertical">
+                        <CartesianGrid stroke="#f4eee6" horizontal={false} />
+                        <XAxis type="number" tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="name" tick={{ fill: '#76523f', fontSize: 10 }} axisLine={false} tickLine={false} width={120} />
+                        <Tooltip content={<AnalyticsTooltip />} />
+                        <Bar dataKey="revenue" name="Revenue" radius={[0,6,6,0]}>
+                          {(charts.topEvents || []).map((_, i) => <Cell key={i} fill={['#f45a2c','#ff9a72','#10b981','#3b82f6','#8b5cf6','#f59e0b'][i%6]} />)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                      <p className="text-sm text-cocoa-400">No revenue data yet</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+
+            {/* Third Row - Peak Booking Times & Organizer Performance */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Peak Booking Times - BarChart */}
+              <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-cocoa-900">Peak Booking Times</h2>
+                    <p className="text-xs text-cocoa-400">Bookings by hour</p>
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <Clock className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="h-64">
+                  {(advancedAnalytics?.peakBookingHours || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={advancedAnalytics.peakBookingHours.map(r => ({ name: `${r._id.hour}:00`, bookings: r.bookings }))} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <CartesianGrid stroke="#f4eee6" strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                        <Tooltip content={<AnalyticsTooltip />} />
+                        <Bar dataKey="bookings" name="Bookings" radius={[6,6,0,0]} fill="#3b82f6">
+                          {(advancedAnalytics.peakBookingHours || []).map((_, i) => <Cell key={i} fill={['#3b82f6','#60a5fa','#2563eb','#1d4ed8','#93c5fd'][i%5]} />)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                      <p className="text-sm text-cocoa-400">No peak time data yet</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Organizer Performance - BarChart */}
+              <section className="rounded-xl border border-cocoa-100 bg-white p-5 shadow-lg shadow-cocoa-900/5">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-cocoa-900">Organizer Performance</h2>
+                    <p className="text-xs text-cocoa-400">Revenue by organizer</p>
+                  </div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                    <Activity className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="h-64">
+                  {(advancedAnalytics?.organizerPerformance || []).length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={advancedAnalytics.organizerPerformance.map(r => ({ name: r._id?.name || 'Unknown', revenue: r.revenue, tickets: r.ticketsSold || 0 }))} margin={{ top: 10, right: 10, left: 0, bottom: 10 }} layout="vertical">
+                        <CartesianGrid stroke="#f4eee6" horizontal={false} />
+                        <XAxis type="number" tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} tick={{ fill: '#976f59', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis type="category" dataKey="name" tick={{ fill: '#76523f', fontSize: 10 }} axisLine={false} tickLine={false} width={100} />
+                        <Tooltip content={<AnalyticsTooltip />} />
+                        <Bar dataKey="revenue" name="Revenue" radius={[0,6,6,0]} fill="#8b5cf6">
+                          {(advancedAnalytics.organizerPerformance || []).map((_, i) => <Cell key={i} fill={['#8b5cf6','#a78bfa','#7c3aed','#6d28d9','#c4b5fd'][i%5]} />)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center rounded-lg border border-cocoa-100 bg-[#fbf8f4]">
+                      <p className="text-sm text-cocoa-400">No organizer data yet</p>
+                    </div>
+                  )}
+                </div>
+              </section>
             </div>
           </div>
         )}
