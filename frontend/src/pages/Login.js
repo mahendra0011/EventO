@@ -217,6 +217,35 @@ const Login = () => {
                                 </button>
                             </form>
 
+                            <div className="premium-surface mt-6 rounded-xl border border-cocoa-100 p-5">
+                                <p className="mb-3 text-center text-xs font-extrabold uppercase tracking-wide text-cocoa-400">
+                                    Quick demo access
+                                </p>
+                                <div className="grid gap-3 sm:grid-cols-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setEmail('admin@evento.com'); setPassword('admin123'); }}
+                                        className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] px-3 py-2 text-xs font-bold text-cocoa-700 hover:border-primary-200 hover:bg-primary-50/60"
+                                    >
+                                        Admin demo
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setEmail('host@evento.com'); setPassword('host123'); }}
+                                        className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] px-3 py-2 text-xs font-bold text-cocoa-700 hover:border-primary-200 hover:bg-primary-50/60"
+                                    >
+                                        Host demo
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setEmail('john@example.com'); setPassword('user123'); }}
+                                        className="rounded-lg border border-cocoa-100 bg-[#fbf8f4] px-3 py-2 text-xs font-bold text-cocoa-700 hover:border-primary-200 hover:bg-primary-50/60"
+                                    >
+                                        User demo
+                                    </button>
+                                </div>
+                            </div>
+
                             <p className="mt-6 text-center text-sm font-semibold text-cocoa-500">
                                 Do not have an account?{' '}
                                 <Link to="/register" className="font-bold text-primary-700 hover:text-primary-800">
