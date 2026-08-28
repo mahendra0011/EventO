@@ -2,6 +2,8 @@
 
 Evento is a full-stack event booking platform built with React, Express, MongoDB, and Tailwind CSS. It supports public event discovery, ticket booking with OTP verification, host dashboards, attendee messaging, support tickets, admin controls, reports, and deployment-ready configuration for Render.
 
+live link - http://evento-1645479696.us-east-2.elb.amazonaws.com/
+
 ## Highlights
 
 - Public event browsing with search, categories, featured events, trending flags, and wishlists.
